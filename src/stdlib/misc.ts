@@ -1,4 +1,3 @@
-import Closure from '../interpreter/closure'
 import { Context, Value } from '../types'
 import { stringify } from '../utils/stringify'
 
@@ -118,11 +117,7 @@ export function char_at(str: string, index: number) {
  * An error is thrown if `f` is not a function.
  */
 export function arity(f: Function) {
-  if (f instanceof Closure) {
-    const params = f.node.params
-    const hasVarArgs = params[params.length - 1]?.type === 'RestElement'
-    return hasVarArgs ? params.length - 1 : params.length
-  } else if (typeof f === 'function') {
+  if (typeof f === 'function') {
     return f.length
   } else {
     throw new Error('arity expects a function as argument')

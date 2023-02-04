@@ -12,7 +12,7 @@ import {
   PotentialInfiniteLoopError,
   PotentialInfiniteRecursionError
 } from '../errors/timeoutErrors'
-import { Chapter, NativeStorage, Thunk } from '../types'
+import { NativeStorage, Thunk } from '../types'
 import { callExpression, locationDummyNode } from './astCreator'
 import * as create from './astCreator'
 import { makeWrapper } from './makeWrapper'
@@ -180,7 +180,6 @@ export function evaluateUnaryExpression(operator: UnaryOperator, value: any) {
 
 export function binaryOp(
   operator: BinaryOperator,
-  chapter: Chapter,
   left: any,
   right: any,
   line: number,
@@ -191,7 +190,6 @@ export function binaryOp(
   const error = rttc.checkBinaryExpression(
     create.locationDummyNode(line, column),
     operator,
-    chapter,
     left,
     right
   )

@@ -20,7 +20,7 @@ import { SourceDocumentation } from '../docTooltip'
 
 export function HighlightRulesSelector(
   id: number,
-  variant: Variant = Variant.DEFAULT,
+  variant: Variant,
   external: String = 'NONE',
   externalLibraries: (
     | {
@@ -48,7 +48,7 @@ export function HighlightRulesSelector(
     const TextHighlightRules = acequire('./text_highlight_rules').TextHighlightRules
     const identifierRegex = '[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*'
 
-    const chapter = variant === Variant.DEFAULT ? id.toString() : id.toString() + '_' + variant
+    const chapter = id.toString() + '_' + variant
     const builtin_lib = SourceDocumentation.builtins[chapter]
 
     function addFromBuiltinLibrary(meta: string) {
@@ -93,24 +93,7 @@ export function HighlightRulesSelector(
       return output.join('|')
     }
 
-    const ChapterAndVariantForbiddenWordSelector = () => {
-      const forbiddenWords = []
-      if (id < 3) {
-        forbiddenWords.push('while', 'for', 'break', 'continue', 'let')
-      }
-      if (variant !== Variant.TYPED) {
-        forbiddenWords.push('typeof', 'void')
-      }
-      return forbiddenWords.join('|')
-    }
 
-    const VariantForbiddenRegexSelector = () => {
-      if (variant === Variant.TYPED) {
-        // Removes the part of the regex that highlights singular |, since Typed variant uses union types
-        return /\.{3}|--+|\+\++|\^|(==|!=)[^=]|[$%&*+\-~\/^]=+|[^&]*&[^&]/
-      }
-      return /\.{3}|--+|\+\++|\^|(==|!=)[^=]|[$%&*+\-~\/^]=+|[^&]*&[^&]|[^\|]*\|[^\|]/
-    }
 
     // @ts-ignore
     const SourceHighlightRules = function (options) {
@@ -133,8 +116,7 @@ export function HighlightRulesSelector(
             'var|yield|async|await|with|switch|throw|try|eval|' + // forbidden words
             'class|enum|extends|super|export|implements|private|public|' +
             'interface|package|protected|static|in|of|instanceof|new|' +
-            'case|catch|default|delete|do|finally|' +
-            ChapterAndVariantForbiddenWordSelector()
+            'case|catch|default|delete|do|finally|'
         },
         'identifier'
       )
@@ -281,7 +263,7 @@ export function HighlightRulesSelector(
           },
           {
             token: ['variable.language'],
-            regex: VariantForbiddenRegexSelector()
+            regex: /\.{3}|--+|\+\++|\^|(==|!=)[^=]|[$%&*+\-~\/^]=+|[^&]*&[^&]|[^\|]*\|[^\|]/
           },
           {
             token: keywordMapper,
@@ -562,29 +544,6 @@ export function HighlightRulesSelector(
           // @ts-ignore
           JSX.call(this)
 
-        // Adding of highlight rules for Source Typed
-        // Code referenced from https://github.com/ajaxorg/ace-builds/blob/master/src/mode-typescript.js
-        if (variant === Variant.TYPED) {
-          // @ts-ignore
-          this.$rules.no_regex.unshift(
-            {
-              token: ['storage.type', 'text', 'entity.name.function.ts'],
-              regex: '(function)(\\s+)([a-zA-Z0-9$_\u00a1-\uffff][a-zA-Z0-9d$_\u00a1-\uffff]*)'
-            },
-            {
-              token: 'keyword',
-              regex: '(?:\\b(as|AS)\\b)'
-            },
-            {
-              token: ['keyword', 'storage.type.variable.ts'],
-              regex: '(type)(\\s+[a-zA-Z0-9_?.$][\\w?.$]*)'
-            },
-            {
-              token: 'keyword',
-              regex: '\\b(?:typeof)\\b'
-            }
-          )
-        }
       }
       // @ts-ignore
       this.embedRules(DocCommentHighlightRules, 'doc-', [
@@ -750,7 +709,7 @@ export function HighlightRulesSelector(
 //source mode
 export function ModeSelector(
   id: number,
-  variant: Variant = Variant.DEFAULT,
+  variant: Variant = 'calc',
   external: string = 'NONE'
 ) {
   const name = id.toString() + variant + external

@@ -4,19 +4,17 @@ import { inspect } from 'util'
 
 import { sourceLanguages } from '../constants'
 import { createContext, IOptions, parseError, runInContext } from '../index'
-import Closure from '../interpreter/closure'
 import { ExecutionMethod, Variant } from '../types'
 
 function startRepl(
-  chapter = 1,
   executionMethod: ExecutionMethod = 'interpreter',
-  variant: Variant = Variant.DEFAULT,
+  variant: Variant = 'calc',
   useSubst: boolean = false,
   useRepl: boolean,
   prelude = ''
 ) {
   // use defaults for everything
-  const context = createContext(chapter, variant, undefined, undefined)
+  const context = createContext(variant, undefined, undefined)
   const options: Partial<IOptions> = {
     scheduler: 'preemptive',
     executionMethod,
@@ -44,7 +42,7 @@ function startRepl(
           // set depth to a large number so that `parse()` output will not be folded,
           // setting to null also solves the problem, however a reference loop might crash
           writer: output => {
-            return output instanceof Closure || typeof output === 'function'
+            return typeof output === 'function'
               ? output.toString()
               : inspect(output, {
                   depth: 1000,
@@ -62,15 +60,9 @@ function startRepl(
 /**
  * Returns true iff the given chapter and variant combination is supported.
  */
-function validChapterVariant(chapter: any, variant: any) {
-  if (variant === 'interpreter') {
-    return true
-  }
-  if (variant === 'substituter' && (chapter === 1 || chapter === 2)) {
-    return true
-  }
+function validChapterVariant(variant: any) {
   for (const lang of sourceLanguages) {
-    if (lang.chapter === chapter && lang.variant === variant) return true
+    if (lang.variant === variant) return true
   }
 
   return false
@@ -79,12 +71,11 @@ function validChapterVariant(chapter: any, variant: any) {
 function main() {
   const opt = require('node-getopt')
     .create([
-      ['c', 'chapter=CHAPTER', 'set the Source chapter number (i.e., 1-4)', '1'],
       [
         'v',
         'variant=VARIANT',
-        'set the Source variant (i.e., default, interpreter, substituter, lazy, non-det, concurrent, wasm, gpu)',
-        'default'
+        'set the Source variant (i.e., calc)',
+        'calc'
       ],
       ['h', 'help', 'display this help'],
       ['e', 'eval', "don't show REPL, only display output of evaluation"]
@@ -94,8 +85,7 @@ function main() {
     .parseSystem()
 
   const variant = opt.options.variant
-  const chapter = parseInt(opt.options.chapter, 10)
-  const areValidChapterVariant: boolean = validChapterVariant(chapter, variant)
+  const areValidChapterVariant: boolean = validChapterVariant(variant)
   if (!areValidChapterVariant) {
     throw new Error(
       'The chapter and variant combination provided is unsupported. Use the -h option to view valid chapters and variants.'
@@ -109,7 +99,7 @@ function main() {
   const useSubst = opt.options.variant === 'substituter'
   const useRepl = !opt.options.e
   const prelude = opt.argv[0] ?? ''
-  startRepl(chapter, executionMethod, variant, useSubst, useRepl, prelude)
+  startRepl(executionMethod, variant, useSubst, useRepl, prelude)
 }
 
 main()

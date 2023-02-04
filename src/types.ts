@@ -44,7 +44,6 @@ export interface SourceError {
 
 export interface Rule<T extends es.Node> {
   name: string
-  disableFromChapter?: Chapter
   disableForVariants?: Variant[]
   checkers: {
     [name: string]: (node: T, ancestors: es.Node[]) => SourceError[]
@@ -61,29 +60,10 @@ export interface Comment {
 
 export type ExecutionMethod = 'native' | 'interpreter' | 'auto'
 
-export enum Chapter {
-  SOURCE_1 = 1,
-  SOURCE_2 = 2,
-  SOURCE_3 = 3,
-  SOURCE_4 = 4,
-  FULL_JS = -1,
-  HTML = -2,
-  LIBRARY_PARSER = 100
-}
 
-export enum Variant {
-  DEFAULT = 'default',
-  TYPED = 'typed',
-  NATIVE = 'native',
-  WASM = 'wasm',
-  LAZY = 'lazy',
-  NON_DET = 'non-det',
-  CONCURRENT = 'concurrent',
-  GPU = 'gpu'
-}
+export type Variant = 'calc'
 
 export interface Language {
-  chapter: Chapter
   variant: Variant
 }
 
@@ -115,9 +95,6 @@ export interface NativeStorage {
 }
 
 export interface Context<T = any> {
-  /** The source version used */
-  chapter: Chapter
-
   /** The external symbols that exist in the Context. */
   externalSymbols: string[]
 
@@ -138,15 +115,6 @@ export interface Context<T = any> {
 
   prelude: string | null
 
-  /** the state of the debugger */
-  debugger: {
-    /** External observers watching this context */
-    status: boolean
-    state: {
-      it: IterableIterator<T>
-      scheduler: Scheduler
-    }
-  }
 
   /**
    * Used for storing external properties.
@@ -154,11 +122,6 @@ export interface Context<T = any> {
    * context for use in your own built-in functions (like `display(a)`)
    */
   externalContext?: T
-
-  /**
-   * Used for storing the native context and other values
-   */
-  nativeStorage: NativeStorage
 
   /**
    * Describes the language processor to be used for evaluation
@@ -175,7 +138,6 @@ export interface Context<T = any> {
    * Contains the evaluated code that has not yet been typechecked.
    */
   unTypecheckedCode: string[]
-  typeEnvironment: TypeEnvironment
 
   /**
    * Storage container for module specific information and state
@@ -292,15 +254,6 @@ export interface BlockExpression extends es.BaseExpression {
 }
 
 export type substituterNodes = es.Node | BlockExpression
-
-export {
-  Instruction as SVMInstruction,
-  Program as SVMProgram,
-  Address as SVMAddress,
-  Argument as SVMArgument,
-  Offset as SVMOffset,
-  SVMFunction
-} from './vm/svml-compiler'
 
 export type ContiguousArrayElementExpression = Exclude<es.ArrayExpression['elements'][0], null>
 

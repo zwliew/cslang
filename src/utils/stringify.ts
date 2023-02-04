@@ -1,5 +1,4 @@
 import { MAX_LIST_DISPLAY_LENGTH } from '../constants'
-import Closure from '../interpreter/closure'
 import { Type, Value } from '../types'
 import { forceIt } from './operators'
 
@@ -426,8 +425,6 @@ export function valueToStringDag(value: Value): StringDag {
       return [{ type: 'terminal', str: 'undefined', length: 9 }, false]
     } else if (ancestors.has(v)) {
       return [{ type: 'terminal', str: '...<circular>', length: 13 }, true]
-    } else if (v instanceof Closure) {
-      return convertRepr(v.toString())
     } else if (typeof v === 'string') {
       const str = JSON.stringify(v)
       return [{ type: 'terminal', str: str, length: str.length }, false]

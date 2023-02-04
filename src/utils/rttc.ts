@@ -1,7 +1,7 @@
 import * as es from 'estree'
 
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
-import { Chapter, ErrorSeverity, ErrorType, Value } from '../types'
+import { ErrorSeverity, ErrorType, Value } from '../types'
 
 const LHS = ' on left hand side of operation'
 const RHS = ' on right hand side of operation'
@@ -16,15 +16,12 @@ export class TypeError extends RuntimeSourceError {
     public side: string,
     public expected: string,
     public got: string,
-    public chapter: Chapter = Chapter.SOURCE_4
   ) {
     super(node)
   }
 
   public explain() {
-    const displayGot =
-      this.got === 'array' ? (this.chapter <= 2 ? 'pair' : 'compound data') : this.got
-    return `Expected ${this.expected}${this.side}, got ${displayGot}.`
+    return `Expected ${this.expected}${this.side}, got ${this.got}.`
   }
 
   public elaborate() {
@@ -56,13 +53,12 @@ const isArray = (v: Value) => typeOf(v) === 'array'
 export const checkUnaryExpression = (
   node: es.Node,
   operator: es.UnaryOperator,
-  value: Value,
-  chapter: Chapter = Chapter.SOURCE_4
+  value: Value
 ) => {
   if ((operator === '+' || operator === '-') && !isNumber(value)) {
-    return new TypeError(node, '', 'number', typeOf(value), chapter)
+    return new TypeError(node, '', 'number', typeOf(value))
   } else if (operator === '!' && !isBool(value)) {
-    return new TypeError(node, '', 'boolean', typeOf(value), chapter)
+    return new TypeError(node, '', 'boolean', typeOf(value))
   } else {
     return undefined
   }
@@ -71,7 +67,6 @@ export const checkUnaryExpression = (
 export const checkBinaryExpression = (
   node: es.Node,
   operator: es.BinaryOperator,
-  chapter: Chapter,
   left: Value,
   right: Value
 ) => {
@@ -81,9 +76,9 @@ export const checkBinaryExpression = (
     case '/':
     case '%':
       if (!isNumber(left)) {
-        return new TypeError(node, LHS, 'number', typeOf(left), chapter)
+        return new TypeError(node, LHS, 'number', typeOf(left))
       } else if (!isNumber(right)) {
-        return new TypeError(node, RHS, 'number', typeOf(right), chapter)
+        return new TypeError(node, RHS, 'number', typeOf(right))
       } else {
         return
       }
@@ -94,19 +89,16 @@ export const checkBinaryExpression = (
     case '>=':
     case '!==':
     case '===':
-      if (chapter > 2 && (operator === '===' || operator === '!==')) {
-        return
-      }
       if (isNumber(left)) {
         return isNumber(right)
           ? undefined
-          : new TypeError(node, RHS, 'number', typeOf(right), chapter)
+          : new TypeError(node, RHS, 'number', typeOf(right))
       } else if (isString(left)) {
         return isString(right)
           ? undefined
-          : new TypeError(node, RHS, 'string', typeOf(right), chapter)
+          : new TypeError(node, RHS, 'string', typeOf(right))
       } else {
-        return new TypeError(node, LHS, 'string or number', typeOf(left), chapter)
+        return new TypeError(node, LHS, 'string or number', typeOf(left))
       }
     default:
       return
@@ -116,11 +108,10 @@ export const checkBinaryExpression = (
 export const checkIfStatement = (
   node: es.Node,
   test: Value,
-  chapter: Chapter = Chapter.SOURCE_4
 ) => {
   return isBool(test)
     ? undefined
-    : new TypeError(node, ' as condition', 'boolean', typeOf(test), chapter)
+    : new TypeError(node, ' as condition', 'boolean', typeOf(test))
 }
 
 export const checkMemberAccess = (node: es.Node, obj: Value, prop: Value) => {
