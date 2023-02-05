@@ -19,10 +19,7 @@ export { SourceDocumentation } from './editors/ace/docTooltip'
 
 import { CannotFindModuleError } from './errors/localImportErrors'
 import { validateFilePath } from './localImports/filePaths'
-import {
-  resolvedErrorPromise,
-  sourceFilesRunner
-} from './runner'
+import { resolvedErrorPromise, sourceFilesRunner } from './runner'
 
 export interface IOptions {
   scheduler: 'preemptive' | 'async'
@@ -43,8 +40,6 @@ if (typeof window !== 'undefined') {
     'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.3/lib/mappings.wasm'
   })
 }
-
-
 
 export function parseError(errors: SourceError[]): string {
   const errorMessagesArr = errors.map(error => {
@@ -75,7 +70,6 @@ export function findDeclaration(
   return declarationNode.loc
 }
 
-
 export function hasDeclaration(
   code: string,
   context: Context,
@@ -96,8 +90,6 @@ export function hasDeclaration(
 
   return true
 }
-
-
 
 export async function runInContext(
   code: string,
@@ -147,5 +139,4 @@ export function interrupt(context: Context) {
   context.errors.push(new InterruptedError(context.runtime.nodes[0]))
 }
 
-
-export { createContext, Context, ModuleContext, Result}
+export { createContext, Context, ModuleContext, Result }

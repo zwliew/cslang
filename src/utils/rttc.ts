@@ -11,12 +11,7 @@ export class TypeError extends RuntimeSourceError {
   public severity = ErrorSeverity.ERROR
   public location: es.SourceLocation
 
-  constructor(
-    node: es.Node,
-    public side: string,
-    public expected: string,
-    public got: string,
-  ) {
+  constructor(node: es.Node, public side: string, public expected: string, public got: string) {
     super(node)
   }
 
@@ -50,11 +45,7 @@ const isBool = (v: Value) => typeOf(v) === 'boolean'
 const isObject = (v: Value) => typeOf(v) === 'object'
 const isArray = (v: Value) => typeOf(v) === 'array'
 
-export const checkUnaryExpression = (
-  node: es.Node,
-  operator: es.UnaryOperator,
-  value: Value
-) => {
+export const checkUnaryExpression = (node: es.Node, operator: es.UnaryOperator, value: Value) => {
   if ((operator === '+' || operator === '-') && !isNumber(value)) {
     return new TypeError(node, '', 'number', typeOf(value))
   } else if (operator === '!' && !isBool(value)) {
@@ -90,13 +81,9 @@ export const checkBinaryExpression = (
     case '!==':
     case '===':
       if (isNumber(left)) {
-        return isNumber(right)
-          ? undefined
-          : new TypeError(node, RHS, 'number', typeOf(right))
+        return isNumber(right) ? undefined : new TypeError(node, RHS, 'number', typeOf(right))
       } else if (isString(left)) {
-        return isString(right)
-          ? undefined
-          : new TypeError(node, RHS, 'string', typeOf(right))
+        return isString(right) ? undefined : new TypeError(node, RHS, 'string', typeOf(right))
       } else {
         return new TypeError(node, LHS, 'string or number', typeOf(left))
       }
@@ -105,13 +92,8 @@ export const checkBinaryExpression = (
   }
 }
 
-export const checkIfStatement = (
-  node: es.Node,
-  test: Value,
-) => {
-  return isBool(test)
-    ? undefined
-    : new TypeError(node, ' as condition', 'boolean', typeOf(test))
+export const checkIfStatement = (node: es.Node, test: Value) => {
+  return isBool(test) ? undefined : new TypeError(node, ' as condition', 'boolean', typeOf(test))
 }
 
 export const checkMemberAccess = (node: es.Node, obj: Value, prop: Value) => {

@@ -1,7 +1,7 @@
 import { Options } from 'acorn'
 import * as es from 'estree'
 
-import { Language} from './types'
+import { Chapter, Language, Variant } from './types'
 
 export const CUT = 'cut' // cut operator for Source 4.3
 export const TRY_AGAIN = 'retry' // command for Source 4.3
@@ -25,6 +25,6 @@ export const JSSLANG_PROPERTIES = {
   factorToIncreaseBy: 10
 }
 
-export const sourceLanguages: Language[] = [{ variant: 'calc' }]
+export const sourceLanguages: Language[] = [{chapter: Chapter.CALC, variant: Variant.DEFAULT }]
 
 export const ACORN_PARSE_OPTIONS: Options = { ecmaVersion: 2015 }

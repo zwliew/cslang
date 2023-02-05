@@ -93,8 +93,6 @@ export function HighlightRulesSelector(
       return output.join('|')
     }
 
-
-
     // @ts-ignore
     const SourceHighlightRules = function (options) {
       // @ts-ignore
@@ -543,7 +541,6 @@ export function HighlightRulesSelector(
         if (!options || options.jsx != false)
           // @ts-ignore
           JSX.call(this)
-
       }
       // @ts-ignore
       this.embedRules(DocCommentHighlightRules, 'doc-', [
@@ -707,11 +704,7 @@ export function HighlightRulesSelector(
 }
 
 //source mode
-export function ModeSelector(
-  id: number,
-  variant: Variant = 'calc',
-  external: string = 'NONE'
-) {
+export function ModeSelector(id: number, variant: Variant = Variant.DEFAULT, external: string = 'NONE') {
   const name = id.toString() + variant + external
 
   // @ts-ignore

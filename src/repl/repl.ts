@@ -8,7 +8,7 @@ import { ExecutionMethod, Variant } from '../types'
 
 function startRepl(
   executionMethod: ExecutionMethod = 'interpreter',
-  variant: Variant = 'calc',
+  variant: Variant = Variant.DEFAULT,
   useSubst: boolean = false,
   useRepl: boolean,
   prelude = ''
@@ -71,12 +71,7 @@ function validChapterVariant(variant: any) {
 function main() {
   const opt = require('node-getopt')
     .create([
-      [
-        'v',
-        'variant=VARIANT',
-        'set the Source variant (i.e., calc)',
-        'calc'
-      ],
+      ['v', 'variant=VARIANT', 'set the Source variant (i.e., calc)', 'calc'],
       ['h', 'help', 'display this help'],
       ['e', 'eval', "don't show REPL, only display output of evaluation"]
     ])

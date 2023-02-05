@@ -8,7 +8,7 @@ import { removeExports } from '../localImports/transformers/removeExports'
 import { removeNonSourceModuleImports } from '../localImports/transformers/removeNonSourceModuleImports'
 import { parse } from '../parser/parser'
 import { PreemptiveScheduler } from '../schedulers'
-import { Context, Scheduler} from '../types'
+import { Context, Scheduler, Variant } from '../types'
 import { validateAndAnnotate } from '../validator/validator'
 import { determineVariant, resolvedErrorPromise } from './utils'
 
@@ -17,22 +17,18 @@ const DEFAULT_SOURCE_OPTIONS: IOptions = {
   steps: 1000,
   stepLimit: 1000,
   executionMethod: 'auto',
-  variant: 'calc',
+  variant: Variant.DEFAULT,
   originalMaxExecTime: 1000,
   useSubst: false,
   isPrelude: false,
   throwInfiniteLoops: true
 }
 
-
-
-
 function runInterpreter(program: es.Program, context: Context, options: IOptions): Promise<Result> {
   const it = evaluate(program, context)
   const scheduler: Scheduler = new PreemptiveScheduler(options.steps)
   return scheduler.run(it, context)
 }
-
 
 export async function sourceRunner(
   code: string,
@@ -63,7 +59,6 @@ export async function sourceRunner(
     return resolvedErrorPromise
   }
 
-
   // Handle preludes
   if (context.prelude !== null) {
     const prelude = context.prelude
@@ -71,7 +66,6 @@ export async function sourceRunner(
     await sourceRunner(prelude, context, { ...options, isPrelude: true })
     return sourceRunner(code, context, options)
   }
-
 
   return runInterpreter(program, context, theOptions)
 }
@@ -87,7 +81,6 @@ export async function sourceFilesRunner(
     context.errors.push(new CannotFindModuleError(entrypointFilePath))
     return resolvedErrorPromise
   }
-
 
   context.variant = determineVariant(context, options)
   // TODO: Make use of the preprocessed program AST after refactoring runners.

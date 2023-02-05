@@ -1,6 +1,6 @@
 import * as es from 'estree'
 
-import { parse as sourceParse} from '../parser/parser'
+import { parse as sourceParse } from '../parser/parser'
 import { Context, ContiguousArrayElements, Value } from '../types'
 import { oneLine } from '../utils/formatters'
 import { vector_to_list } from './list'
@@ -502,4 +502,3 @@ export function parse(x: string, context: Context): Value {
     throw new ParseError('Invalid parse')
   }
 }
-

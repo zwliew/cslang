@@ -25,7 +25,4 @@ export function determineVariant(context: Context, options: Partial<IOptions>): 
   }
 }
 
-
-
-
 export const resolvedErrorPromise = Promise.resolve({ status: 'error' } as Result)

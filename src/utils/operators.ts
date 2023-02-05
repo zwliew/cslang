@@ -8,30 +8,12 @@ import {
   InvalidNumberOfArguments
 } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
-import {
-  PotentialInfiniteLoopError,
-  PotentialInfiniteRecursionError
-} from '../errors/timeoutErrors'
-import { NativeStorage, Thunk } from '../types'
-import { callExpression, locationDummyNode } from './astCreator'
+import { Thunk } from '../types'
+import { locationDummyNode } from './astCreator'
 import * as create from './astCreator'
 import { makeWrapper } from './makeWrapper'
 import * as rttc from './rttc'
 
-export function throwIfTimeout(
-  nativeStorage: NativeStorage,
-  start: number,
-  current: number,
-  line: number,
-  column: number
-) {
-  if (current - start > nativeStorage.maxExecTime) {
-    throw new PotentialInfiniteLoopError(
-      create.locationDummyNode(line, column),
-      nativeStorage.maxExecTime
-    )
-  }
-}
 
 export function forceIt(val: Thunk | any): any {
   if (val !== undefined && val !== null && val.isMemoized !== undefined) {
@@ -50,13 +32,6 @@ export function forceIt(val: Thunk | any): any {
   }
 }
 
-export function delayIt(f: () => any): Thunk {
-  return {
-    isMemoized: false,
-    value: undefined,
-    f
-  }
-}
 
 export function wrapLazyCallee(candidate: any) {
   candidate = forceIt(candidate)
@@ -229,94 +204,7 @@ export function evaluateBinaryExpression(operator: BinaryOperator, left: any, ri
   }
 }
 
-/**
- * Limitations for current properTailCalls implementation:
- * Obviously, if objects ({}) are reintroduced,
- * we have to change this for a more stringent check,
- * as isTail and transformedFunctions are properties
- * and may be added by Source code.
- */
-export const callIteratively = (f: any, nativeStorage: NativeStorage, ...args: any[]) => {
-  let line = -1
-  let column = -1
-  const startTime = Date.now()
-  const pastCalls: [string, any[]][] = []
-  while (true) {
-    const dummy = locationDummyNode(line, column)
-    f = forceIt(f)
-    if (typeof f === 'function') {
-      if (f.transformedFunction !== undefined) {
-        f = f.transformedFunction
-      }
-      const expectedLength = f.length
-      const receivedLength = args.length
-      const hasVarArgs = f.minArgsNeeded !== undefined
-      if (hasVarArgs ? f.minArgsNeeded > receivedLength : expectedLength !== receivedLength) {
-        throw new InvalidNumberOfArguments(
-          callExpression(dummy, args, {
-            start: { line, column },
-            end: { line, column }
-          }),
-          hasVarArgs ? f.minArgsNeeded : expectedLength,
-          receivedLength,
-          hasVarArgs
-        )
-      }
-    } else if (f instanceof LazyBuiltIn) {
-      if (f.evaluateArgs) {
-        args = args.map(forceIt)
-      }
-      f = f.func
-    } else {
-      throw new CallingNonFunctionValue(f, dummy)
-    }
-    let res
-    try {
-      res = f(...args)
-      if (Date.now() - startTime > nativeStorage.maxExecTime) {
-        throw new PotentialInfiniteRecursionError(dummy, pastCalls, nativeStorage.maxExecTime)
-      }
-    } catch (error) {
-      // if we already handled the error, simply pass it on
-      if (!(error instanceof RuntimeSourceError || error instanceof ExceptionError)) {
-        throw new ExceptionError(error, dummy.loc!)
-      } else {
-        throw error
-      }
-    }
-    if (res === null || res === undefined) {
-      return res
-    } else if (res.isTail === true) {
-      f = res.function
-      args = res.arguments
-      line = res.line
-      column = res.column
-      pastCalls.push([res.functionName, args])
-    } else if (res.isTail === false) {
-      return res.value
-    } else {
-      return res
-    }
-  }
-}
 
-export const wrap = (
-  f: (...args: any[]) => any,
-  stringified: string,
-  hasVarArgs: boolean,
-  nativeStorage: NativeStorage
-) => {
-  if (hasVarArgs) {
-    // @ts-ignore
-    f.minArgsNeeded = f.length
-  }
-  const wrapped = (...args: any[]) => callIteratively(f, nativeStorage, ...args)
-  makeWrapper(f, wrapped)
-  wrapped.transformedFunction = f
-  wrapped[Symbol.toStringTag] = () => stringified
-  wrapped.toString = () => stringified
-  return wrapped
-}
 
 export const setProp = (obj: any, prop: any, value: any, line: number, column: number) => {
   const dummy = locationDummyNode(line, column)

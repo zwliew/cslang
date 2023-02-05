@@ -1,13 +1,10 @@
 /* tslint:disable:max-classes-per-file */
 import * as es from 'estree'
-import { uniqueId } from 'lodash'
 
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
-import { Context, Environment, Frame, Value } from '../types'
+import { Context, Environment, Value } from '../types'
 import { evaluateBinaryExpression, evaluateUnaryExpression } from '../utils/operators'
 import * as rttc from '../utils/rttc'
-
-
 
 class Thunk {
   public value: Value
@@ -17,7 +14,6 @@ class Thunk {
     this.value = null
   }
 }
-
 
 function* forceIt(val: any, context: Context): Value {
   if (val instanceof Thunk) {
@@ -38,20 +34,6 @@ export function* actualValue(exp: es.Node, context: Context): Value {
   return forced
 }
 
-
-export const createBlockEnvironment = (
-  context: Context,
-  name = 'blockEnvironment',
-  head: Frame = {}
-): Environment => {
-  return {
-    name,
-    tail: currentEnvironment(context),
-    head,
-    id: uniqueId()
-  }
-}
-
 const handleRuntimeError = (context: Context, error: RuntimeSourceError): never => {
   context.errors.push(error)
   context.runtime.environments = context.runtime.environments.slice(
@@ -59,7 +41,6 @@ const handleRuntimeError = (context: Context, error: RuntimeSourceError): never 
   )
   throw error
 }
-
 
 function* visit(context: Context, node: es.Node) {
   context.runtime.nodes.unshift(node)
@@ -72,13 +53,11 @@ function* leave(context: Context) {
   yield context
 }
 
-const currentEnvironment = (context: Context) => context.runtime.environments[0]
 const popEnvironment = (context: Context) => context.runtime.environments.shift()
 export const pushEnvironment = (context: Context, environment: Environment) => {
   context.runtime.environments.unshift(environment)
   context.runtime.environmentTree.insert(environment)
 }
-
 
 export type Evaluator<T extends es.Node> = (node: T, context: Context) => IterableIterator<Value>
 
@@ -223,13 +202,8 @@ export const evaluators: { [nodeType: string]: Evaluator<es.Node> } = {
 }
 // tslint:enable:object-literal-shorthand
 
-
-
 export function* evaluate(node: es.Node, context: Context) {
-  console.log(`Evaluating ${node.type}`)
   const result = yield* evaluators[node.type](node, context)
   yield* leave(context)
   return result
 }
-
-

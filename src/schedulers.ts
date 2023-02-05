@@ -2,8 +2,6 @@
 import { MaximumStackLimitExceeded } from './errors/errors'
 import { Context, Result, Scheduler, Value } from './types'
 
-
-
 export class PreemptiveScheduler implements Scheduler {
   constructor(public steps: number) {}
 
