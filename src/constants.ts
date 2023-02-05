@@ -25,6 +25,6 @@ export const JSSLANG_PROPERTIES = {
   factorToIncreaseBy: 10
 }
 
-export const sourceLanguages: Language[] = [{chapter: Chapter.CALC, variant: Variant.DEFAULT }]
+export const sourceLanguages: Language[] = [{ chapter: Chapter.CALC, variant: Variant.DEFAULT }]
 
 export const ACORN_PARSE_OPTIONS: Options = { ecmaVersion: 2015 }

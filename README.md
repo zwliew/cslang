@@ -1,10 +1,12 @@
-# js-slang
+# calc-slang
 
-Open-source implementations of the programming language _Source_. Source is a
-series of small subsets of JavaScript, designed for teaching university-level
-programming courses for computer science majors, following Structure and
-Interpretation of Computer Programs, JavaScript Adaptation
-(<https://sourceacademy.org/sicpjs/>).
+Calculator language modified from js-slang.
+
+## Unknown Issues (and manual solutions)
+
+* If you failed to execute the `jsdoc.sh` in your bash, please check the line break type.
+* `node` should be replaced by `node.exe` if you are using WSL with node.js installed on your Windows.
+* In case you meet the same error as [this](https://github.com/jiangmiao/node-getopt/issues/20) when using *node-getopt*, modify the `package.json` of node-getopt as [this PR](https://github.com/jiangmiao/node-getopt/pull/21/commits/05e498731c14b648fa332ca78d3a301c5e4be440) shows.
 
 # Table of Contents
 
@@ -14,9 +16,7 @@ Interpretation of Computer Programs, JavaScript Adaptation
 - [Requirements](#requirements-1)
 - [Testing](#testing)
 - [Error messages](#error-messages)
-- [Using your js-slang in Source Academy](#using-your-js-slang-in-source-academy)
-- [Using your js-slang in your local Source Academy](#using-your-js-slang-in-your-local-source-academy)
-- [Building and publishing SICP package](#building-and-publishing-sicp-package)
+- [Using your xx-slang in your local Source Academy](#using-your-xx-slang-in-your-local-source-academy)
 - [Talks and Presentations](#talks-and-presentations)
 - [License](#license)
 
@@ -29,13 +29,13 @@ Interpretation of Computer Programs, JavaScript Adaptation
 To build,
 
 ```{.}
-$ git clone https://github.com/source-academy/js-slang.git
-$ cd js-slang
+$ git clone https://github.com/yangdinglou/calc-slang
+$ cd calc-slang
 $ yarn
 $ yarn build
 ```
 
-To add \"js-slang\" to your PATH, build it as per the above instructions, then
+To add \"calc-slang\" to your PATH, build it as per the above instructions, then
 run
 
 ```{.}
@@ -43,57 +43,36 @@ $ cd dist
 $ npm link
 ```
 
-If you do not wish to add \"js-slang\" to your PATH, replace \"js-slang\" with
+If you do not wish to add \"calc-slang\" to your PATH, replace \"calc-slang\" with
 \"node dist/repl/repl.js\" in the following examples.
 
 To try out _Source_ in a REPL, run
 
 ```{.}
-$ js-slang -c [chapter] # default: 1
+$ calc-slang -c [chapter] # default: 1
 ```
 
 You can set additional options:
 
 ```{.}
-Usage: js-slang [PROGRAM_STRING] [OPTION]
-
-  -c, --chapter=CHAPTER set the Source chapter number (i.e., 1-4)                                                              (default: 1)
-  -v, --variant=VARIANT set the Source variant (i.e., default, interpreter, substituter, typed, lazy, non-det, concurrent, wasm, gpu) (default: default)
+Usage: calc-slang [PROGRAM_STRING] [OPTION]
   -h, --help            display this help
   -e, --eval            don't show REPL, only display output of evaluation
 ```
 
 Currently, valid CHAPTER/VARIANT combinations are:
 
-- `--chapter=1 --variant=default`
-- `--chapter=1 --variant=wasm`
-- `--chapter=1 --variant=lazy`
-- `--chapter=1 --variant=substituter`
-- `--chapter=1 --variant=interpreter`
-- `--chapter=1 --variant=typed`
-- `--chapter=2 --variant=default`
-- `--chapter=2 --variant=lazy`
-- `--chapter=2 --variant=substituter`
-- `--chapter=2 --variant=interpreter`
-- `--chapter=2 --variant=typed`
-- `--chapter=3 --variant=default`
-- `--chapter=3 --variant=concurrent`
-- `--chapter=3 --variant=non-det`
-- `--chapter=3 --variant=interpreter`
-- `--chapter=3 --variant=typed`
-- `--chapter=4 --variant=default`
-- `--chapter=4 --variant=gpu`
-- `--chapter=4 --variant=interpreter`
+- `--chapter=1 --variant=calc`
 
 Hint: In `bash` you can take the `PROGRAM_STRING` out of a file as follows:
 
 ```{.}
-$ js-slang -n --chapter=1 -e "$(< my_source_program.js)"
+$ calc-slang -n -e "$(< my_source_program.js)"
 ```
 
 # Documentation
 
-Source is documented here: <https://docs.sourceacademy.org/>
+Source is documented here: [https://docs.sourceacademy.org/](https://docs.sourceacademy.org/)
 
 # Requirements
 
@@ -105,16 +84,16 @@ Source is documented here: <https://docs.sourceacademy.org/>
 To build the documentation, run
 
 ```{.}
-$ git clone https://github.com/source-academy/js-slang.git
-$ cd js-slang
+$ git clone https://github.com/source-academy/calc-slang.git
+$ cd calc-slang
 $ yarn
 $ yarn install
-$ yarn jsdoc  # to make the web pages in js-slang/docs/source
+$ yarn jsdoc  # to make the web pages in calc-slang/docs/source
 $ cd docs/specs
 $ make        # to make the PDF documents using LaTeX
 ```
 
-Note: The documentation may not build on Windows, depending on your bash setup,
+**Note**: The documentation may not build on Windows, depending on your bash setup,
 [see above](https://github.com/source-academy/js-slang#requirements).
 
 Documentation on the Source libraries are generated from inline documentation in
@@ -129,9 +108,9 @@ $ cd docs/source;  python -m http.server 8000
 Documentation of libraries is displayed in autocomplete in the frontend. This
 documentation is generated by `./scripts/updateAutocompleteDocs.py` and placed
 in `src/editors/ace/docTooltip/*.json` files. This script is run by
-`yarn build`prior to`tsc`. To add a Source variant to the frontend autocomplete,
+`yarn build`prior to `tsc`. To add a Source variant to the frontend autocomplete,
 edit `src/editors/ace/docTooltip/index.ts`
-and`./scripts/updateAutocompleteDocs.py`.
+and `./scripts/updateAutocompleteDocs.py`.
 
 # Testing
 
@@ -166,26 +145,19 @@ guides, should be left to `elaborate()`.
 Please remember to write test cases to reflect your added functionalities. The
 god of this repository is self-professed to be very particular about test cases.
 
-# Using your js-slang in Source Academy
+# Using your xx-slang in your local Source Academy
 
-js-slang is used by the [Source Academy](https://sourceacademy.org), the
-immersive online experiential environment for learning programming. For this,
-js-slang is
-[deployed as an NPM package](https://www.npmjs.com/package/js-slang). The
-frontend of the Source Academy then includes the js-slang package in its
-deployment bundle.
-
-# Using your js-slang in your local Source Academy
+(xx is the name of your language)
 
 A common issue when developing modifications to js-slang is how to test it using
 your own local frontend. Assume that you have built your own frontend locally,
-here is how you can make it use your own js-slang, instead of the one that the
+here is how you can make it use your own xx-slang, instead of the one that the
 Source Academy team has deployed to npm.
 
-First, build and link your local js-slang:
+First, build and link your local xx-slang: (don't forget to modify the "calc-slang" in both projects)
 
 ```{.}
-$ cd js-slang
+$ cd xx-slang
 $ yarn build
 $ yarn link
 ```
@@ -194,27 +166,10 @@ Then, from your local copy of frontend:
 
 ```{.}
 $ cd frontend
-$ yarn link "js-slang"
+$ yarn link "xx-slang"
 ```
 
 Then start the frontend and the new js-slang will be used.
-
-# Building and publishing SICP package
-
-To build SICP package
-
-```{.}
-$ cd js-slang
-$ yarn
-$ yarn build_sicp_package
-```
-
-To publish SICP package, update version number in `sicp_publish/package.json`
-
-```{.}
-$ cd js-slang/sicp_publish
-$ npm publish
-```
 
 # Talks and Presentations
 

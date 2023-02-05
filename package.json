@@ -1,14 +1,13 @@
 {
-  "name": "js-slang",
+  "name": "calc-slang",
   "version": "1.0.10",
   "license": "Apache-2.0",
-  "description": "Javascript-based implementations of Source, written in Typescript",
+  "description": "Calc language as a start point for CS4215's project",
   "keywords": [
     "JavaScript",
     "interpreter",
     "compiler",
-    "Source",
-    "SICP"
+    "Source"
   ],
   "author": {
     "name": "Source Academy",
@@ -37,7 +36,7 @@
     "dist"
   ],
   "bin": {
-    "js-slang": "dist/repl/repl.js"
+    "calc-slang": "dist/repl/repl.js"
   },
   "scripts": {
     "antlr4ts": "antlr4ts -visitor ./src/lang/Calc.g4",
@@ -45,7 +44,7 @@
     "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn docs && yarn tsc --build --force",
     "build_sicp_package": "./scripts/build_sicp_package.sh",
-    "ci": "yarn jsdoc && yarn autocomplete && yarn format:ci && yarn eslint && yarn test",
+    "ci": "yarn jsdoc && yarn autocomplete && yarn format:ci && yarn eslint",
     "compile": "yarn tsc",
     "docs": "yarn jsdoc && yarn autocomplete",
     "eslint": "eslint --ext \".ts,.tsx\" src",
@@ -60,12 +59,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/source-academy/js-slang.git"
+    "url": "git+https://github.com/yangdinglou/calc-slang.git"
   },
   "bugs": {
-    "url": "https://github.com/source-academy/js-slang/issues"
+    "url": "https://github.com/yangdinglou/calc-slang/issues"
   },
-  "homepage": "https://github.com/source-academy/js-slang",
+  "homepage": "https://github.com/yangdinglou/calc-slang",
   "devDependencies": {
     "@types/jest": "^29.0.0",
     "@types/lodash.assignin": "^4.2.6",

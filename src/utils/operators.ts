@@ -14,7 +14,6 @@ import * as create from './astCreator'
 import { makeWrapper } from './makeWrapper'
 import * as rttc from './rttc'
 
-
 export function forceIt(val: Thunk | any): any {
   if (val !== undefined && val !== null && val.isMemoized !== undefined) {
     if (val.isMemoized) {
@@ -31,7 +30,6 @@ export function forceIt(val: Thunk | any): any {
     return val
   }
 }
-
 
 export function wrapLazyCallee(candidate: any) {
   candidate = forceIt(candidate)
@@ -203,8 +201,6 @@ export function evaluateBinaryExpression(operator: BinaryOperator, left: any, ri
       return undefined
   }
 }
-
-
 
 export const setProp = (obj: any, prop: any, value: any, line: number, column: number) => {
   const dummy = locationDummyNode(line, column)

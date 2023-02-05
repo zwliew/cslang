@@ -704,7 +704,11 @@ export function HighlightRulesSelector(
 }
 
 //source mode
-export function ModeSelector(id: number, variant: Variant = Variant.DEFAULT, external: string = 'NONE') {
+export function ModeSelector(
+  id: number,
+  variant: Variant = Variant.DEFAULT,
+  external: string = 'NONE'
+) {
   const name = id.toString() + variant + external
 
   // @ts-ignore
