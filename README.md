@@ -2,9 +2,11 @@
 
 Calculator language modified from js-slang.
 
-## Unknown Issues (and manual solutions)
+## Possible Issues (and manual solutions)
 
-* If you failed to execute the `jsdoc.sh` in your bash, please check the line break type.
+* If you failed to execute the `jsdoc.sh` in your bash
+  * Delete the first line of jsdoc.sh (for Windows PowerShell) before executing `yarn jsdoc`.
+  * Please modify the line break type if `‘bash\r’: No such file or directory`
 * `node` should be replaced by `node.exe` if you are using WSL with node.js installed on your Windows.
 * In case you meet the same error as [this](https://github.com/jiangmiao/node-getopt/issues/20) when using *node-getopt*, modify the `package.json` of node-getopt as [this PR](https://github.com/jiangmiao/node-getopt/pull/21/commits/05e498731c14b648fa332ca78d3a301c5e4be440) shows.
 
