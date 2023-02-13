@@ -56,7 +56,7 @@
     "publish_sicp_package": "./scripts/publish_sicp_package.sh",
     "test": "jest",
     "test-coverage": "jest --coverage",
-    "start": "node ./dist/repl/repl.js 0"
+    "start": "node ./dist/repl/repl.js -e"
   },
   "repository": {
     "type": "git",
