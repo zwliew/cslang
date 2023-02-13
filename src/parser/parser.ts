@@ -20,7 +20,9 @@ import {
   SubtractionContext
 } from '../lang/CalcParser'
 import { CalcVisitor } from '../lang/CalcVisitor'
-import { Context, ErrorSeverity, ErrorType, SourceError } from '../types'
+import { CLexer } from '../lang/CLexer'
+import { CParser } from '../lang/CParser'
+import { Context, ErrorSeverity, ErrorType, SourceError, Variant } from '../types'
 import { stripIndent } from '../utils/formatters'
 
 export class DisallowedConstructError implements SourceError {
@@ -69,7 +71,7 @@ export class DisallowedConstructError implements SourceError {
 export class FatalSyntaxError implements SourceError {
   public type = ErrorType.SYNTAX
   public severity = ErrorSeverity.ERROR
-  public constructor(public location: es.SourceLocation, public message: string) {}
+  public constructor(public location: es.SourceLocation, public message: string) { }
 
   public explain() {
     return this.message
@@ -83,7 +85,7 @@ export class FatalSyntaxError implements SourceError {
 export class MissingSemicolonError implements SourceError {
   public type = ErrorType.SYNTAX
   public severity = ErrorSeverity.ERROR
-  public constructor(public location: es.SourceLocation) {}
+  public constructor(public location: es.SourceLocation) { }
 
   public explain() {
     return 'Missing semicolon at the end of statement'
@@ -97,7 +99,7 @@ export class MissingSemicolonError implements SourceError {
 export class TrailingCommaError implements SourceError {
   public type: ErrorType.SYNTAX
   public severity: ErrorSeverity.WARNING
-  public constructor(public location: es.SourceLocation) {}
+  public constructor(public location: es.SourceLocation) { }
 
   public explain() {
     return 'Trailing comma'
@@ -238,7 +240,21 @@ function convertSource(expression: ExpressionContext): es.Program {
 export function parse(source: string, context: Context) {
   let program: es.Program | undefined
 
-  if (context.variant === 'calc') {
+  if (context.variant === Variant.C) {
+    const inputStream = CharStreams.fromString(source)
+    const lexer = new CLexer(inputStream)
+    const tokenStream = new CommonTokenStream(lexer)
+    const parser = new CParser(tokenStream)
+    parser.buildParseTree = true
+    try {
+      const tree = parser.primaryExpression()
+      console.error(`WE GOT THE TREE BOIS!!!!`)
+      console.error(tree)
+      return undefined
+    } catch (error) {
+      throw error
+    }
+  } else if (context.variant === 'calc') {
     const inputStream = CharStreams.fromString(source)
     const lexer = new CalcLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)

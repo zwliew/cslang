@@ -1,6 +1,6 @@
 /*
-	This file contains definitions of some interfaces and classes that are used in Source (such as
-	error-related classes).
+  This file contains definitions of some interfaces and classes that are used in Source (such as
+  error-related classes).
 */
 
 /* tslint:disable:max-classes-per-file */
@@ -61,11 +61,13 @@ export interface Comment {
 export type ExecutionMethod = 'native' | 'interpreter' | 'auto'
 
 export enum Chapter {
-  CALC = 1
+  CALC = 1,
+  C = 2,
 }
 
 export enum Variant {
-  DEFAULT = 'calc'
+  DEFAULT = 'calc',
+  C = 'c',
 }
 
 export interface Language {
@@ -217,8 +219,8 @@ export interface Scheduler {
 }
 
 /*
-	Although the ESTree specifications supposedly provide a Directive interface, the index file does not seem to export it.
-	As such this interface was created here to fulfil the same purpose.
+  Although the ESTree specifications supposedly provide a Directive interface, the index file does not seem to export it.
+  As such this interface was created here to fulfil the same purpose.
  */
 export interface Directive extends es.ExpressionStatement {
   type: 'ExpressionStatement'
