@@ -55,7 +55,8 @@
     "prepare": "husky install",
     "publish_sicp_package": "./scripts/publish_sicp_package.sh",
     "test": "jest",
-    "test-coverage": "jest --coverage"
+    "test-coverage": "jest --coverage",
+    "start": "node ./dist/repl/repl.js 0"
   },
   "repository": {
     "type": "git",
