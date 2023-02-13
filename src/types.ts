@@ -62,12 +62,12 @@ export type ExecutionMethod = 'native' | 'interpreter' | 'auto'
 
 export enum Chapter {
   CALC = 1,
-  C = 2,
+  C = 2
 }
 
 export enum Variant {
   DEFAULT = 'calc',
-  C = 'c',
+  C = 'c'
 }
 
 export interface Language {
