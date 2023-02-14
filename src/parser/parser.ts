@@ -20,10 +20,9 @@ import {
   SubtractionContext
 } from '../lang/CalcParser'
 import { CalcVisitor } from '../lang/CalcVisitor'
-import { CLexer } from '../lang/CLexer'
-import { CParser } from '../lang/CParser'
 import { Context, ErrorSeverity, ErrorType, SourceError, Variant } from '../types'
 import { stripIndent } from '../utils/formatters'
+import { parse as parseC } from './c-parser'
 
 export class DisallowedConstructError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -241,19 +240,7 @@ export function parse(source: string, context: Context) {
   let program: es.Program | undefined
 
   if (context.variant === Variant.C) {
-    const inputStream = CharStreams.fromString(source)
-    const lexer = new CLexer(inputStream)
-    const tokenStream = new CommonTokenStream(lexer)
-    const parser = new CParser(tokenStream)
-    parser.buildParseTree = true
-    try {
-      const tree = parser.primaryExpression()
-      console.error(`WE GOT THE TREE BOIS!!!!`)
-      console.error(tree)
-      return undefined
-    } catch (error) {
-      throw error
-    }
+    return parseC(source, context)
   } else if (context.variant === 'calc') {
     const inputStream = CharStreams.fromString(source)
     const lexer = new CalcLexer(inputStream)
