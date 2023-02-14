@@ -8,15 +8,37 @@ grammar C;
 /*
  Parser rules
  */
+primaryExpression
+    :   Identifier
+    |   Constant
+    // |   StringLiteral+
+    |   '(' expression ')'
+    // |   genericSelection
+    // |   '__extension__'? '(' compoundStatement ')' // Blocks (GCC extension)
+    // |   '__builtin_va_arg' '(' unaryExpression ',' typeName ')'
+    // |   '__builtin_offsetof' '(' typeName ',' unaryExpression ')'
+    ;
+
+postfixExpression
+    :
+    (   primaryExpression
+    // |   '__extension__'? '(' typeName ')' '{' initializerList ','? '}'
+    )
+    // ('[' expression ']'
+    // | '(' argumentExpressionList? ')'
+    // | ('.' | '->') Identifier
+    // | ('++' | '--')
+    // )*
+    ;
 
 unaryExpression
-    // :
+    :
     // ('++' |  '--' |  'sizeof')*
-    // (postfixExpression
-    :   unaryOperator castExpression
+    (postfixExpression
+    |   unaryOperator castExpression
     // |   ('sizeof' | '_Alignof') '(' typeName ')'
     // |   '&&' Identifier // GCC extension address of label
-    // )
+    )
     ;
 
 unaryOperator
@@ -26,7 +48,7 @@ unaryOperator
 castExpression
     // :   '__extension__'? '(' typeName ')' castExpression
     :   unaryExpression
-    |   DigitSequence // for
+    // |   DigitSequence // for
     ;
 
 multiplicativeExpression
@@ -76,7 +98,7 @@ conditionalExpression
 assignmentExpression
     :   conditionalExpression
     |   unaryExpression assignmentOperator assignmentExpression
-    |   DigitSequence // for
+    // |   DigitSequence // for
     ;
 
 assignmentOperator
