@@ -1,0 +1,19 @@
+{
+  "exclude": [
+    "src/stdlib/metacircular-interpreter",
+    "src/stdlib/**/*.js",
+    "node_modules",
+    "dist",
+    "sicp_publish"
+  ],
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false
+    },
+    "target": "es2016"
+  },
+  "module": {
+      "type": "commonjs"
+  }
+}
