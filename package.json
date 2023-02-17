@@ -39,7 +39,7 @@
     "calc-slang": "dist/repl/repl.js"
   },
   "scripts": {
-    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4",
+    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o ./src/lang/",
     "autocomplete": "node ./scripts/updateAutocompleteDocs.js",
     "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn tsc --build --force",
@@ -57,7 +57,8 @@
     "publish_sicp_package": "./scripts/publish_sicp_package.sh",
     "test": "jest",
     "test-coverage": "jest --coverage",
-    "start": "node ./dist/repl/repl.js -e --variant=c"
+    "start": "node ./dist/repl/repl.js -e --variant=c",
+    "cslang-test": "node ./dist/parser/parser-test.js"
   },
   "repository": {
     "type": "git",

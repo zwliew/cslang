@@ -239,9 +239,7 @@ function convertSource(expression: ExpressionContext): es.Program {
 export function parse(source: string, context: Context) {
   let program: es.Program | undefined
 
-  if (context.variant === Variant.C) {
-    return parseC(source, context)
-  } else if (context.variant === 'calc') {
+  if (context.variant === 'calc') {
     const inputStream = CharStreams.fromString(source)
     const lexer = new CalcLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
