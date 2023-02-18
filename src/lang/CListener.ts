@@ -74,7 +74,6 @@ import { StaticAssertDeclarationContext } from "./CParser";
 import { StatementContext } from "./CParser";
 import { LabeledStatementContext } from "./CParser";
 import { CompoundStatementContext } from "./CParser";
-import { BlockItemListContext } from "./CParser";
 import { BlockItemContext } from "./CParser";
 import { ExpressionStatementContext } from "./CParser";
 import { SelectionStatementContext } from "./CParser";
@@ -84,6 +83,7 @@ import { ForDeclarationContext } from "./CParser";
 import { ForExpressionContext } from "./CParser";
 import { JumpStatementContext } from "./CParser";
 import { CompilationUnitContext } from "./CParser";
+import { CalculatorUnitContext } from "./CParser";
 import { ExternalDeclarationContext } from "./CParser";
 import { FunctionDefinitionContext } from "./CParser";
 import { DeclarationListContext } from "./CParser";
@@ -876,17 +876,6 @@ export interface CListener extends ParseTreeListener {
 	exitCompoundStatement?: (ctx: CompoundStatementContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `CParser.blockItemList`.
-	 * @param ctx the parse tree
-	 */
-	enterBlockItemList?: (ctx: BlockItemListContext) => void;
-	/**
-	 * Exit a parse tree produced by `CParser.blockItemList`.
-	 * @param ctx the parse tree
-	 */
-	exitBlockItemList?: (ctx: BlockItemListContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `CParser.blockItem`.
 	 * @param ctx the parse tree
 	 */
@@ -984,6 +973,17 @@ export interface CListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitCompilationUnit?: (ctx: CompilationUnitContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CParser.calculatorUnit`.
+	 * @param ctx the parse tree
+	 */
+	enterCalculatorUnit?: (ctx: CalculatorUnitContext) => void;
+	/**
+	 * Exit a parse tree produced by `CParser.calculatorUnit`.
+	 * @param ctx the parse tree
+	 */
+	exitCalculatorUnit?: (ctx: CalculatorUnitContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `CParser.externalDeclaration`.

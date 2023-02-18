@@ -74,7 +74,6 @@ import { StaticAssertDeclarationContext } from "./CParser";
 import { StatementContext } from "./CParser";
 import { LabeledStatementContext } from "./CParser";
 import { CompoundStatementContext } from "./CParser";
-import { BlockItemListContext } from "./CParser";
 import { BlockItemContext } from "./CParser";
 import { ExpressionStatementContext } from "./CParser";
 import { SelectionStatementContext } from "./CParser";
@@ -84,6 +83,7 @@ import { ForDeclarationContext } from "./CParser";
 import { ForExpressionContext } from "./CParser";
 import { JumpStatementContext } from "./CParser";
 import { CompilationUnitContext } from "./CParser";
+import { CalculatorUnitContext } from "./CParser";
 import { ExternalDeclarationContext } from "./CParser";
 import { FunctionDefinitionContext } from "./CParser";
 import { DeclarationListContext } from "./CParser";
@@ -595,13 +595,6 @@ export interface CVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitCompoundStatement?: (ctx: CompoundStatementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `CParser.blockItemList`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitBlockItemList?: (ctx: BlockItemListContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `CParser.blockItem`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -663,6 +656,13 @@ export interface CVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitCompilationUnit?: (ctx: CompilationUnitContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CParser.calculatorUnit`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitCalculatorUnit?: (ctx: CalculatorUnitContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `CParser.externalDeclaration`.

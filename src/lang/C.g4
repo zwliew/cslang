@@ -322,9 +322,9 @@ labeledStatement:
 	| 'case' constantExpression ':' statement
 	| 'default' ':' statement;
 
-compoundStatement: '{' blockItemList? '}';
+compoundStatement: '{' blockItem+ '}';
 
-blockItemList: blockItem+;
+// blockItemList: blockItem+;
 
 blockItem: statement | declaration;
 
@@ -355,7 +355,13 @@ jumpStatement: (
 		| 'goto' unaryExpression // GCC extension
 	) ';';
 
-compilationUnit: externalDeclaration+? EOF;
+compilationUnit: (externalDeclaration+ | compoundStatement)? EOF;
+
+calculatorUnit: (
+		externalDeclaration
+		| expression
+		| expressionStatement
+	)+?;
 
 // translationUnit: externalDeclaration+;
 

@@ -10,14 +10,17 @@ import {
   AdditiveExpressionContext,
   AndExpressionContext,
   AssignmentExpressionContext,
+  BlockItemContext,
   CastExpressionContext,
   CompilationUnitContext,
+  CompoundStatementContext,
   ConditionalExpressionContext,
   CParser,
   DeclarationContext,
   DirectDeclaratorContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
+  ExpressionStatementContext,
   ExternalDeclarationContext,
   InclusiveOrExpressionContext,
   InitDeclaratorContext,
@@ -29,6 +32,7 @@ import {
   PrimaryExpressionContext,
   RelationalExpressionContext,
   ShiftExpressionContext,
+  StatementContext,
   UnaryExpressionContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
@@ -46,11 +50,19 @@ function printContext(functionName: string, context: any) {
   console.log(`End ${functionName}`)
 }
 export class CGenerator implements CVisitor<cst.AstNode> {
+  terminalAstNode = {
+    type: 'TerminalNode'
+  }
   visitCompilationUnit(ctx: CompilationUnitContext): cst.AstNode {
+    // Temporary rule to allow top level blocks for testing
+
     // Ignore translationUnit, add children directly to root node
     const childNodes: Array<cst.AstNode> = []
     for (let i = 0; i < ctx.childCount; i++) {
-      childNodes.push(ctx.getChild(i).accept(this))
+      const child = ctx.getChild(i).accept(this)
+      if (child !== this.terminalAstNode) {
+        childNodes.push(child)
+      }
     }
 
     return {
@@ -60,8 +72,11 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   }
 
   visitExternalDeclaration(ctx: ExternalDeclarationContext): cst.AstNode {
+    if (!ctx.children) {
+      return InvalidNode
+    }
     // There should only be one child. Visit that child
-    return this.visit((ctx.children as ParseTree[])[0])
+    return ctx.children[0].accept(this)
   }
 
   // Declaration is a sequence of one or more InitDeclarators, e.g. int i = 1, j = 2;
@@ -74,7 +89,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     const initDeclaratorListParseNode: ParseTree = children[1]
     const declarations: cst.AstNode[] = []
     for (let i = 0; i < initDeclaratorListParseNode.childCount; i++) {
-      declarations.push(this.visit(initDeclaratorListParseNode.getChild(i)))
+      declarations.push(initDeclaratorListParseNode.getChild(i).accept(this))
     }
     return {
       type: 'Declaration',
@@ -88,7 +103,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     if (ctx.children) {
       return {
         type: 'InitDeclarator',
-        children: [this.visit(ctx.declarator()), this.visit(ctx.initializer())]
+        children: [ctx.declarator().accept(this), ctx.initializer().accept(this)]
       }
     } else {
       return InvalidNode
@@ -106,7 +121,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitInitializer(ctx: InitializerContext): cst.AstNode {
     const assignmentExpression = ctx.assignmentExpression()
     if (assignmentExpression) {
-      return this.visit(assignmentExpression)
+      return assignmentExpression.accept(this)
     } else {
       // Declaring a new array
       return {
@@ -119,7 +134,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitAssignmentExpression(ctx: AssignmentExpressionContext): cst.AstNode {
     const conditionalExpression = ctx.conditionalExpression()
     if (conditionalExpression) {
-      return this.visit(conditionalExpression)
+      return conditionalExpression.accept(this)
     } else {
       // Assigning a value to something
       // TODO: implement parsing
@@ -132,7 +147,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitConditionalExpression(ctx: ConditionalExpressionContext): cst.AstNode {
     const logicalOrExpression = ctx.logicalOrExpression()
     if (logicalOrExpression) {
-      return this.visit(logicalOrExpression)
+      return logicalOrExpression.accept(this)
     } else {
       // Ternary conditional (?, :)
       // TODO: implement parsing
@@ -145,7 +160,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitLogicalOrExpression(ctx: LogicalOrExpressionContext): cst.AstNode {
     const logicalAndExpression = ctx.logicalAndExpression()
     if (logicalAndExpression.length === 1) {
-      return this.visit(logicalAndExpression[0])
+      return logicalAndExpression[0].accept(this)
     } else {
       // Logical or (||)
       // TODO: implement parsing
@@ -158,7 +173,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitLogicalAndExpression(ctx: LogicalAndExpressionContext): cst.AstNode {
     const inclusiveOrExpression = ctx.inclusiveOrExpression()
     if (inclusiveOrExpression.length === 1) {
-      return this.visit(inclusiveOrExpression[0])
+      return inclusiveOrExpression[0].accept(this)
     } else {
       // Logical and (&&)
       // TODO: implement parsing
@@ -171,7 +186,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): cst.AstNode {
     const exclusiveOrExpression = ctx.exclusiveOrExpression()
     if (exclusiveOrExpression.length === 1) {
-      return this.visit(exclusiveOrExpression[0])
+      return exclusiveOrExpression[0].accept(this)
     } else {
       // Bitwise or (|)
       // TODO: implement parsing
@@ -184,7 +199,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): cst.AstNode {
     const andExpression = ctx.andExpression()
     if (andExpression.length === 1) {
-      return this.visit(andExpression[0])
+      return andExpression[0].accept(this)
     } else {
       // Bitwise xor (^)
       // TODO: implement parsing
@@ -197,7 +212,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitAndExpression(ctx: AndExpressionContext): cst.AstNode {
     const equalityExpression = ctx.equalityExpression()
     if (equalityExpression.length === 1) {
-      return this.visit(equalityExpression[0])
+      return equalityExpression[0].accept(this)
     } else {
       // Bitwise and (&)
       // TODO: implement parsing
@@ -210,7 +225,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitEqualityExpression(ctx: EqualityExpressionContext): cst.AstNode {
     const relationalExpression = ctx.relationalExpression()
     if (relationalExpression.length === 1) {
-      return this.visit(relationalExpression[0])
+      return relationalExpression[0].accept(this)
     } else {
       // Equality comparison (==, !=)
       // TODO: implement parsing
@@ -223,7 +238,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitRelationalExpression(ctx: RelationalExpressionContext): cst.AstNode {
     const shiftExpression = ctx.shiftExpression()
     if (shiftExpression.length === 1) {
-      return this.visit(shiftExpression[0])
+      return shiftExpression[0].accept(this)
     } else {
       // Relational comparison (<, >, <=, >=)
       // TODO: implement parsing
@@ -236,7 +251,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitShiftExpression(ctx: ShiftExpressionContext): cst.AstNode {
     const additiveExpression = ctx.additiveExpression()
     if (additiveExpression.length === 1) {
-      return this.visit(additiveExpression[0])
+      return additiveExpression[0].accept(this)
     } else {
       // Bitshift (<<, >>)
       // TODO: implement parsing
@@ -249,7 +264,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitAdditiveExpression(ctx: AdditiveExpressionContext): cst.AstNode {
     const multiplicativeExpression = ctx.multiplicativeExpression()
     if (multiplicativeExpression.length === 1) {
-      return this.visit(multiplicativeExpression[0])
+      return multiplicativeExpression[0].accept(this)
     } else {
       // Addition and subtraction (+, -)
       // TODO: implement parsing
@@ -262,7 +277,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): cst.AstNode {
     const castExpression = ctx.castExpression()
     if (castExpression.length === 1) {
-      return this.visit(castExpression[0])
+      return castExpression[0].accept(this)
     } else {
       // Multiplication, division and modulo (*, /, %)
       // TODO: implement parsing
@@ -275,7 +290,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitCastExpression(ctx: CastExpressionContext): cst.AstNode {
     const unaryExpression = ctx.unaryExpression()
     if (unaryExpression) {
-      return this.visit(unaryExpression)
+      return unaryExpression.accept(this)
     } else {
       // Typecasting ((typeName) expression)
       // TODO: implement parsing
@@ -288,7 +303,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitUnaryExpression(ctx: UnaryExpressionContext): cst.AstNode {
     const postfixExpression = ctx.postfixExpression()
     if (postfixExpression) {
-      return this.visit(postfixExpression)
+      return postfixExpression.accept(this)
     } else {
       // Unary expression (++, -- prefix)
       // TODO: implement parsing
@@ -301,7 +316,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
   visitPostfixExpression(ctx: PostfixExpressionContext): cst.AstNode {
     const primaryExpression = ctx.primaryExpression()
     if (primaryExpression) {
-      return this.visit(primaryExpression)
+      return primaryExpression.accept(this)
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
       // TODO: implement parsing
@@ -328,6 +343,45 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     }
   }
 
+  visitCompoundStatement(ctx: CompoundStatementContext): cst.AstNode {
+    const childNodes: cst.AstNode[] = []
+    for (let i = 0; i < ctx.childCount; i++) {
+      const child = ctx.getChild(i).accept(this)
+      if (child !== this.terminalAstNode) {
+        childNodes.push(child)
+      }
+    }
+    return {
+      type: 'CompoundStatement',
+      children: childNodes
+    }
+  }
+
+  visitBlockItem(ctx: BlockItemContext): cst.AstNode {
+    // statement | declaration. Flatten this node away
+    return (ctx.children as ParseTree[])[0].accept(this)
+  }
+
+  visitStatement(ctx: StatementContext): cst.AstNode {
+    // If the child is an expressionStatement, flatten this node away
+    const expressionStatement = ctx.expressionStatement()
+    if (expressionStatement) {
+      return expressionStatement.accept(this)
+    } else {
+      return this.visitChildren(ctx)
+    }
+  }
+
+  visitExpressionStatement(ctx: ExpressionStatementContext): cst.AstNode {
+    // expression? ; Flatten this node away
+    const expression = ctx.expression()
+    if (expression) {
+      return expression.accept(this)
+    }
+    // is just a terminal node
+    return (ctx.children as ParseTree[])[0].accept(this)
+  }
+
   visit(tree: ParseTree): cst.AstNode {
     return tree.accept(this)
   }
@@ -342,9 +396,7 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     }
   }
   visitTerminal(node: TerminalNode): cst.AstNode {
-    return {
-      type: 'TerminalNode'
-    }
+    return this.terminalAstNode
   }
   visitErrorNode(node: ErrorNode): cst.AstNode {
     throw new FatalSyntaxError(
