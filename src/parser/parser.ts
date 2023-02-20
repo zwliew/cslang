@@ -1,5 +1,5 @@
-/* tslint:disable:max-classes-per-file */
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
+import { ContextSensitivityInfo } from 'antlr4ts/atn/ContextSensitivityInfo'
 import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
@@ -20,8 +20,10 @@ import {
   DirectDeclaratorContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
+  ExpressionContext,
   ExpressionStatementContext,
   ExternalDeclarationContext,
+  GenericAssocListContext,
   InclusiveOrExpressionContext,
   InitDeclaratorContext,
   InitializerContext,
@@ -36,297 +38,255 @@ import {
   UnaryExpressionContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
-// import { Context, ErrorSeverity } from '../types'
-import * as cst from './ast-types'
-// import { FatalSyntaxError } from './parser'
+import { AstNode, BinaryOperator, Expression, Statement } from './ast-types'
 
-const InvalidNode: cst.AstNode = {
-  type: 'InvalidNode'
-}
+const NotImplementedError = "NotImplementedError";
 
-function printContext(functionName: string, context: any) {
-  console.log(functionName)
-  console.log(context)
-  console.log(`End ${functionName}`)
-}
-export class CGenerator implements CVisitor<cst.AstNode> {
-  terminalAstNode = {
-    type: 'TerminalNode'
-  }
-  visitCompilationUnit(ctx: CompilationUnitContext): cst.AstNode {
-    // Temporary rule to allow top level blocks for testing
-
-    // Ignore translationUnit, add children directly to root node
-    const childNodes: Array<cst.AstNode> = []
-    for (let i = 0; i < ctx.childCount; i++) {
-      const child = ctx.getChild(i).accept(this)
-      if (child !== this.terminalAstNode) {
-        childNodes.push(child)
-      }
-    }
-
-    return {
-      type: 'RootNode',
-      children: childNodes
-    }
+export class CGenerator implements CVisitor<AstNode> {
+  visit(tree: ParseTree): AstNode {
+    return tree.accept(this)
   }
 
-  visitExternalDeclaration(ctx: ExternalDeclarationContext): cst.AstNode {
-    if (!ctx.children) {
-      return InvalidNode
-    }
-    // There should only be one child. Visit that child
-    return ctx.children[0].accept(this)
+  visitChildren(node: RuleNode): AstNode {
+    // From what I can tell, if we don't override one of the visitors for a rule,
+    // It would use this visit method instead.
+    console.warn("[Warn] Using undefined visitor method! " + node.constructor.name)
+
+    // Just return the first child for now
+    return node.getChild(0).accept(this);
   }
 
-  // Declaration is a sequence of one or more InitDeclarators, e.g. int i = 1, j = 2;
-  visitDeclaration(ctx: DeclarationContext): cst.AstNode {
-    if (!ctx.children) {
-      return InvalidNode
-    }
-    const children: ParseTree[] = ctx.children
-    // Skip initDeclaratorList
-    const initDeclaratorListParseNode: ParseTree = children[1]
-    const declarations: cst.AstNode[] = []
-    for (let i = 0; i < initDeclaratorListParseNode.childCount; i++) {
-      declarations.push(initDeclaratorListParseNode.getChild(i).accept(this))
-    }
-    return {
-      type: 'Declaration',
-      children: [{ type: 'TypeSpecifier', value: children[0].text }, ...declarations]
-    }
+  visitTerminal(node: TerminalNode): AstNode {
+    // We should not reach here - We should be handling the terminal nodes directly
+    // in each visit method.
+    throw "Visited TerminalNode: " + JSON.stringify(node)
   }
 
-  // InitDeclarator is of the syntax (var = val)
-  visitInitDeclarator(ctx: InitDeclaratorContext): cst.AstNode {
-    // There will only be 3 children
-    if (ctx.children) {
-      return {
-        type: 'InitDeclarator',
-        children: [ctx.declarator().accept(this), ctx.initializer().accept(this)]
-      }
-    } else {
-      return InvalidNode
-    }
+  visitErrorNode(node: ErrorNode): AstNode {
+    throw "Visited ErrorNode: " + JSON.stringify(node)
   }
 
-  // varName, and possibly varName[2] in the future
-  visitDirectDeclarator(ctx: DirectDeclaratorContext): cst.AstNode {
-    return {
-      type: 'DirectDeclarator',
-      value: ctx.text
-    }
-  }
+  //
+  //
+  // EXPRESSIONS
+  //
+  // The ordering of the expression visitor methods are in reverse order of C.g4
+  //
 
-  visitInitializer(ctx: InitializerContext): cst.AstNode {
+  visitExpression(ctx: ExpressionContext): AstNode {
     const assignmentExpression = ctx.assignmentExpression()
-    if (assignmentExpression) {
-      return assignmentExpression.accept(this)
+    if (assignmentExpression.length === 1) {
+      return assignmentExpression[0].accept(this)
     } else {
-      // Declaring a new array
-      return {
-        type: 'Initializer',
-        value: ctx.text
-      }
+      // Comma separated expressions
+      throw NotImplementedError
     }
   }
 
-  visitAssignmentExpression(ctx: AssignmentExpressionContext): cst.AstNode {
+  visitAssignmentExpression(ctx: AssignmentExpressionContext): AstNode {
     const conditionalExpression = ctx.conditionalExpression()
     if (conditionalExpression) {
       return conditionalExpression.accept(this)
     } else {
       // Assigning a value to something
       // TODO: implement parsing
-      return {
-        type: 'AssignmentExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitConditionalExpression(ctx: ConditionalExpressionContext): cst.AstNode {
+  visitConditionalExpression(ctx: ConditionalExpressionContext): AstNode {
     const logicalOrExpression = ctx.logicalOrExpression()
     if (logicalOrExpression) {
       return logicalOrExpression.accept(this)
     } else {
       // Ternary conditional (?, :)
       // TODO: implement parsing
-      return {
-        type: 'ConditionalExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitLogicalOrExpression(ctx: LogicalOrExpressionContext): cst.AstNode {
+  visitLogicalOrExpression(ctx: LogicalOrExpressionContext): AstNode {
     const logicalAndExpression = ctx.logicalAndExpression()
     if (logicalAndExpression.length === 1) {
       return logicalAndExpression[0].accept(this)
     } else {
       // Logical or (||)
       // TODO: implement parsing
-      return {
-        type: 'LogicalOrExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitLogicalAndExpression(ctx: LogicalAndExpressionContext): cst.AstNode {
+  visitLogicalAndExpression(ctx: LogicalAndExpressionContext): AstNode {
     const inclusiveOrExpression = ctx.inclusiveOrExpression()
     if (inclusiveOrExpression.length === 1) {
       return inclusiveOrExpression[0].accept(this)
     } else {
       // Logical and (&&)
       // TODO: implement parsing
-      return {
-        type: 'LogicalAndExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): cst.AstNode {
+  visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): AstNode {
     const exclusiveOrExpression = ctx.exclusiveOrExpression()
     if (exclusiveOrExpression.length === 1) {
       return exclusiveOrExpression[0].accept(this)
     } else {
       // Bitwise or (|)
       // TODO: implement parsing
-      return {
-        type: 'InclusiveOrExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): cst.AstNode {
+  visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): AstNode {
     const andExpression = ctx.andExpression()
     if (andExpression.length === 1) {
       return andExpression[0].accept(this)
     } else {
       // Bitwise xor (^)
       // TODO: implement parsing
-      return {
-        type: 'ExclusiveOrExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitAndExpression(ctx: AndExpressionContext): cst.AstNode {
+  visitAndExpression(ctx: AndExpressionContext): AstNode {
     const equalityExpression = ctx.equalityExpression()
     if (equalityExpression.length === 1) {
       return equalityExpression[0].accept(this)
     } else {
       // Bitwise and (&)
       // TODO: implement parsing
-      return {
-        type: 'AndExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitEqualityExpression(ctx: EqualityExpressionContext): cst.AstNode {
+  visitEqualityExpression(ctx: EqualityExpressionContext): AstNode {
     const relationalExpression = ctx.relationalExpression()
     if (relationalExpression.length === 1) {
       return relationalExpression[0].accept(this)
     } else {
       // Equality comparison (==, !=)
       // TODO: implement parsing
-      return {
-        type: 'EqualityExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitRelationalExpression(ctx: RelationalExpressionContext): cst.AstNode {
+  visitRelationalExpression(ctx: RelationalExpressionContext): AstNode {
     const shiftExpression = ctx.shiftExpression()
     if (shiftExpression.length === 1) {
       return shiftExpression[0].accept(this)
     } else {
       // Relational comparison (<, >, <=, >=)
       // TODO: implement parsing
-      return {
-        type: 'RelationalExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitShiftExpression(ctx: ShiftExpressionContext): cst.AstNode {
+  visitShiftExpression(ctx: ShiftExpressionContext): AstNode {
     const additiveExpression = ctx.additiveExpression()
     if (additiveExpression.length === 1) {
       return additiveExpression[0].accept(this)
     } else {
       // Bitshift (<<, >>)
       // TODO: implement parsing
-      return {
-        type: 'ShiftExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitAdditiveExpression(ctx: AdditiveExpressionContext): cst.AstNode {
+  visitAdditiveExpression(ctx: AdditiveExpressionContext): AstNode {
     const multiplicativeExpression = ctx.multiplicativeExpression()
     if (multiplicativeExpression.length === 1) {
       return multiplicativeExpression[0].accept(this)
     } else {
       // Addition and subtraction (+, -)
-      // TODO: implement parsing
-      return {
-        type: 'AdditiveExpression'
+
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression =  {
+        type: 'BinaryExpression',
+        operator: ctx.getChild(1).text as BinaryOperator,
+        left: multiplicativeExpression[0].accept(this) as Expression,
+        right: multiplicativeExpression[1].accept(this) as Expression
       }
+
+      for (let i = 2; i < multiplicativeExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
+          left: expression,
+          right: multiplicativeExpression[i].accept(this) as Expression
+        }
+      }
+
+      return expression;
     }
   }
 
-  visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): cst.AstNode {
-    const castExpression = ctx.castExpression()
-    if (castExpression.length === 1) {
-      return castExpression[0].accept(this)
+  visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): AstNode {
+    const castExpressions = ctx.castExpression()
+    if (castExpressions.length === 1) {
+      return castExpressions[0].accept(this)
     } else {
       // Multiplication, division and modulo (*, /, %)
-      // TODO: implement parsing
-      return {
-        type: 'MultiplicativeExpression'
+
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression =  {
+        type: 'BinaryExpression',
+        operator: ctx.getChild(1).text as BinaryOperator,
+        left: castExpressions[0].accept(this) as Expression,
+        right: castExpressions[1].accept(this) as Expression
       }
+
+      for (let i = 2; i < castExpressions.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
+          left: expression,
+          right: castExpressions[i].accept(this) as Expression
+        }
+      }
+
+      return expression;
     }
   }
 
-  visitCastExpression(ctx: CastExpressionContext): cst.AstNode {
+  visitCastExpression(ctx: CastExpressionContext): AstNode {
     const unaryExpression = ctx.unaryExpression()
     if (unaryExpression) {
       return unaryExpression.accept(this)
     } else {
       // Typecasting ((typeName) expression)
       // TODO: implement parsing
-      return {
-        type: 'CastExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitUnaryExpression(ctx: UnaryExpressionContext): cst.AstNode {
+  visitUnaryExpression(ctx: UnaryExpressionContext): AstNode {
     const postfixExpression = ctx.postfixExpression()
     if (postfixExpression) {
       return postfixExpression.accept(this)
     } else {
       // Unary expression (++, -- prefix)
       // TODO: implement parsing
-      return {
-        type: 'UnaryExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitPostfixExpression(ctx: PostfixExpressionContext): cst.AstNode {
+  visitPostfixExpression(ctx: PostfixExpressionContext): AstNode {
     const primaryExpression = ctx.primaryExpression()
     if (primaryExpression) {
       return primaryExpression.accept(this)
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
       // TODO: implement parsing
-      return {
-        type: 'PostfixExpression'
-      }
+      throw NotImplementedError
     }
   }
 
-  visitPrimaryExpression(ctx: PrimaryExpressionContext): cst.AstNode {
+  visitPrimaryExpression(ctx: PrimaryExpressionContext): AstNode {
     // Assuming it is either Identifier or Constant
     // Constants can only be ints or strings
     const constantValue = parseInt(ctx.text)
@@ -343,62 +303,43 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     }
   }
 
-  visitCompoundStatement(ctx: CompoundStatementContext): cst.AstNode {
-    const childNodes: cst.AstNode[] = []
-    for (let i = 0; i < ctx.childCount; i++) {
-      const child = ctx.getChild(i).accept(this)
-      if (child !== this.terminalAstNode) {
-        childNodes.push(child)
-      }
-    }
+  //
+  //
+  // EXPRESSIONS
+  //
+  //
+
+  visitCompoundStatement(ctx: CompoundStatementContext): AstNode {
     return {
-      type: 'CompoundStatement',
-      children: childNodes
+      type: "Block",
+      statements: ctx.blockItem().map(v => v.accept(this)) as Array<Statement>
     }
   }
 
-  visitBlockItem(ctx: BlockItemContext): cst.AstNode {
+  visitStatement(ctx: StatementContext): AstNode {
+    let statement = ctx.expressionStatement()
+    if (statement) {
+      return statement.accept(this)
+    }
+
+    // Other forms of statements
+    throw NotImplementedError
+  }
+
+  visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {
+    return {
+      type: "ExpressionStatement",
+      expression: ctx.expression()?.accept(this) as Expression
+    }
+  }
+
+  visitBlockItem(ctx: BlockItemContext): AstNode {
     // statement | declaration. Flatten this node away
     return (ctx.children as ParseTree[])[0].accept(this)
-  }
-
-  visit(tree: ParseTree): cst.AstNode {
-    return tree.accept(this)
-  }
-  visitChildren(node: RuleNode): cst.AstNode {
-    const childNodes: cst.AstNode[] = []
-    for (let i = 0; i < node.childCount; i++) {
-      childNodes.push(node.getChild(i).accept(this))
-    }
-    return {
-      type: node.constructor.name,
-      children: childNodes
-    }
-  }
-  visitTerminal(node: TerminalNode): cst.AstNode {
-    return this.terminalAstNode
-  }
-  visitErrorNode(node: ErrorNode): cst.AstNode {
-    // throw new FatalSyntaxError(
-    //   {
-    //     start: {
-    //       line: node.symbol.line,
-    //       column: node.symbol.charPositionInLine
-    //     },
-    //     end: {
-    //       line: node.symbol.line,
-    //       column: node.symbol.charPositionInLine + 1
-    //     }
-    //   },
-    //   `invalid syntax ${node.text}`
-    // )
-    throw 'FatalError'
   }
 }
 
 export function parse(source: string) {
-  //, context: Context) {
-  //   let program: cst.Program | undefined
 
   const inputStream = CharStreams.fromString(source)
   const lexer = new CLexer(inputStream)
@@ -406,26 +347,9 @@ export function parse(source: string) {
   const parser = new CParser(tokenStream)
   parser.buildParseTree = true
 
-  // try {
   const tree = parser.compilationUnit()
   const generator = new CGenerator()
-  const program: cst.Program | undefined = {
-    type: 'Program',
-    sourceType: 'script',
-    body: [tree.accept(generator)]
-  }
-  //   console.error(program)
-  // } catch (error) {
-  //   if (error instanceof FatalSyntaxError) {
-  //     context.errors.push(error)
-  //   } else {
-  //     throw error
-  //   }
-  // }
+  const program: AstNode = tree.accept(generator)
 
-  // const hasErrors = context.errors.find(m => m.severity === ErrorSeverity.ERROR)
-  // if (program && !hasErrors) {
   return program
-  // }
-  // return undefined
 }
