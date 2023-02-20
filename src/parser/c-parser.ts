@@ -362,26 +362,6 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     return (ctx.children as ParseTree[])[0].accept(this)
   }
 
-  visitStatement(ctx: StatementContext): cst.AstNode {
-    // If the child is an expressionStatement, flatten this node away
-    const expressionStatement = ctx.expressionStatement()
-    if (expressionStatement) {
-      return expressionStatement.accept(this)
-    } else {
-      return this.visitChildren(ctx)
-    }
-  }
-
-  visitExpressionStatement(ctx: ExpressionStatementContext): cst.AstNode {
-    // expression? ; Flatten this node away
-    const expression = ctx.expression()
-    if (expression) {
-      return expression.accept(this)
-    }
-    // is just a terminal node
-    return (ctx.children as ParseTree[])[0].accept(this)
-  }
-
   visit(tree: ParseTree): cst.AstNode {
     return tree.accept(this)
   }
