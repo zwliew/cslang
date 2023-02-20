@@ -2,9 +2,9 @@ import { CharStreams, CommonTokenStream } from 'antlr4ts'
 
 import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
-import { CGenerator } from './c-parser'
 import { Program } from './cslang-ast-types'
-import * as programs from './cslang-programs'
+import { CGenerator } from './parser'
+import * as programs from './programs'
 
 function generateAstFromParseTree(source: string): Program {
   const inputStream = CharStreams.fromString(source)
