@@ -37,7 +37,7 @@ import {
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
 // import { Context, ErrorSeverity } from '../types'
-import * as cst from './cslang-ast-types'
+import * as cst from './ast-types'
 // import { FatalSyntaxError } from './parser'
 
 const InvalidNode: cst.AstNode = {
@@ -414,7 +414,7 @@ export function parse(source: string) {
     sourceType: 'script',
     body: [tree.accept(generator)]
   }
-  console.error(program)
+  //   console.error(program)
   // } catch (error) {
   //   if (error instanceof FatalSyntaxError) {
   //     context.errors.push(error)

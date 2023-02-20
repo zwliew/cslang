@@ -1,8 +1,8 @@
-import { AstNode } from '../parser/cslang-ast-types'
+import { AstNode } from '../parser/ast-types'
 
-export function interprete(ast: AstNode) {
-  console.log('TODO: Implement interprete')
-}
+// export function interprete(ast: AstNode) {
+//   console.log('TODO: Implement interprete')
+// }
 
 function error(val: any, message: string) {
   throw message + val
@@ -111,7 +111,7 @@ const microcode = {}
 
 const step_limit = 1000000
 
-const execute = (program: AstNode) => {
+export const execute = (program: AstNode) => {
   A = [program]
   S = []
   E = global_environment

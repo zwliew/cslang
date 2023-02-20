@@ -58,8 +58,9 @@
     "test": "jest",
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
-    "parser-test": "node ./dist/parser/parser-test.js",
-    "runner-test": "node ./dist/runner/runner-test.js"
+    "parser-test": "node ./dist/tests/parser-test.js",
+    "interpreter-test": "node ./dist/tests/interpreter-test.js",
+    "runner-test": "node ./dist/tests/runner-test.js"
   },
   "repository": {
     "type": "git",
