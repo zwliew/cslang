@@ -4,7 +4,7 @@ import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
 import { CGenerator } from './c-parser'
 import { Program } from './cslang-ast-types'
-import programs from './cslang-programs'
+import * as programs from './cslang-programs'
 
 function generateAstFromParseTree(source: string): Program {
   const inputStream = CharStreams.fromString(source)
