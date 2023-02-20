@@ -58,7 +58,8 @@
     "test": "jest",
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
-    "cslang-test": "node ./dist/parser/parser-test.js"
+    "parser-test": "node ./dist/parser/parser-test.js",
+    "runner-test": "node ./dist/runner/runner-test.js"
   },
   "repository": {
     "type": "git",

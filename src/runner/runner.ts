@@ -4,5 +4,5 @@ import { parse } from '../parser/parser'
 
 export function cslangRunner(code: string) {
   const program: AstNode = parse(code)
-  interprete(program)
+  return interprete(program)
 }

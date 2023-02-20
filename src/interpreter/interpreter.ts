@@ -65,8 +65,6 @@ const global_environment = empty_environment.concat(global_frame)
 // S: stash: stack of values
 // E: environment: list of frames
 
-// agenda A
-
 // The agenda A is a stack of commands that still need
 // to be executed by the interpreter. The agenda follows
 // stack discipline: pop, push, peek at end of the array.
@@ -80,8 +78,6 @@ const global_environment = empty_environment.concat(global_frame)
 
 let A: any
 
-// stash S
-
 // stash S is array of values that stores intermediate
 // results. The stash follows strict stack discipline:
 // pop, push, peek at the end of the array.
@@ -89,8 +85,6 @@ let A: any
 // Execution initializes stash S as an empty array.
 
 let S: any
-
-// environment E
 
 // See *environments* above. Execution initializes
 // environment E as the global environment.
@@ -127,7 +121,6 @@ const execute = (program: AstNode) => {
     const cmd = A.pop()
     if (microcode.hasOwnProperty(cmd.tag)) {
       microcode[cmd.tag](cmd)
-      //debug(cmd)
     } else {
       error('', 'unknown command: ' + cmd)
     }
