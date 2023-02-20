@@ -10,7 +10,9 @@ function interpreterTest() {
   } else {
     console.log('Invalid program type/name provided. Defaulting to singleDeclarationTree')
   }
-  console.log(execute(programTree))
+  // console.log(execute(programTree))
+  // Edited by Shawn: Need to remove this after making major typing changes
+  throw "NotImplementedError"
 }
 
 interpreterTest()
