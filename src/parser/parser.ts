@@ -392,12 +392,13 @@ export class CGenerator implements CVisitor<cst.AstNode> {
     //   },
     //   `invalid syntax ${node.text}`
     // )
-    throw "FatalError";
+    throw 'FatalError'
   }
 }
 
-export function parse(source: string) { //, context: Context) {
-  let program: cst.Program | undefined
+export function parse(source: string) {
+  //, context: Context) {
+  //   let program: cst.Program | undefined
 
   const inputStream = CharStreams.fromString(source)
   const lexer = new CLexer(inputStream)
@@ -406,14 +407,14 @@ export function parse(source: string) { //, context: Context) {
   parser.buildParseTree = true
 
   // try {
-    const tree = parser.compilationUnit()
-    const generator = new CGenerator()
-    program = {
-      type: 'Program',
-      sourceType: 'script',
-      body: [tree.accept(generator)]
-    }
-    console.error(program)
+  const tree = parser.compilationUnit()
+  const generator = new CGenerator()
+  const program: cst.Program | undefined = {
+    type: 'Program',
+    sourceType: 'script',
+    body: [tree.accept(generator)]
+  }
+  console.error(program)
   // } catch (error) {
   //   if (error instanceof FatalSyntaxError) {
   //     context.errors.push(error)
@@ -424,7 +425,7 @@ export function parse(source: string) { //, context: Context) {
 
   // const hasErrors = context.errors.find(m => m.severity === ErrorSeverity.ERROR)
   // if (program && !hasErrors) {
-    return program
+  return program
   // }
   // return undefined
 }
