@@ -1,11 +1,12 @@
-import { AstNode } from '../parser/ast-types'
+import { AstNode, BinaryOperator } from '../parser/ast-types'
+import { AgendaItems, ProgramValues } from './interpreter-types'
 
 // export function interprete(ast: AstNode) {
 //   console.log('TODO: Implement interprete')
 // }
 
 function error(val: any, message: string) {
-  throw message + val
+  throw message + JSON.stringify(val)
 }
 
 /* ************
@@ -76,7 +77,7 @@ const global_environment = empty_environment.concat(global_frame)
 // Execution initializes A as a singleton array
 // containing the given program.
 
-let A: any
+let A: Array<AgendaItems> = []
 
 // stash S is array of values that stores intermediate
 // results. The stash follows strict stack discipline:
@@ -84,12 +85,21 @@ let A: any
 
 // Execution initializes stash S as an empty array.
 
-let S: any
+let S: Array<ProgramValues>
 
 // See *environments* above. Execution initializes
 // environment E as the global environment.
 
 let E: any
+
+const binop_microcode = {
+  '+': (x: ProgramValues, y: ProgramValues) => Number(x) + Number(y),
+  '-': (x: ProgramValues, y: ProgramValues) => Number(x) - Number(y),
+  '*': (x: ProgramValues, y: ProgramValues) => Number(x) * Number(y),
+  '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y)
+}
+
+const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) => binop_microcode[op](v1, v2);
 
 /* *********************
  * interpreter microcode
@@ -103,7 +113,41 @@ let E: any
 // changes the configuration according to the meaning of
 // the command. The return value is not used.
 
-const microcode = {}
+const microcode = (code: AgendaItems) => {
+  switch (code.type) {
+    case "Literal":
+      S.push(code.value);
+      break;
+
+    case "BinaryExpression":
+      A.push(
+        {type: "binop_i", operator: code.operator},
+        code.right,
+        code.left
+      );
+      break;
+
+    case "ExpressionStatement":
+      A.push(code.expression)
+      break;
+
+    case "Block":
+      A.push(
+        // TODO: Reverse Order
+        ...code.statements
+      )
+      break;
+
+
+    // Instructions
+    case "binop_i":
+      S.push(apply_binop(code.operator, S.pop(), S.pop()))
+      break;
+
+    default:
+      error(code, "Unknown command: ")
+  }
+}
 
 /* ****************
  * interpreter loop
@@ -118,12 +162,10 @@ export const execute = (program: AstNode) => {
   let i = 0
   while (i < step_limit) {
     if (A.length === 0) break
-    const cmd = A.pop()
-    if (microcode.hasOwnProperty(cmd.tag)) {
-      microcode[cmd.tag](cmd)
-    } else {
-      error('', 'unknown command: ' + cmd)
-    }
+
+    // Agenda will always have items on it
+    const cmd = A.pop() as AgendaItems
+    microcode(cmd)
     i++
   }
   if (S.length > 1 || S.length < 1) {
