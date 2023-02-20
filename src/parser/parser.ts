@@ -305,7 +305,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
   //
   //
-  // EXPRESSIONS
+  // STATEMENTS
   //
   //
 
