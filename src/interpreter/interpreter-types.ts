@@ -1,4 +1,4 @@
-import { AstNode, BinaryOperator } from "../parser/ast-types";
+import { AstNode, BinaryOperator } from '../parser/ast-types'
 
 // TODO: Consider whether to remove "undefined"
 export type ProgramValues = number | boolean | undefined
@@ -9,11 +9,9 @@ export interface BaseInstruction {
   type: string
 }
 
-export type Instructions =
-  | iBinaryOperation
-  ;
+export type Instructions = iBinaryOperation
 
 export interface iBinaryOperation extends BaseInstruction {
-  type: "binop_i",
+  type: 'binop_i'
   operator: BinaryOperator
 }

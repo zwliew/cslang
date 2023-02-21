@@ -12,7 +12,7 @@ function interpreterTest() {
   }
   // console.log(execute(programTree))
   // Edited by Shawn: Need to remove this after making major typing changes
-  throw "NotImplementedError"
+  throw 'NotImplementedError'
 }
 
 interpreterTest()
