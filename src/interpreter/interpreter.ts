@@ -160,7 +160,7 @@ export const execute = (program: AstNode) => {
     if (A.length === 0) break
 
     // Agenda will always have items on it
-    const cmd = A.pop() as AgendaItems
+    const cmd = A.pop()!
     microcode(cmd)
     i++
   }
