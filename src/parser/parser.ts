@@ -40,7 +40,7 @@ import {
 import { CVisitor } from '../lang/CVisitor'
 import { AstNode, BinaryOperator, Expression, Statement } from './ast-types'
 
-const NotImplementedError = "NotImplementedError";
+const NotImplementedError = 'NotImplementedError'
 
 export class CGenerator implements CVisitor<AstNode> {
   visit(tree: ParseTree): AstNode {
@@ -50,20 +50,20 @@ export class CGenerator implements CVisitor<AstNode> {
   visitChildren(node: RuleNode): AstNode {
     // From what I can tell, if we don't override one of the visitors for a rule,
     // It would use this visit method instead.
-    console.warn("[Warn] Using undefined visitor method! " + node.constructor.name)
+    console.warn('[Warn] Using undefined visitor method! ' + node.constructor.name)
 
     // Just return the first child for now
-    return node.getChild(0).accept(this);
+    return node.getChild(0).accept(this)
   }
 
   visitTerminal(node: TerminalNode): AstNode {
     // We should not reach here - We should be handling the terminal nodes directly
     // in each visit method.
-    throw "Visited TerminalNode: " + JSON.stringify(node)
+    throw 'Visited TerminalNode: ' + JSON.stringify(node)
   }
 
   visitErrorNode(node: ErrorNode): AstNode {
-    throw "Visited ErrorNode: " + JSON.stringify(node)
+    throw 'Visited ErrorNode: ' + JSON.stringify(node)
   }
 
   //
@@ -203,7 +203,7 @@ export class CGenerator implements CVisitor<AstNode> {
       // There may be more than one set.
       // Assume these operations are left associative
 
-      let expression: Expression =  {
+      let expression: Expression = {
         type: 'BinaryExpression',
         operator: ctx.getChild(1).text as BinaryOperator,
         left: multiplicativeExpression[0].accept(this) as Expression,
@@ -219,7 +219,7 @@ export class CGenerator implements CVisitor<AstNode> {
         }
       }
 
-      return expression;
+      return expression
     }
   }
 
@@ -233,7 +233,7 @@ export class CGenerator implements CVisitor<AstNode> {
       // There may be more than one set.
       // Assume these operations are left associative
 
-      let expression: Expression =  {
+      let expression: Expression = {
         type: 'BinaryExpression',
         operator: ctx.getChild(1).text as BinaryOperator,
         left: castExpressions[0].accept(this) as Expression,
@@ -249,7 +249,7 @@ export class CGenerator implements CVisitor<AstNode> {
         }
       }
 
-      return expression;
+      return expression
     }
   }
 
@@ -311,7 +311,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
   visitCompoundStatement(ctx: CompoundStatementContext): AstNode {
     return {
-      type: "Block",
+      type: 'Block',
       statements: ctx.blockItem().map(v => v.accept(this)) as Array<Statement>
     }
   }
@@ -328,7 +328,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
   visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {
     return {
-      type: "ExpressionStatement",
+      type: 'ExpressionStatement',
       expression: ctx.expression()?.accept(this) as Expression
     }
   }
@@ -340,7 +340,6 @@ export class CGenerator implements CVisitor<AstNode> {
 }
 
 export function parse(source: string) {
-
   const inputStream = CharStreams.fromString(source)
   const lexer = new CLexer(inputStream)
   const tokenStream = new CommonTokenStream(lexer)

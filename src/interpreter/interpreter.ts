@@ -99,7 +99,8 @@ const binop_microcode = {
   '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y)
 }
 
-const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) => binop_microcode[op](v1, v2);
+const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =>
+  binop_microcode[op](v1, v2)
 
 /* *********************
  * interpreter microcode
@@ -115,37 +116,32 @@ const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =
 
 const microcode = (code: AgendaItems) => {
   switch (code.type) {
-    case "Literal":
-      S.push(code.value);
-      break;
+    case 'Literal':
+      S.push(code.value)
+      break
 
-    case "BinaryExpression":
-      A.push(
-        {type: "binop_i", operator: code.operator},
-        code.right,
-        code.left
-      );
-      break;
+    case 'BinaryExpression':
+      A.push({ type: 'binop_i', operator: code.operator }, code.right, code.left)
+      break
 
-    case "ExpressionStatement":
+    case 'ExpressionStatement':
       A.push(code.expression)
-      break;
+      break
 
-    case "Block":
+    case 'Block':
       A.push(
         // TODO: Reverse Order
         ...code.statements
       )
-      break;
-
+      break
 
     // Instructions
-    case "binop_i":
+    case 'binop_i':
       S.push(apply_binop(code.operator, S.pop(), S.pop()))
-      break;
+      break
 
     default:
-      error(code, "Unknown command: ")
+      error(code, 'Unknown command: ')
   }
 }
 
