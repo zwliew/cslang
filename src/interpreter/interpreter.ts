@@ -107,7 +107,8 @@ const binop_microcode = {
   '+': (x: ProgramValues, y: ProgramValues) => Number(x) + Number(y),
   '-': (x: ProgramValues, y: ProgramValues) => Number(x) - Number(y),
   '*': (x: ProgramValues, y: ProgramValues) => Number(x) * Number(y),
-  '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y)
+  '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y),
+  '%': (x: ProgramValues, y: ProgramValues) => Number(x) % Number(y)
 }
 
 const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =>
