@@ -14,6 +14,7 @@ import {
   CompoundStatementContext,
   ConditionalExpressionContext,
   CParser,
+  DeclarationContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
   ExpressionContext,
@@ -89,7 +90,7 @@ export class CGenerator implements CVisitor<AstNode> {
   visitAssignmentExpression(ctx: AssignmentExpressionContext): Expression {
     const conditionalExpression = ctx.conditionalExpression()
     if (conditionalExpression) {
-      return this.visitConditionalExpression(conditionalExpression)
+      return this.visitConditionalExpression(conditionalExpression) as Expression
     }
     // Assigning a value to something
     // TODO: implement parsing
