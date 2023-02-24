@@ -10,7 +10,12 @@ interface BaseInstruction {
   type: string
 }
 
-export type Instructions = iAssignment |iBinaryOperation | iIfStatement | iRestoreEnvironment | iPop
+export type Instructions =
+  | iAssignment
+  | iBinaryOperation
+  | iIfStatement
+  | iRestoreEnvironment
+  | iPop
 
 export interface iAssignment extends BaseInstruction {
   type: 'assmt_i'

@@ -232,7 +232,7 @@ const microcode = (code: AgendaItems) => {
         A.push(code.alternative)
       }
       break
-      
+
     case 'env_i':
       E = code.environment
       break

@@ -37,6 +37,7 @@ export class Environment {
 
     if (this.parent !== undefined) {
       this.parent.set(identifier, value)
+      return
     }
 
     throw new UndeclaredIdentifierError(identifier)
