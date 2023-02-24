@@ -1,4 +1,6 @@
-import { AstNode, BinaryOperator } from '../parser/ast-types'
+import { AstNode, BinaryOperator, Block } from '../parser/ast-types'
+import { UNDEFINED_LITERAL, POP_INSTRUCTION } from './constants'
+import { Environment } from './environment'
 import { AgendaItems, ProgramValues } from './interpreter-types'
 
 // C's NULL
@@ -101,7 +103,7 @@ let S: Array<ProgramValues>
 // See *environments* above. Execution initializes
 // environment E as the global environment.
 
-let E: any
+let E: Environment
 
 const binop_microcode = {
   '+': (x: ProgramValues, y: ProgramValues) => Number(x) + Number(y),
@@ -113,6 +115,20 @@ const binop_microcode = {
 
 const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =>
   binop_microcode[op](v1, v2)
+
+function handle_block(blk: Block): AgendaItems[] {
+  const stmts = blk.statements
+  if (stmts.length === 0) {
+    return [UNDEFINED_LITERAL]
+  }
+
+  const result = []
+  for (let i = stmts.length - 1; i > 0; i--) {
+    result.push(stmts[i], POP_INSTRUCTION)
+  }
+  result.push(stmts[0])
+  return result
+}
 
 /* *********************
  * interpreter microcode
@@ -152,13 +168,14 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'Block':
-      A.push(
-        // TODO: Reverse Order
-        ...code.statements
-      )
+      E = E.extend()
+      A.push(...handle_block(code))
       break
 
+    //
     // Instructions
+    //
+
     case 'binop_i':
       S.push(apply_binop(code.operator, S.pop(), S.pop()))
       break
@@ -170,6 +187,14 @@ const microcode = (code: AgendaItems) => {
       } else if (code.alternative) {
         A.push(code.alternative)
       }
+      break
+      
+    case 'env_i':
+      E = code.environment
+      break
+
+    case 'pop_i':
+      S.pop()
       break
 
     default:
@@ -186,7 +211,7 @@ const step_limit = 1000000
 export const execute = (program: AstNode) => {
   A = [program]
   S = []
-  E = global_environment
+  E = new Environment()
   let i = 0
   while (i < step_limit) {
     if (A.length === 0) break

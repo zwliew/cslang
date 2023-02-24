@@ -1,3 +1,5 @@
+import { ProgramValues } from '../interpreter/interpreter-types'
+
 interface BaseNode {
   type: string
 }
@@ -39,7 +41,7 @@ export interface Identifier extends BaseExpression {
 
 export interface Literal extends BaseExpression {
   type: 'Literal'
-  value: boolean | number
+  value: ProgramValues
 }
 
 export interface UnaryExpression extends BaseExpression {
