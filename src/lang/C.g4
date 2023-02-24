@@ -134,7 +134,7 @@ declaration: typeSpecifier initDeclaratorList ';';
 
 initDeclaratorList: initDeclarator (',' initDeclarator)*;
 
-initDeclarator: declarator '=' initializer;
+initDeclarator: declarator ('=' initializer)?;
 
 storageClassSpecifier:
 	'typedef'
