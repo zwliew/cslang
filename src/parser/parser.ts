@@ -32,8 +32,7 @@ import {
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
 import { AstNode, BinaryOperator, Expression, IfStatement, Statement } from './ast-types'
-
-const NotImplementedError = 'NotImplementedError'
+import { NotImplementedError } from '../utils/errors'
 
 export class CGenerator implements CVisitor<AstNode> {
   visit(tree: ParseTree): AstNode {
@@ -64,15 +63,16 @@ export class CGenerator implements CVisitor<AstNode> {
   // EXPRESSIONS
   //
   // The ordering of the expression visitor methods are in reverse order of C.g4
+  // TODO: Change method signature to `Expression`
   //
 
-  visitExpression(ctx: ExpressionContext): AstNode {
+  visitExpression(ctx: ExpressionContext): Expression {
     const assignmentExpression = ctx.assignmentExpression()
     if (assignmentExpression.length === 1) {
-      return assignmentExpression[0].accept(this)
+      return assignmentExpression[0].accept(this) as Expression
     } else {
       // Comma separated expressions
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -83,7 +83,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Assigning a value to something
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -111,7 +111,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Logical or (||)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -122,7 +122,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Logical and (&&)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -133,7 +133,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise or (|)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -144,7 +144,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise xor (^)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -155,7 +155,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise and (&)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -166,7 +166,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Equality comparison (==, !=)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -177,7 +177,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Relational comparison (<, >, <=, >=)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -188,14 +188,14 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitshift (<<, >>)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
-  visitAdditiveExpression(ctx: AdditiveExpressionContext): AstNode {
+  visitAdditiveExpression(ctx: AdditiveExpressionContext): Expression {
     const multiplicativeExpression = ctx.multiplicativeExpression()
     if (multiplicativeExpression.length === 1) {
-      return multiplicativeExpression[0].accept(this)
+      return this.visitMultiplicativeExpression(multiplicativeExpression[0])
     } else {
       // Addition and subtraction (+, -)
 
@@ -205,8 +205,8 @@ export class CGenerator implements CVisitor<AstNode> {
       let expression: Expression = {
         type: 'BinaryExpression',
         operator: ctx.getChild(1).text as BinaryOperator,
-        left: multiplicativeExpression[0].accept(this) as Expression,
-        right: multiplicativeExpression[1].accept(this) as Expression
+        left: this.visitMultiplicativeExpression(multiplicativeExpression[0]),
+        right: this.visitMultiplicativeExpression(multiplicativeExpression[1])
       }
 
       for (let i = 2; i < multiplicativeExpression.length; i++) {
@@ -214,7 +214,7 @@ export class CGenerator implements CVisitor<AstNode> {
           type: 'BinaryExpression',
           operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
           left: expression,
-          right: multiplicativeExpression[i].accept(this) as Expression
+          right: this.visitMultiplicativeExpression(multiplicativeExpression[i])
         }
       }
 
@@ -222,10 +222,10 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): AstNode {
+  visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): Expression {
     const castExpressions = ctx.castExpression()
     if (castExpressions.length === 1) {
-      return castExpressions[0].accept(this)
+      return castExpressions[0].accept(this) as Expression
     } else {
       // Multiplication, division and modulo (*, /, %)
 
@@ -259,7 +259,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Typecasting ((typeName) expression)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -270,7 +270,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Unary expression (++, -- prefix)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
@@ -281,25 +281,39 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
       // TODO: implement parsing
-      throw NotImplementedError
+      throw new NotImplementedError()
     }
   }
 
-  visitPrimaryExpression(ctx: PrimaryExpressionContext): AstNode {
-    // Assuming it is either Identifier or Constant
-    // Constants can only be ints or strings
-    const constantValue = parseInt(ctx.text)
-    if (!isNaN(constantValue)) {
-      return {
-        type: 'Literal',
-        value: constantValue
+  visitPrimaryExpression(ctx: PrimaryExpressionContext): Expression {
+    const constantValue = ctx.Constant()
+    if (constantValue) {
+      // Assume integers for now
+      const value = parseInt(constantValue.toString())
+      if (!isNaN(value)) {
+        return {
+          type: 'Literal',
+          value: value
+        }
       }
-    } else {
+      throw new NotImplementedError()
+    }
+
+    const expression = ctx.expression()
+    if (expression) {
+      return this.visitExpression(expression)
+    }
+
+    const identifier = ctx.Identifier()
+    if (identifier) {
       return {
         type: 'Identifier',
-        value: ctx.text
+        value: identifier.toString()
       }
     }
+
+    // TODO: String literals
+    throw new NotImplementedError()
   }
 
   //
@@ -311,7 +325,7 @@ export class CGenerator implements CVisitor<AstNode> {
   visitCompoundStatement(ctx: CompoundStatementContext): AstNode {
     return {
       type: 'Block',
-      statements: ctx.blockItem().map(v => v.accept(this)) as Array<Statement>
+      statements: ctx.blockItem().map(v => v.accept(this)) as Statement[]
     }
   }
 
@@ -332,7 +346,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     // Other forms of statements
-    throw NotImplementedError
+    throw new NotImplementedError()
   }
 
   visitSelectionStatement(ctx: SelectionStatementContext): AstNode {
@@ -355,10 +369,16 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {
-    return {
-      type: 'ExpressionStatement',
-      expression: ctx.expression()?.accept(this) as Expression
+    const expression = ctx.expression()
+
+    if (expression) {
+      return {
+        type: 'ExpressionStatement',
+        expression: this.visitExpression(expression)
+      }
     }
+
+    throw new NotImplementedError()
   }
 
   visitBlockItem(ctx: BlockItemContext): AstNode {

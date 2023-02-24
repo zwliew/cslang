@@ -1,15 +1,16 @@
-import { AstNode, BinaryOperator } from '../parser/ast-types'
+import { AstNode, BinaryOperator, Literal } from '../parser/ast-types'
+import { Environment } from './environment'
 
-// TODO: Consider whether to remove "undefined"
-export type ProgramValues = number | boolean | undefined
+export type ExpressibleValues = number | boolean
+export type ProgramValues = ExpressibleValues | undefined
 
 export type AgendaItems = AstNode | Instructions
 
-export interface BaseInstruction {
+interface BaseInstruction {
   type: string
 }
 
-export type Instructions = iBinaryOperation | iIfStatement
+export type Instructions = iBinaryOperation | iIfStatement | iPop
 
 export interface iBinaryOperation extends BaseInstruction {
   type: 'binop_i'
@@ -19,4 +20,13 @@ export interface iIfStatement extends BaseInstruction {
   type: 'branch_i'
   consequent: AstNode
   alternative?: AstNode
+}
+
+export interface iRestoreEnvironment extends BaseInstruction {
+  type: 'env_i'
+  environment: Environment
+}
+
+export interface iPop extends BaseInstruction {
+  type: 'pop_i'
 }
