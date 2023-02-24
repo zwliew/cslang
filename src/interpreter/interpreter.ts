@@ -1,4 +1,5 @@
-import { AstNode, BinaryOperator, Block } from '../parser/ast-types'
+import { AssignmentExpression, AstNode, BinaryOperator, Block } from '../parser/ast-types'
+import { NotImplementedError } from '../utils/errors'
 import { UNDEFINED_LITERAL, POP_INSTRUCTION } from './constants'
 import { Environment } from './environment'
 import { AgendaItems, ProgramValues } from './interpreter-types'
@@ -130,6 +131,21 @@ function handle_block(blk: Block): AgendaItems[] {
   return result
 }
 
+function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItems[] {
+  const result: AgendaItems[] = [{ type: 'assmt_i', identifier: assignExp.identifier }]
+
+  switch (assignExp.operator) {
+    case '=':
+      result.push(assignExp.value)
+      break
+
+    default:
+      throw new NotImplementedError('Only direct assignments are implemented')
+  }
+
+  return result
+}
+
 /* *********************
  * interpreter microcode
  * *********************/
@@ -148,12 +164,37 @@ const microcode = (code: AgendaItems) => {
       S.push(code.value)
       break
 
+    case 'AssignmentExpression':
+      A.push(...handle_assignment_operator(code))
+      break
+
     case 'BinaryExpression':
       A.push({ type: 'binop_i', operator: code.operator }, code.right, code.left)
       break
 
+    case 'Block':
+      A.push({ type: 'env_i', environment: E })
+      A.push(...handle_block(code))
+      E = E.extend()
+      break
+
+    case 'Declaration':
+      // TODO: Keep track of declaration's type as well
+      E.declare(code.identifier)
+      if (code.value) {
+        // There is a value for this declaration
+        A.push({ type: 'assmt_i', identifier: code.identifier })
+        A.push(code.value)
+      }
+      break
+
     case 'ExpressionStatement':
       A.push(code.expression)
+      break
+
+    case 'Block':
+      E = E.extend()
+      A.push(...handle_block(code))
       break
 
     case 'IfStatement':
@@ -167,14 +208,17 @@ const microcode = (code: AgendaItems) => {
       )
       break
 
-    case 'Block':
-      E = E.extend()
-      A.push(...handle_block(code))
+    case 'Identifier':
+      S.push(E.get(code.identifier))
       break
 
     //
     // Instructions
     //
+
+    case 'assmt_i':
+      E.set(code.identifier, S[S.length - 1]!)
+      break
 
     case 'binop_i':
       S.push(apply_binop(code.operator, S.pop(), S.pop()))
@@ -214,6 +258,10 @@ export const execute = (program: AstNode) => {
   E = new Environment()
   let i = 0
   while (i < step_limit) {
+    // console.log('Step', i)
+    // console.log(A)
+    // console.log(S)
+    // console.log(E)
     if (A.length === 0) break
 
     // Agenda will always have items on it
