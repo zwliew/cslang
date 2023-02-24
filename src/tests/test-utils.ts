@@ -9,7 +9,7 @@ export function determineProgramString(): string {
     if (programs[process.argv[2]]) {
       programString = programs[process.argv[2]]
     } else {
-      console.log('Invalid program type/name provided. Defaulting to singleDeclaration')
+      console.log('Invalid program name provided')
     }
   } else if (process.argv.length >= 4) {
     switch (process.argv[2]) {
@@ -22,7 +22,7 @@ export function determineProgramString(): string {
         programString = process.argv[3]
         break
       default:
-        console.log('Invalid program type/name provided. Defaulting to singleDeclaration')
+        console.log('Invalid program type/name provided')
     }
   }
 

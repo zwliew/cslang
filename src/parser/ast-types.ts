@@ -22,6 +22,7 @@ interface ExpressionMap {
 
 export type Expression = ExpressionMap[keyof ExpressionMap]
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseExpression extends BaseNode {}
 
 export interface BinaryExpression extends BaseExpression {
@@ -75,13 +76,22 @@ export type BinaryOperator =
 //
 //
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseStatement extends BaseNode {}
 
-export type Statement = ExpressionStatement | Block
+export type Statement = ExpressionStatement | Block | IfStatement
 
 export interface ExpressionStatement extends BaseStatement {
   type: 'ExpressionStatement'
   expression: Expression
+}
+
+// Conditional
+export interface IfStatement extends BaseStatement {
+  type: 'IfStatement'
+  predicate: AstNode
+  consequent: AstNode
+  alternative?: AstNode
 }
 
 export interface Block extends BaseStatement {

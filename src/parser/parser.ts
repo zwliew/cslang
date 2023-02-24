@@ -1,5 +1,4 @@
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
-import { ContextSensitivityInfo } from 'antlr4ts/atn/ContextSensitivityInfo'
 import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
@@ -12,33 +11,27 @@ import {
   AssignmentExpressionContext,
   BlockItemContext,
   CastExpressionContext,
-  CompilationUnitContext,
   CompoundStatementContext,
   ConditionalExpressionContext,
   CParser,
-  DeclarationContext,
-  DirectDeclaratorContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
   ExpressionContext,
   ExpressionStatementContext,
-  ExternalDeclarationContext,
-  GenericAssocListContext,
   InclusiveOrExpressionContext,
-  InitDeclaratorContext,
-  InitializerContext,
   LogicalAndExpressionContext,
   LogicalOrExpressionContext,
   MultiplicativeExpressionContext,
   PostfixExpressionContext,
   PrimaryExpressionContext,
   RelationalExpressionContext,
+  SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
   UnaryExpressionContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
-import { AstNode, BinaryOperator, Expression, Statement } from './ast-types'
+import { AstNode, BinaryOperator, Expression, IfStatement, Statement } from './ast-types'
 
 const NotImplementedError = 'NotImplementedError'
 
@@ -95,13 +88,19 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitConditionalExpression(ctx: ConditionalExpressionContext): AstNode {
-    const logicalOrExpression = ctx.logicalOrExpression()
-    if (logicalOrExpression) {
-      return logicalOrExpression.accept(this)
+    if (ctx.childCount === 1) {
+      return this.visitLogicalOrExpression(ctx.logicalOrExpression())
     } else {
       // Ternary conditional (?, :)
-      // TODO: implement parsing
-      throw NotImplementedError
+      const predicate = this.visitLogicalOrExpression(ctx.logicalOrExpression())
+      const consequent = this.visitExpression(ctx.expression()!)
+      const alternative = this.visitConditionalExpression(ctx.conditionalExpression()!)
+      return {
+        type: 'IfStatement',
+        predicate: predicate,
+        consequent: consequent,
+        alternative: alternative
+      }
     }
   }
 
@@ -317,13 +316,42 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitStatement(ctx: StatementContext): AstNode {
-    let statement = ctx.expressionStatement()
-    if (statement) {
-      return statement.accept(this)
+    const expressionStatement = ctx.expressionStatement()
+    if (expressionStatement) {
+      return this.visitExpressionStatement(expressionStatement)
+    }
+
+    const selectionStatement = ctx.selectionStatement()
+    if (selectionStatement) {
+      return this.visitSelectionStatement(selectionStatement)
+    }
+
+    const compoundStatement = ctx.compoundStatement()
+    if (compoundStatement) {
+      return this.visitCompoundStatement(compoundStatement)
     }
 
     // Other forms of statements
     throw NotImplementedError
+  }
+
+  visitSelectionStatement(ctx: SelectionStatementContext): AstNode {
+    if (ctx.If()) {
+      const statements = ctx.statement()
+      const ifStatementNode: IfStatement = {
+        type: 'IfStatement',
+        predicate: this.visitExpression(ctx.expression()),
+        consequent: this.visitStatement(statements[0])
+      }
+      if (statements.length !== 1) {
+        // There is an else statement
+        ifStatementNode.alternative = this.visitStatement(statements[1])
+      }
+      return ifStatementNode
+    } else {
+      // Is switch case
+      throw NotImplementedError
+    }
   }
 
   visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {

@@ -1,12 +1,23 @@
 import { AstNode, BinaryOperator } from '../parser/ast-types'
 import { AgendaItems, ProgramValues } from './interpreter-types'
 
-// export function interprete(ast: AstNode) {
-//   console.log('TODO: Implement interprete')
-// }
+// C's NULL
+export const NULL_PTR = null
 
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
+}
+
+function is_null(val: any): boolean {
+  return val === NULL_PTR
+}
+
+function is_false(val: any): boolean {
+  return val === 0
+}
+
+function is_true(val: any): boolean {
+  return !is_null(val) && !is_false(val)
 }
 
 /* ************
@@ -128,6 +139,17 @@ const microcode = (code: AgendaItems) => {
       A.push(code.expression)
       break
 
+    case 'IfStatement':
+      A.push(
+        {
+          type: 'branch_i',
+          consequent: code.consequent,
+          alternative: code.alternative
+        },
+        code.predicate
+      )
+      break
+
     case 'Block':
       A.push(
         // TODO: Reverse Order
@@ -138,6 +160,15 @@ const microcode = (code: AgendaItems) => {
     // Instructions
     case 'binop_i':
       S.push(apply_binop(code.operator, S.pop(), S.pop()))
+      break
+
+    case 'branch_i':
+      console.log(`S: ${S}`)
+      if (is_true(S.pop())) {
+        A.push(code.consequent)
+      } else if (code.alternative) {
+        A.push(code.alternative)
+      }
       break
 
     default:

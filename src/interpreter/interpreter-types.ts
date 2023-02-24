@@ -9,9 +9,14 @@ export interface BaseInstruction {
   type: string
 }
 
-export type Instructions = iBinaryOperation
+export type Instructions = iBinaryOperation | iIfStatement
 
 export interface iBinaryOperation extends BaseInstruction {
   type: 'binop_i'
   operator: BinaryOperator
+}
+export interface iIfStatement extends BaseInstruction {
+  type: 'branch_i'
+  consequent: AstNode
+  alternative?: AstNode
 }
