@@ -31,8 +31,18 @@ import {
   UnaryExpressionContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
-import { AstNode, BinaryOperator, Expression, IfStatement, Statement } from './ast-types'
 import { NotImplementedError } from '../utils/errors'
+import {
+  AssignmentOperator,
+  AstNode,
+  BinaryOperator,
+  Declaration,
+  Expression,
+  IfStatement,
+  Identifier,
+  Statement,
+  TypeSpecifier
+} from './ast-types'
 
 export class CGenerator implements CVisitor<AstNode> {
   visit(tree: ParseTree): AstNode {
@@ -69,21 +79,36 @@ export class CGenerator implements CVisitor<AstNode> {
   visitExpression(ctx: ExpressionContext): Expression {
     const assignmentExpression = ctx.assignmentExpression()
     if (assignmentExpression.length === 1) {
-      return assignmentExpression[0].accept(this) as Expression
+      return this.visitAssignmentExpression(assignmentExpression[0])
     } else {
       // Comma separated expressions
       throw new NotImplementedError()
     }
   }
 
-  visitAssignmentExpression(ctx: AssignmentExpressionContext): AstNode {
+  visitAssignmentExpression(ctx: AssignmentExpressionContext): Expression {
     const conditionalExpression = ctx.conditionalExpression()
     if (conditionalExpression) {
-      return conditionalExpression.accept(this)
-    } else {
-      // Assigning a value to something
-      // TODO: implement parsing
+      return this.visitConditionalExpression(conditionalExpression)
+    }
+    // Assigning a value to something
+    // TODO: implement parsing
+
+    const leftContext = ctx.unaryExpression()
+    const rightContext = ctx.assignmentExpression()
+
+    if (leftContext === undefined || rightContext === undefined) {
       throw new NotImplementedError()
+    }
+
+    const operator = ctx.assignmentOperator()!.text
+
+    // Left should be a name, right should be an expression
+    return {
+      type: 'AssignmentExpression',
+      operator: operator as AssignmentOperator,
+      identifier: leftContext.text,
+      value: this.visitAssignmentExpression(rightContext)
     }
   }
 
@@ -308,7 +333,7 @@ export class CGenerator implements CVisitor<AstNode> {
     if (identifier) {
       return {
         type: 'Identifier',
-        value: identifier.toString()
+        identifier: identifier.toString()
       }
     }
 
@@ -322,7 +347,7 @@ export class CGenerator implements CVisitor<AstNode> {
   //
   //
 
-  visitCompoundStatement(ctx: CompoundStatementContext): AstNode {
+  visitCompoundStatement(ctx: CompoundStatementContext): Statement {
     return {
       type: 'Block',
       statements: ctx.blockItem().map(v => v.accept(this)) as Statement[]
@@ -384,6 +409,37 @@ export class CGenerator implements CVisitor<AstNode> {
   visitBlockItem(ctx: BlockItemContext): AstNode {
     // statement | declaration. Flatten this node away
     return (ctx.children as ParseTree[])[0].accept(this)
+  }
+
+  //
+  //
+  // DECLARATIONS
+  //
+  //
+
+  visitDeclaration(ctx: DeclarationContext): Declaration {
+    const typeSpecifier = ctx.typeSpecifier().text // TODO: Coerce into the actual class?
+    const initDeclarator = ctx.initDeclaratorList().initDeclarator()
+
+    if (initDeclarator.length != 1) {
+      // Multiple declarations on a single line, ie int x = 1, y = 2;
+      throw new NotImplementedError()
+    }
+
+    const identifier = initDeclarator[0].declarator().text
+    const initializer = initDeclarator[0].initializer()
+
+    const value =
+      initializer === undefined
+        ? undefined
+        : this.visitAssignmentExpression(initializer.assignmentExpression())
+
+    return {
+      type: 'Declaration',
+      typeSpecifier: typeSpecifier as TypeSpecifier,
+      identifier: identifier,
+      value: value
+    }
   }
 }
 
