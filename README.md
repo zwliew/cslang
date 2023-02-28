@@ -28,6 +28,12 @@ Calculator language modified from js-slang.
 
 # Usage
 
+The usual dev workflow is:
+1. Run `yarn dev` to start the watcher that auto-compiles any changes.
+2. Code your changes in `src/` and add test cases in `src/tests/`.
+3. Run `yarn runner-test "test program name here"` or `yarn parser-test "test program name here"` to test your changes.
+4. Repeat steps 2 and 3.
+
 To build,
 
 ```{.}
