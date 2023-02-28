@@ -192,11 +192,6 @@ const microcode = (code: AgendaItems) => {
       A.push(code.expression)
       break
 
-    case 'Block':
-      E = E.extend()
-      A.push(...handle_block(code))
-      break
-
     case 'IfStatement':
       A.push(
         {
