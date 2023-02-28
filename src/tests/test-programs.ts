@@ -44,3 +44,7 @@ export const falseConditional = `{
 export const ternaryOperator = `{
     0 ? 2 : 1;
 }`
+
+export const whileLoop = `{
+    while (0) {}
+}`

@@ -1,5 +1,5 @@
-import { AstNode, BinaryOperator, Literal } from '../parser/ast-types'
 import { Environment } from './environment'
+import { AstNode, BinaryOperator, Literal, Expression, Statement } from '../parser/ast-types'
 
 export type ExpressibleValues = number | boolean
 export type ProgramValues = ExpressibleValues | undefined
@@ -14,6 +14,7 @@ export type Instructions =
   | iAssignment
   | iBinaryOperation
   | iIfStatement
+  | iWhileStatement
   | iRestoreEnvironment
   | iPop
 
@@ -39,4 +40,10 @@ export interface iRestoreEnvironment extends BaseInstruction {
 
 export interface iPop extends BaseInstruction {
   type: 'pop_i'
+}
+
+export interface iWhileStatement extends BaseInstruction {
+  type: 'while_i'
+  pred: Expression
+  body: Statement
 }

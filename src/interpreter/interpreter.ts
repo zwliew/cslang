@@ -207,6 +207,11 @@ const microcode = (code: AgendaItems) => {
       S.push(E.get(code.identifier))
       break
 
+    case 'WhileStatement':
+      // Note: statements don't leave anything in the operand stash
+      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
+      break
+
     //
     // Instructions
     //
@@ -234,6 +239,13 @@ const microcode = (code: AgendaItems) => {
 
     case 'pop_i':
       S.pop()
+      break
+
+    case 'while_i':
+      const pred_val = S.pop()
+      if (is_true(pred_val)) {
+        A.push(code, code.pred, { type: 'pop_i' }, code.body)
+      }
       break
 
     default:

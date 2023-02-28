@@ -20,6 +20,7 @@ import {
   ExpressionContext,
   ExpressionStatementContext,
   InclusiveOrExpressionContext,
+  IterationStatementContext,
   LogicalAndExpressionContext,
   LogicalOrExpressionContext,
   MultiplicativeExpressionContext,
@@ -34,13 +35,13 @@ import {
 import { CVisitor } from '../lang/CVisitor'
 import { NotImplementedError } from '../utils/errors'
 import {
+  WhileStatement,
   AssignmentOperator,
   AstNode,
   BinaryOperator,
   Declaration,
   Expression,
   IfStatement,
-  Identifier,
   Statement,
   TypeSpecifier
 } from './ast-types'
@@ -371,6 +372,11 @@ export class CGenerator implements CVisitor<AstNode> {
       return this.visitCompoundStatement(compoundStatement)
     }
 
+    const iterationStatement = ctx.iterationStatement()
+    if (iterationStatement) {
+      return this.visitIterationStatement(iterationStatement)
+    }
+
     // Other forms of statements
     throw new NotImplementedError()
   }
@@ -405,6 +411,19 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     throw new NotImplementedError()
+  }
+
+  visitIterationStatement(ctx: IterationStatementContext): Statement {
+    if (ctx.While()) {
+      return {
+        type: 'WhileStatement',
+        pred: this.visitExpression(ctx.expression()!) as Expression, // expression should be defined for while
+        body: this.visitStatement(ctx.statement()) as Statement
+      }
+    } else {
+      // TODO: implement for and do-while loops
+      throw new NotImplementedError()
+    }
   }
 
   visitBlockItem(ctx: BlockItemContext): AstNode {

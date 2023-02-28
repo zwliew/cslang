@@ -101,7 +101,7 @@ export type AssignmentOperator =
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseStatement extends BaseNode {}
 
-export type Statement = ExpressionStatement | Block | IfStatement
+export type Statement = ExpressionStatement | Block | IfStatement | WhileStatement
 
 export interface ExpressionStatement extends BaseStatement {
   type: 'ExpressionStatement'
@@ -119,6 +119,13 @@ export interface IfStatement extends BaseStatement {
 export interface Block extends BaseStatement {
   type: 'Block'
   statements: Array<Statement>
+}
+
+// Loops
+export interface WhileStatement extends BaseStatement {
+  type: 'WhileStatement'
+  pred: Expression
+  body: Statement
 }
 
 //
