@@ -10,17 +10,17 @@ import {
 import { Environment } from './classes/environment'
 import { AgendaItems } from './interpreter-types'
 import { Memory, sizeOfTypes } from './classes/memory'
-import { add, divide, mod, multiply, subtract } from './operations'
+import { add, divide, equals, mod, multiply, subtract } from './operations'
 
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
 }
 
-function is_false(val: any): boolean {
-  return val === 0
+function is_false(val: Literal): boolean {
+  return val.value == 0
 }
 
-function is_true(val: any): boolean {
+function is_true(val: Literal): boolean {
   return !is_false(val)
 }
 
@@ -65,8 +65,8 @@ const binop_microcode = {
   '-': subtract,
   '*': multiply,
   '/': divide,
-  '%': mod
-  // TODO: '==': (x: ProgramValues, y: ProgramValues) => Number(Number(x) == Number(y))
+  '%': mod,
+  '==': equals
 }
 
 const apply_binop = (op: BinaryOperator, v2: Literal, v1: Literal) => binop_microcode[op](v1, v2)
@@ -92,7 +92,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   }
 
   const result: AgendaItems[] = []
-  const switch_value = S.pop()
+  const switch_value = S.pop()!
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
     if (stmt.type === 'SwitchCaseBranch') {
@@ -200,10 +200,6 @@ const microcode = (code: AgendaItems) => {
       break
     }
 
-    /******************
-     * Instructions
-     *****************/
-
     case 'WhileStatement':
       // Note: statements don't leave anything in the operand stash
       A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
@@ -225,16 +221,17 @@ const microcode = (code: AgendaItems) => {
 
     case 'UnaryExpression':
       if (code.operator === '-') {
-        S.push(-1)
+        S.push({ type: 'Literal', typeSpecifier: 'char', value: -1 })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
       } else {
         error(code, 'Unknown command: ')
       }
       break
 
-    //
-    // Instructions
-    //
+    /******************
+     * Instructions
+     *****************/
+
     case 'assmt_i': {
       // Get the address the name is refering to
       const addr = E.get(code.identifier)
@@ -250,7 +247,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'branch_i':
       console.log(`S: ${S}`)
-      if (is_true(S.pop())) {
+      if (is_true(S.pop()!)) {
         A.push(code.consequent)
       } else if (code.alternative) {
         A.push(code.alternative)
@@ -268,7 +265,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'while_i':
       const pred_val = S.pop()
-      if (is_true(pred_val)) {
+      if (is_true(pred_val!)) {
         A.push(code, code.pred, { type: 'pop_i' }, code.body)
       }
       break
@@ -300,7 +297,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'case_i':
-      if (is_false(S.pop())) {
+      if (is_false(S.pop()!)) {
         // Pop agenda until next case/default statement
         while (
           A.length > 0 &&

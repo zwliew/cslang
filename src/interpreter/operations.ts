@@ -71,3 +71,11 @@ export function mod(left: Literal, right: Literal): Literal {
     }
   }
 }
+
+export function equals(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value === right.value ? 1 : 0
+  }
+}
