@@ -1,8 +1,26 @@
-import { AstNode, BinaryOperator, Block, Expression, Statement } from '../parser/ast-types'
-import { Environment } from './environment'
+import {
+  AstNode,
+  BinaryOperator,
+  Block,
+  Expression,
+  Statement,
+  TypeSpecifier
+} from '../parser/ast-types'
+import { Environment } from './classes/environment'
 
-export type ExpressibleValues = number | boolean
-export type ProgramValues = ExpressibleValues | undefined
+/***************
+ * Memory
+ ***************/
+
+export interface MemoryAddress {
+  type: 'MemoryAddress'
+  typeSpecifier: TypeSpecifier
+  location: number
+}
+
+/***************
+ * Agenda Items
+ ***************/
 
 export type AgendaItems = AstNode | Instructions
 

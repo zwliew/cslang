@@ -345,6 +345,7 @@ export class CGenerator implements CVisitor<AstNode> {
       if (!isNaN(value)) {
         return {
           type: 'Literal',
+          typeSpecifier: 'int', // DEFAULT FOR NOW
           value: value
         }
       }

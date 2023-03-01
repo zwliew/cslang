@@ -5,3 +5,10 @@ export class NotImplementedError extends Error {
     this.name = 'NotImplementedError'
   }
 }
+
+export class IllegalArgumentError extends Error {
+  constructor(message?: string) {
+    super(message)
+    this.name = 'IllegalArgumentError'
+  }
+}

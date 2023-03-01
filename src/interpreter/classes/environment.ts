@@ -1,7 +1,7 @@
-import { RedeclarationError, UndeclaredIdentifierError } from './errors'
-import { ExpressibleValues } from './interpreter-types'
+import { RedeclarationError, UndeclaredIdentifierError } from '../errors'
+import { MemoryAddress } from '../interpreter-types'
 
-type Frame = Map<string, ExpressibleValues>
+type Frame = Map<string, MemoryAddress>
 
 export class Environment {
   // The environment is a linked list of frames
@@ -15,7 +15,7 @@ export class Environment {
   }
 
   // Get the value of the name in the current environment
-  get(identifier: string): ExpressibleValues {
+  get(identifier: string): MemoryAddress {
     const value = this.frame.get(identifier)
     if (value !== undefined) {
       return value
@@ -29,7 +29,7 @@ export class Environment {
   }
 
   // Set the value of the name in the current environment
-  set(identifier: string, value: ExpressibleValues) {
+  set(identifier: string, value: MemoryAddress) {
     if (this.frame.has(identifier)) {
       this.frame.set(identifier, value)
       return
@@ -49,22 +49,14 @@ export class Environment {
     return temp
   }
 
-  pop(): Environment {
-    if (this.parent === undefined) {
-      // TODO: Make a more descriptive error
-      throw Error()
-    }
-    return this.parent
-  }
-
   // Declare a new variable
-  declare(identifier: string) {
+  declare(identifier: string, memoryAddress: MemoryAddress) {
     // Check if declaration already exists in most the current frame
     if (this.frame.has(identifier)) {
       throw new RedeclarationError(identifier)
     }
 
     // TODO: Fix the default "NULL" value for each type
-    this.frame.set(identifier, 0)
+    this.frame.set(identifier, memoryAddress)
   }
 }
