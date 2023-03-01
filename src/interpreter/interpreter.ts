@@ -1,4 +1,4 @@
-import { AssignmentExpression, AstNode, BinaryOperator, Block } from '../parser/ast-types'
+import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
 import { NotImplementedError } from '../utils/errors'
 import {
   BREAK_INSTRUCTION,
@@ -7,8 +7,10 @@ import {
   SWITCH_DEFAULT_INSTRUCTION,
   UNDEFINED_LITERAL
 } from './constants'
-import { Environment } from './environment'
-import { AgendaItems, ProgramValues } from './interpreter-types'
+import { Environment } from './classes/environment'
+import { AgendaItems } from './interpreter-types'
+import { Memory, sizeOfTypes } from './classes/memory'
+import { add, divide, mod, multiply, subtract } from './operations'
 
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
@@ -21,54 +23,6 @@ function is_false(val: any): boolean {
 function is_true(val: any): boolean {
   return !is_false(val)
 }
-
-/* ************
- * environments
- * ************/
-
-// Frames are objects that map symbols (strings) to values.
-
-const global_frame = {}
-
-// An environment is null or a pair whose head is a frame
-// and whose tail is an environment.
-const empty_environment: Array<any> = []
-const global_environment = empty_environment.concat(global_frame)
-
-// const lookup = (x, e) => {
-//   if (is_null(e)) error(x, 'unbound name:')
-//   if (head(e).hasOwnProperty(x)) {
-//     const v = head(e)[x]
-//     if (is_unassigned(v)) error(cmd.sym, 'unassigned name:')
-//     return v
-//   }
-//   return lookup(x, tail(e))
-// }
-
-// const assign = (x, v, e) => {
-//   if (is_null(e)) error(x, 'unbound name:')
-//   if (head(e).hasOwnProperty(x)) {
-//     head(e)[x] = v
-//   } else {
-//     assign(x, v, tail(e))
-//   }
-// }
-
-// const extend = (xs, vs, e) => {
-//   if (vs.length > xs.length) error('too many arguments')
-//   if (vs.length < xs.length) error('too few arguments')
-//   const new_frame = {}
-//   for (let i = 0; i < xs.length; i++) new_frame[xs[i]] = vs[i]
-//   return pair(new_frame, e)
-// }
-
-// At the start of executing a block, local
-// variables refer to unassigned values.
-// const unassigned = { tag: 'unassigned' }
-
-// const is_unassigned = v => {
-//   return v !== null && typeof v === 'object' && v.hasOwnProperty('tag') && v.tag === 'unassigned'
-// }
 
 /* **************************
  * interpreter configurations
@@ -98,24 +52,24 @@ let A: Array<AgendaItems> = []
 
 // Execution initializes stash S as an empty array.
 
-let S: Array<ProgramValues>
+let S: Array<Literal>
 
-// See *environments* above. Execution initializes
-// environment E as the global environment.
+// Execution initialize environment E as the global environment.
 
 let E: Environment
 
+let M: Memory
+
 const binop_microcode = {
-  '+': (x: ProgramValues, y: ProgramValues) => Number(x) + Number(y),
-  '-': (x: ProgramValues, y: ProgramValues) => Number(x) - Number(y),
-  '*': (x: ProgramValues, y: ProgramValues) => Number(x) * Number(y),
-  '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y),
-  '%': (x: ProgramValues, y: ProgramValues) => Number(x) % Number(y),
-  '==': (x: ProgramValues, y: ProgramValues) => Number(Number(x) == Number(y))
+  '+': add,
+  '-': subtract,
+  '*': multiply,
+  '/': divide,
+  '%': mod
+  // TODO: '==': (x: ProgramValues, y: ProgramValues) => Number(Number(x) == Number(y))
 }
 
-const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =>
-  binop_microcode[op](v1, v2)
+const apply_binop = (op: BinaryOperator, v2: Literal, v1: Literal) => binop_microcode[op](v1, v2)
 
 function handle_block(blk: Block): AgendaItems[] {
   const stmts = blk.statements
@@ -191,7 +145,7 @@ function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItem
 const microcode = (code: AgendaItems) => {
   switch (code.type) {
     case 'Literal':
-      S.push(code.value)
+      S.push(code)
       break
 
     case 'AssignmentExpression':
@@ -209,8 +163,12 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'Declaration':
-      // TODO: Keep track of declaration's type as well
-      E.declare(code.identifier)
+      E.declare(code.identifier, {
+        type: 'MemoryAddress',
+        typeSpecifier: code.typeSpecifier,
+        location: M.allocateStack(sizeOfTypes[code.typeSpecifier])
+      })
+
       if (code.value) {
         // There is a value for this declaration
         A.push({ type: 'assmt_i', identifier: code.identifier })
@@ -233,9 +191,18 @@ const microcode = (code: AgendaItems) => {
       )
       break
 
-    case 'Identifier':
-      S.push(E.get(code.identifier))
+    case 'Identifier': {
+      // Get the address where the value is stored on the stack
+      const addr = E.get(code.identifier)
+
+      // Push the literal value onto the stash
+      S.push({ type: 'Literal', typeSpecifier: addr.typeSpecifier, value: M.getValue(addr) })
       break
+    }
+
+    /******************
+     * Instructions
+     *****************/
 
     case 'WhileStatement':
       // Note: statements don't leave anything in the operand stash
@@ -268,13 +235,17 @@ const microcode = (code: AgendaItems) => {
     //
     // Instructions
     //
+    case 'assmt_i': {
+      // Get the address the name is refering to
+      const addr = E.get(code.identifier)
 
-    case 'assmt_i':
-      E.set(code.identifier, S[S.length - 1]!)
+      // Set the topmost literal value into memory
+      M.setValue(addr, S.at(-1)!)
       break
+    }
 
     case 'binop_i':
-      S.push(apply_binop(code.operator, S.pop(), S.pop()))
+      S.push(apply_binop(code.operator, S.pop()!, S.pop()!))
       break
 
     case 'branch_i':
@@ -287,6 +258,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'env_i':
+      // TODO: Reinstate stack pointer for the memory
       E = code.environment
       break
 
@@ -366,6 +338,7 @@ export const execute = (program: AstNode) => {
   A = [program]
   S = []
   E = new Environment()
+  M = new Memory(100)
   let i = 0
   while (i < step_limit) {
     // console.log('Step', i)
@@ -382,5 +355,6 @@ export const execute = (program: AstNode) => {
   if (S.length > 1 || S.length < 1) {
     error(S, 'internal error: stash must be singleton but is: ')
   }
+  M.viewMemory()
   return console.log(S[0])
 }

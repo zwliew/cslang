@@ -7,7 +7,8 @@ export const POP_INSTRUCTION: iPop = {
 
 export const UNDEFINED_LITERAL: Literal = {
   type: 'Literal',
-  value: undefined
+  typeSpecifier: 'void',
+  value: 0
 }
 
 export const BREAK_INSTRUCTION: iBreak = { type: 'break_i' }
