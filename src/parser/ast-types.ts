@@ -101,7 +101,14 @@ export type AssignmentOperator =
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseStatement extends BaseNode {}
 
-export type Statement = ExpressionStatement | Block | IfStatement | WhileStatement
+export type Statement =
+  | ExpressionStatement
+  | Block
+  | If
+  | SwitchCase
+  | Switch
+  | WhileStatement
+  | Jump
 
 export interface ExpressionStatement extends BaseStatement {
   type: 'ExpressionStatement'
@@ -109,11 +116,30 @@ export interface ExpressionStatement extends BaseStatement {
 }
 
 // Conditional
-export interface IfStatement extends BaseStatement {
-  type: 'IfStatement'
+export interface If extends BaseStatement {
+  type: 'If'
   predicate: AstNode
   consequent: AstNode
   alternative?: AstNode
+}
+
+export interface Switch extends BaseStatement {
+  type: 'Switch'
+  expression: Expression
+  block: Block // non SwitchCase nodes are ignored in the interpreter
+}
+
+export type SwitchCase = SwitchCaseBranch | SwitchCaseDefault
+
+export interface SwitchCaseBranch extends BaseStatement {
+  type: 'SwitchCaseBranch'
+  case: AstNode
+  consequent: AstNode
+}
+
+export interface SwitchCaseDefault extends BaseStatement {
+  type: 'SwitchCaseDefault'
+  consequent: AstNode
 }
 
 export interface Block extends BaseStatement {
@@ -126,6 +152,10 @@ export interface WhileStatement extends BaseStatement {
   type: 'WhileStatement'
   pred: Expression
   body: Statement
+}
+
+export interface Jump extends BaseStatement {
+  type: 'Break'
 }
 
 //

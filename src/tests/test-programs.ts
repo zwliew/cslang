@@ -8,7 +8,7 @@ export const semicolon = `;`
 export const helloWorld = `
 main()
 {
-    printf("Hello world!");
+  printf("Hello world!");
 }
 `
 
@@ -25,24 +25,62 @@ export const block = `{
 
 // evaluates to 1
 export const trueConditional = `{
-    if (2) {
-        1;
-    } else {
-        0;
-    }
+  if (2) {
+    1;
+  } else {
+    0;
+  }
 }`
 
-// evaluates to 1
+// should evaluate to 1
 export const falseConditional = `{
-    if (0) {
-        1;
-    } else {
-        0;
-    }
+  if (0) {
+    1;
+  } else {
+    0;
+  }
+}`
+
+// Should evaluate to 7
+export const switchCase = `{
+  switch (1) {
+    case 0:
+      0;
+      break;
+    case 1:
+      7;
+      break;
+    default:
+      -1;
+      break;
+  }
+}`
+
+export const switchCaseSimple = `{
+  switch (1) {
+    case 1:
+      1;
+      break;
+  }
 }`
 
 export const ternaryOperator = `{
-    0 ? 2 : 1;
+  0 ? 2 : 1;
+}`
+
+// should evaluate to 6
+export const bitwiseOr = `{
+  2 | 4;
+}`
+
+// should evaluate to 6
+export const bitwiseAnd = `{
+  7 & 14;
+}`
+
+// should evaluate to 6
+export const bitwiseXor = `{
+  5 ^ 3;
 }`
 
 export const whileLoop = `{

@@ -1,18 +1,17 @@
 import { AssignmentExpression, AstNode, BinaryOperator, Block } from '../parser/ast-types'
 import { NotImplementedError } from '../utils/errors'
-import { UNDEFINED_LITERAL, POP_INSTRUCTION } from './constants'
+import {
+  BREAK_INSTRUCTION,
+  CASE_INSTRUCTION,
+  POP_INSTRUCTION,
+  SWITCH_DEFAULT_INSTRUCTION,
+  UNDEFINED_LITERAL
+} from './constants'
 import { Environment } from './environment'
 import { AgendaItems, ProgramValues } from './interpreter-types'
 
-// C's NULL
-export const NULL_PTR = null
-
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
-}
-
-function is_null(val: any): boolean {
-  return val === NULL_PTR
 }
 
 function is_false(val: any): boolean {
@@ -20,7 +19,7 @@ function is_false(val: any): boolean {
 }
 
 function is_true(val: any): boolean {
-  return !is_null(val) && !is_false(val)
+  return !is_false(val)
 }
 
 /* ************
@@ -111,7 +110,8 @@ const binop_microcode = {
   '-': (x: ProgramValues, y: ProgramValues) => Number(x) - Number(y),
   '*': (x: ProgramValues, y: ProgramValues) => Number(x) * Number(y),
   '/': (x: ProgramValues, y: ProgramValues) => Number(x) / Number(y),
-  '%': (x: ProgramValues, y: ProgramValues) => Number(x) % Number(y)
+  '%': (x: ProgramValues, y: ProgramValues) => Number(x) % Number(y),
+  '==': (x: ProgramValues, y: ProgramValues) => Number(Number(x) == Number(y))
 }
 
 const apply_binop = (op: BinaryOperator, v2: ProgramValues, v1: ProgramValues) =>
@@ -128,6 +128,36 @@ function handle_block(blk: Block): AgendaItems[] {
     result.push(stmts[i], POP_INSTRUCTION)
   }
   result.push(stmts[0])
+  return result
+}
+
+function handle_switch_block(blk: Block): AgendaItems[] {
+  const stmts = blk.statements
+  if (stmts.length === 0) {
+    return [UNDEFINED_LITERAL]
+  }
+
+  const result: AgendaItems[] = []
+  const switch_value = S.pop()
+  for (let i = stmts.length - 1; i > -1; i--) {
+    const stmt = stmts[i]
+    if (stmt.type === 'SwitchCaseBranch') {
+      result.push(stmt.consequent, {
+        type: 'switch_branch_i',
+        switch_value: switch_value,
+        case: stmt.case
+      })
+    } else if (stmt.type === 'SwitchCaseDefault') {
+      result.push(stmt.consequent, SWITCH_DEFAULT_INSTRUCTION)
+    } else if (stmt.type === 'Break') {
+      result.push(BREAK_INSTRUCTION)
+    } else {
+      result.push(stmt)
+      if (i == 0) {
+        result.push(POP_INSTRUCTION)
+      }
+    }
+  }
   return result
 }
 
@@ -192,7 +222,7 @@ const microcode = (code: AgendaItems) => {
       A.push(code.expression)
       break
 
-    case 'IfStatement':
+    case 'If':
       A.push(
         {
           type: 'branch_i',
@@ -210,6 +240,29 @@ const microcode = (code: AgendaItems) => {
     case 'WhileStatement':
       // Note: statements don't leave anything in the operand stash
       A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
+      break
+
+    case 'Switch':
+      A.push({ type: 'switch_env_i', environment: E })
+      A.push({ type: 'switch_i', block: code.block }, code.expression)
+      E = E.extend()
+      break
+
+    case 'SwitchCaseDefault':
+      A.push(code.consequent)
+      break
+
+    case 'Break':
+      A.push({ type: 'break_i' })
+      break
+
+    case 'UnaryExpression':
+      if (code.operator === '-') {
+        S.push(-1)
+        A.push({ type: 'binop_i', operator: '*' }, code.operand)
+      } else {
+        error(code, 'Unknown command: ')
+      }
       break
 
     //
@@ -245,6 +298,56 @@ const microcode = (code: AgendaItems) => {
       const pred_val = S.pop()
       if (is_true(pred_val)) {
         A.push(code, code.pred, { type: 'pop_i' }, code.body)
+      }
+      break
+
+    case 'switch_env_i':
+      E = code.environment
+      break
+
+    case 'switch_i':
+      A.push(...handle_switch_block(code.block))
+      break
+
+    case 'switch_branch_i':
+      S.push(code.switch_value)
+      A.push(CASE_INSTRUCTION, { type: 'binop_i', operator: '==' }, code.case)
+      break
+
+    case 'switch_default_i':
+      // Do nothing
+      break
+
+    case 'break_i':
+      while (
+        A.length > 0 &&
+        (A[A.length - 1].type !== 'switch_env_i' || A[A.length - 1].type !== 'while_i')
+      ) {
+        A.pop()
+      }
+      break
+
+    case 'case_i':
+      if (is_false(S.pop())) {
+        // Pop agenda until next case/default statement
+        while (
+          A.length > 0 &&
+          !(
+            A[A.length - 1].type === 'switch_branch_i' ||
+            A[A.length - 1].type === 'switch_default_i'
+          )
+        ) {
+          A.pop()
+        }
+      } else {
+        // Remove all SwitchCaseBranch
+        for (let i = A.length - 1; i > -1; i--) {
+          if (A[i].type === 'switch_env_i') {
+            break
+          } else if (A[i].type === 'switch_branch_i' || A[i].type === 'switch_default_i') {
+            A.splice(i, 1)
+          }
+        }
       }
       break
 

@@ -4,6 +4,6 @@ import { parse } from '../parser/parser'
 
 export function cslangRunner(code: string) {
   const program: AstNode = parse(code)
-  console.dir(program, { depth: null })
+  // console.dir(program, { depth: null })
   return execute(program)
 }

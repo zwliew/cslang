@@ -13,6 +13,7 @@ import {
   CastExpressionContext,
   CompoundStatementContext,
   ConditionalExpressionContext,
+  ConstantExpressionContext,
   CParser,
   DeclarationContext,
   EqualityExpressionContext,
@@ -21,6 +22,8 @@ import {
   ExpressionStatementContext,
   InclusiveOrExpressionContext,
   IterationStatementContext,
+  JumpStatementContext,
+  LabeledStatementContext,
   LogicalAndExpressionContext,
   LogicalOrExpressionContext,
   MultiplicativeExpressionContext,
@@ -30,20 +33,23 @@ import {
   SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
-  UnaryExpressionContext
+  UnaryExpressionContext,
+  UnaryOperatorContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
 import { NotImplementedError } from '../utils/errors'
 import {
-  WhileStatement,
   AssignmentOperator,
   AstNode,
   BinaryOperator,
+  Block,
   Declaration,
   Expression,
-  IfStatement,
+  If,
   Statement,
-  TypeSpecifier
+  SwitchCase,
+  TypeSpecifier,
+  UnaryOperator
 } from './ast-types'
 
 export class CGenerator implements CVisitor<AstNode> {
@@ -84,7 +90,7 @@ export class CGenerator implements CVisitor<AstNode> {
       return this.visitAssignmentExpression(assignmentExpression[0])
     } else {
       // Comma separated expressions
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -100,7 +106,7 @@ export class CGenerator implements CVisitor<AstNode> {
     const rightContext = ctx.assignmentExpression()
 
     if (leftContext === undefined || rightContext === undefined) {
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
 
     const operator = ctx.assignmentOperator()!.text
@@ -123,7 +129,7 @@ export class CGenerator implements CVisitor<AstNode> {
       const consequent = this.visitExpression(ctx.expression()!)
       const alternative = this.visitConditionalExpression(ctx.conditionalExpression()!)
       return {
-        type: 'IfStatement',
+        type: 'If',
         predicate: predicate,
         consequent: consequent,
         alternative: alternative
@@ -138,7 +144,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Logical or (||)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -149,7 +155,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Logical and (&&)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -160,7 +166,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise or (|)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -171,7 +177,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise xor (^)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -182,7 +188,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitwise and (&)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -193,7 +199,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Equality comparison (==, !=)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -204,7 +210,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Relational comparison (<, >, <=, >=)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -215,7 +221,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Bitshift (<<, >>)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -286,7 +292,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Typecasting ((typeName) expression)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -294,10 +300,29 @@ export class CGenerator implements CVisitor<AstNode> {
     const postfixExpression = ctx.postfixExpression()
     if (postfixExpression) {
       return postfixExpression.accept(this)
+    }
+
+    const unaryOperator = ctx.unaryOperator()
+    if (unaryOperator) {
+      // unaryOperator castExpression
+      return {
+        type: 'UnaryExpression',
+        operator: this.unaryOperatorContextToString(unaryOperator),
+        operand: this.visitCastExpression(ctx.castExpression()!) as Expression
+      }
     } else {
       // Unary expression (++, -- prefix)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
+    }
+  }
+
+  // Internal method to convert unary operators to strings directly instead of an AstNode
+  unaryOperatorContextToString(ctx: UnaryOperatorContext): UnaryOperator {
+    if (ctx.Minus()) {
+      return '-'
+    } else {
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -308,7 +333,7 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
       // TODO: implement parsing
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -323,7 +348,7 @@ export class CGenerator implements CVisitor<AstNode> {
           value: value
         }
       }
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
 
     const expression = ctx.expression()
@@ -340,7 +365,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     // TODO: String literals
-    throw new NotImplementedError()
+    throw new NotImplementedError(ctx.text)
   }
 
   //
@@ -349,7 +374,7 @@ export class CGenerator implements CVisitor<AstNode> {
   //
   //
 
-  visitCompoundStatement(ctx: CompoundStatementContext): Statement {
+  visitCompoundStatement(ctx: CompoundStatementContext): Block {
     return {
       type: 'Block',
       statements: ctx.blockItem().map(v => v.accept(this)) as Statement[]
@@ -377,15 +402,35 @@ export class CGenerator implements CVisitor<AstNode> {
       return this.visitIterationStatement(iterationStatement)
     }
 
+    const labeledStatement = ctx.labeledStatement()
+    if (labeledStatement) {
+      return this.visitLabeledStatement(labeledStatement)
+    }
+
+    const jumpStatement = ctx.jumpStatement()
+    if (jumpStatement) {
+      return this.visitJumpStatement(jumpStatement)
+    }
+
     // Other forms of statements
-    throw new NotImplementedError()
+    throw new NotImplementedError(ctx.text)
+  }
+
+  visitJumpStatement(ctx: JumpStatementContext): AstNode {
+    if (ctx.Break()) {
+      return {
+        type: 'Break'
+      }
+    } else {
+      throw new NotImplementedError(ctx.text)
+    }
   }
 
   visitSelectionStatement(ctx: SelectionStatementContext): AstNode {
     if (ctx.If()) {
       const statements = ctx.statement()
-      const ifStatementNode: IfStatement = {
-        type: 'IfStatement',
+      const ifStatementNode: If = {
+        type: 'If',
         predicate: this.visitExpression(ctx.expression()),
         consequent: this.visitStatement(statements[0])
       }
@@ -396,8 +441,40 @@ export class CGenerator implements CVisitor<AstNode> {
       return ifStatementNode
     } else {
       // Is switch case
+      const expression = this.visitExpression(ctx.expression())
+      // There must be only one statement, which is the compound statement in {}
+      const switchBlock = this.visitCompoundStatement(ctx.statement()[0].compoundStatement()!)
+      // .blockItem()
+      // .map(blockItem => this.visitBlockItem(blockItem))
+      return {
+        type: 'Switch',
+        expression: expression,
+        block: switchBlock
+      }
+    }
+  }
+
+  visitLabeledStatement(ctx: LabeledStatementContext): SwitchCase {
+    if (ctx.Case()) {
+      return {
+        type: 'SwitchCaseBranch',
+        case: this.visitConstantExpression(ctx.constantExpression()!),
+        consequent: this.visitStatement(ctx.statement())
+      }
+    } else if (ctx.Default()) {
+      return {
+        type: 'SwitchCaseDefault',
+        consequent: this.visitStatement(ctx.statement())
+      }
+    } else {
+      // Is a label (e.g. done: ...)
       throw NotImplementedError
     }
+  }
+
+  visitConstantExpression(ctx: ConstantExpressionContext): AstNode {
+    // Flatten this node as it only has one rule
+    return this.visitConditionalExpression(ctx.conditionalExpression())
   }
 
   visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {
@@ -410,7 +487,7 @@ export class CGenerator implements CVisitor<AstNode> {
       }
     }
 
-    throw new NotImplementedError()
+    throw new NotImplementedError(ctx.text)
   }
 
   visitIterationStatement(ctx: IterationStatementContext): Statement {
@@ -422,7 +499,7 @@ export class CGenerator implements CVisitor<AstNode> {
       }
     } else {
       // TODO: implement for and do-while loops
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -443,7 +520,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
     if (initDeclarator.length != 1) {
       // Multiple declarations on a single line, ie int x = 1, y = 2;
-      throw new NotImplementedError()
+      throw new NotImplementedError(ctx.text)
     }
 
     const identifier = initDeclarator[0].declarator().text

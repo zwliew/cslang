@@ -1,4 +1,6 @@
 {
-    "restructuredtext.confPath": "",
-    "restructuredtext.linter.disabled": true
+  "restructuredtext.confPath": "",
+  "restructuredtext.linter.disabled": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false
 }
