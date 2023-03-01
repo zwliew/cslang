@@ -4,7 +4,7 @@ export const singleDeclarationTree: AstNode = {
   type: 'Declaration',
   typeSpecifier: 'int',
   identifier: 'i',
-  value: { type: 'Literal', value: 0 }
+  value: { type: 'Literal', typeSpecifier: 'int', value: 0 }
 }
 
 export const switchCaseTree: AstNode = {
@@ -12,25 +12,25 @@ export const switchCaseTree: AstNode = {
   statements: [
     {
       type: 'Switch',
-      expression: { type: 'Literal', value: 1 },
+      expression: { type: 'Literal', typeSpecifier: 'int', value: 1 },
       block: {
         type: 'Block',
         statements: [
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', value: 0 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: 0 },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', value: 0 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: 0 }
             }
           },
           { type: 'Break' },
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', value: 1 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: 1 },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', value: 7 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: 7 }
             }
           },
           { type: 'Break' },
@@ -41,7 +41,7 @@ export const switchCaseTree: AstNode = {
               expression: {
                 type: 'UnaryExpression',
                 operator: '-',
-                operand: { type: 'Literal', value: 1 }
+                operand: { type: 'Literal', typeSpecifier: 'int', value: 1 }
               }
             }
           },
@@ -57,16 +57,16 @@ export const switchCaseSimpleTree: AstNode = {
   statements: [
     {
       type: 'Switch',
-      expression: { type: 'Literal', value: 1 },
+      expression: { type: 'Literal', typeSpecifier: 'int', value: 1 },
       block: {
         type: 'Block',
         statements: [
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', value: 1 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: 1 },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', value: 1 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: 1 }
             }
           },
           { type: 'Break' }
