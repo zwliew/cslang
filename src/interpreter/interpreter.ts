@@ -2,6 +2,7 @@ import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '.
 import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 import { NotImplementedError } from '../utils/errors'
 import { Environment } from './classes/environment'
+import { FunctionStack } from './classes/function-stack'
 import { Memory, sizeOfTypes } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
@@ -10,7 +11,8 @@ import {
   SWITCH_DEFAULT_INSTRUCTION,
   UNDEFINED_LITERAL
 } from './constants'
-import { AgendaItems } from './interpreter-types'
+import { UndeclaredIdentifierError } from './errors'
+import { AgendaItems, FunctionStackAddress, MemoryAddress } from './interpreter-types'
 import {
   add,
   bitwiseAnd,
@@ -48,7 +50,7 @@ function is_true(val: Literal): boolean {
 
 // An interpreter configuration has three parts:
 // A: agenda: stack of commands
-// S: stash: stack of values
+// OS: operand stack: stack of values
 // E: environment: list of frames
 
 // The agenda A is a stack of commands that still need
@@ -64,19 +66,21 @@ function is_true(val: Literal): boolean {
 
 let A: Array<AgendaItems> = []
 
-// stash S is array of values that stores intermediate
-// results. The stash follows strict stack discipline:
+// operand stack S is array of values that stores intermediate
+// results. The operand stack follows strict stack discipline:
 // pop, push, peek at the end of the array.
 
-// Execution initializes stash S as an empty array.
+// Execution initializes operand stack S as an empty array.
 
-let S: Array<Literal>
+let OS: Array<Literal>
 
 // Execution initialize environment E as the global environment.
 
 let E: Environment
 
 let M: Memory
+
+let FS: FunctionStack
 
 const binop_microcode = {
   '+': add,
@@ -120,7 +124,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   }
 
   const result: AgendaItems[] = []
-  const switch_value = S.pop()!
+  const switch_value = OS.pop()!
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
     if (stmt.type === 'SwitchCaseBranch') {
@@ -144,7 +148,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
 }
 
 function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItems[] {
-  const result: AgendaItems[] = [{ type: 'assmt_i', identifier: assignExp.identifier }]
+  const result: AgendaItems[] = [{ type: 'value_assmt_i', identifier: assignExp.identifier }]
 
   switch (assignExp.operator) {
     case '=':
@@ -178,7 +182,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'Literal':
-      S.push(code)
+      OS.push(code)
       break
 
     case 'AssignmentExpression':
@@ -195,7 +199,7 @@ const microcode = (code: AgendaItems) => {
       E = E.extend()
       break
 
-    case 'Declaration':
+    case 'ValueDeclaration':
       E.declare(code.identifier, {
         type: 'MemoryAddress',
         typeSpecifier: code.typeSpecifier,
@@ -204,7 +208,7 @@ const microcode = (code: AgendaItems) => {
 
       if (code.value) {
         // There is a value for this declaration
-        A.push({ type: 'assmt_i', identifier: code.identifier })
+        A.push({ type: 'value_assmt_i', identifier: code.identifier })
         A.push(code.value)
       }
       break
@@ -228,8 +232,14 @@ const microcode = (code: AgendaItems) => {
       // Get the address where the value is stored on the stack
       const addr = E.get(code.identifier)
 
-      // Push the literal value onto the stash
-      S.push({ type: 'Literal', typeSpecifier: addr.typeSpecifier, value: M.getValue(addr) })
+      if (addr.type === 'MemoryAddress') {
+        // Push the literal value onto the stash
+        OS.push({ type: 'Literal', typeSpecifier: addr.typeSpecifier, value: M.getValue(addr) })
+      } else {
+        // Function calling is handled in postfixExpression
+        throw new UndeclaredIdentifierError(code.identifier)
+      }
+
       break
     }
 
@@ -263,37 +273,43 @@ const microcode = (code: AgendaItems) => {
 
     case 'UnaryExpression':
       if (code.operator === '-') {
-        S.push({ type: 'Literal', typeSpecifier: 'char', value: -1 })
+        OS.push({ type: 'Literal', typeSpecifier: 'char', value: -1 })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
       } else {
         error(code, 'Unknown command: ')
       }
       break
 
-    case 'FunctionDefinition':
-      // name, body, parameters
+    case 'FunctionDeclaration':
+      // allocate space for the function and declare it on the environment
+      E.declare(code.identifier, {
+        type: 'FunctionStackAddress',
+        location: FS.declareFunction()
+      })
+
+      // make a copy of the new environment and set the function definition
+      FS.allocateFunction(code.functionDefinition, code.identifier, E.copy())
       break
 
     /******************
      * Instructions
      *****************/
 
-    case 'assmt_i': {
+    case 'value_assmt_i': {
       // Get the address the name is refering to
-      const addr = E.get(code.identifier)
-
+      const addr = E.get(code.identifier) as MemoryAddress
       // Set the topmost literal value into memory
-      M.setValue(addr, S.at(-1)!)
+      M.setValue(addr, OS.at(-1)!)
       break
     }
 
     case 'binop_i':
-      S.push(apply_binop(code.operator, S.pop()!, S.pop()!))
+      OS.push(apply_binop(code.operator, OS.pop()!, OS.pop()!))
       break
 
     case 'branch_i':
-      console.log(`S: ${S}`)
-      if (is_true(S.pop()!)) {
+      console.log(`S: ${OS}`)
+      if (is_true(OS.pop()!)) {
         A.push(code.consequent)
       } else if (code.alternative) {
         A.push(code.alternative)
@@ -306,11 +322,11 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'pop_i':
-      S.pop()
+      OS.pop()
       break
 
     case 'while_i':
-      const pred_val = S.pop()
+      const pred_val = OS.pop()
       if (is_true(pred_val!)) {
         A.push(code, code.pred, { type: 'pop_i' }, code.body)
       }
@@ -325,7 +341,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'switch_branch_i':
-      S.push(code.switch_value)
+      OS.push(code.switch_value)
       A.push(CASE_INSTRUCTION, { type: 'binop_i', operator: '==' }, code.case)
       break
 
@@ -343,7 +359,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'case_i':
-      if (is_false(S.pop()!)) {
+      if (is_false(OS.pop()!)) {
         // Pop agenda until next case/default statement
         while (
           A.length > 0 &&
@@ -379,16 +395,18 @@ const step_limit = 1000000
 
 export const execute = (program: AstNode) => {
   A = [program]
-  S = []
+  OS = []
   E = new Environment()
+  FS = new FunctionStack()
   M = new Memory(100)
   let i = 0
   while (i < step_limit) {
     if (DEBUG_PRINT_STEPS) {
       console.log('Step', i)
       console.log(A)
-      console.log(S)
+      console.log(OS)
       console.log(E)
+      console.log(FS)
     }
     if (A.length === 0) break
 
@@ -397,11 +415,11 @@ export const execute = (program: AstNode) => {
     microcode(cmd)
     i++
   }
-  if (S.length > 1 || S.length < 1) {
-    error(S, 'internal error: stash must be singleton but is: ')
+  if (OS.length > 1 || OS.length < 1) {
+    error(OS, 'internal error: stash must be singleton but is: ')
   }
   if (DEBUG_PRINT_MEMORY) {
     M.viewMemory()
   }
-  return S[0].value
+  return OS[0].value
 }

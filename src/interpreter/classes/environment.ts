@@ -1,7 +1,7 @@
 import { RedeclarationError, UndeclaredIdentifierError } from '../errors'
-import { MemoryAddress } from '../interpreter-types'
+import { Address, FunctionStackAddress, MemoryAddress } from '../interpreter-types'
 
-type Frame = Map<string, MemoryAddress>
+type Frame = Map<string, Address>
 
 export class Environment {
   // The environment is a linked list of frames
@@ -15,7 +15,7 @@ export class Environment {
   }
 
   // Get the value of the name in the current environment
-  get(identifier: string): MemoryAddress {
+  get(identifier: string): Address {
     const value = this.frame.get(identifier)
     if (value !== undefined) {
       return value
@@ -29,7 +29,7 @@ export class Environment {
   }
 
   // Set the value of the name in the current environment
-  set(identifier: string, value: MemoryAddress) {
+  set(identifier: string, value: Address) {
     if (this.frame.has(identifier)) {
       this.frame.set(identifier, value)
       return
@@ -50,13 +50,17 @@ export class Environment {
   }
 
   // Declare a new variable
-  declare(identifier: string, memoryAddress: MemoryAddress) {
+  declare(identifier: string, address: Address) {
     // Check if declaration already exists in most the current frame
     if (this.frame.has(identifier)) {
       throw new RedeclarationError(identifier)
     }
 
     // TODO: Fix the default "NULL" value for each type
-    this.frame.set(identifier, memoryAddress)
+    this.frame.set(identifier, address)
+  }
+
+  copy(): Environment {
+    return new Environment(new Map(this.frame))
   }
 }

@@ -1,7 +1,7 @@
 import { AstNode } from '../parser/ast-types'
 
 export const singleDeclarationTree: AstNode = {
-  type: 'Declaration',
+  type: 'ValueDeclaration',
   typeSpecifier: 'int',
   identifier: 'i',
   value: { type: 'Literal', typeSpecifier: 'int', value: 0 }
@@ -71,6 +71,21 @@ export const switchCaseSimpleTree: AstNode = {
           },
           { type: 'Break' }
         ]
+      }
+    }
+  ]
+}
+
+export const simpleFunctionTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'one',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: { type: 'Block', statements: [] }
       }
     }
   ]

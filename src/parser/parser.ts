@@ -40,6 +40,7 @@ import {
   SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
+  TypeSpecifierContext,
   UnaryExpressionContext,
   UnaryOperatorContext
 } from '../lang/CParser'
@@ -50,7 +51,7 @@ import {
   AstNode,
   BinaryOperator,
   Block,
-  Declaration,
+  ValueDeclaration,
   Declarations,
   Declarator,
   Expression,
@@ -61,7 +62,8 @@ import {
   Statement,
   SwitchCase,
   TypeSpecifier,
-  UnaryOperator
+  UnaryOperator,
+  FunctionDeclaration
 } from './ast-types'
 
 export class CGenerator implements CVisitor<AstNode> {
@@ -113,7 +115,6 @@ export class CGenerator implements CVisitor<AstNode> {
 
   // zx
   visitExternalDeclaration(ctx: ExternalDeclarationContext): Declarations {
-    console.log(`From external declaration, text: ${ctx.text}`)
     // Flatten this node away
     const declaration = ctx.declaration()
     if (declaration) {
@@ -122,10 +123,6 @@ export class CGenerator implements CVisitor<AstNode> {
       return this.visitFunctionDefinition(ctx.functionDefinition()!)
     }
   }
-
-  //   // This is a stray ';'
-  //   return UNDEFINED_LITERAL
-  // }
 
   //
   //
@@ -685,7 +682,7 @@ export class CGenerator implements CVisitor<AstNode> {
   //
   //
 
-  visitDeclaration(ctx: DeclarationContext): Declaration {
+  visitDeclaration(ctx: DeclarationContext): ValueDeclaration {
     const typeSpecifier = ctx.typeSpecifier().text // TODO: Coerce into the actual class?
     const initDeclarator = ctx.initDeclaratorList().initDeclarator()
 
@@ -703,18 +700,15 @@ export class CGenerator implements CVisitor<AstNode> {
         : this.visitAssignmentExpression(initializer.assignmentExpression())
 
     return {
-      type: 'Declaration',
+      type: 'ValueDeclaration',
       typeSpecifier: typeSpecifier as TypeSpecifier,
       identifier: identifier,
       value: value
     }
   }
 
-  visitFunctionDefinition(ctx: FunctionDefinitionContext): FunctionDefinition {
-    const typeSpecifier = ctx.typeSpecifier()
-    if (typeSpecifier.length == 0) {
-      // Default to int
-    }
+  // function definitions are essentially assignments like const name = fn {code}, as if fn {code} is a lambda expression in JS
+  visitFunctionDefinition(ctx: FunctionDefinitionContext): FunctionDeclaration {
     const functionNameWithParameters = ctx.declarator().directDeclarator()
     const functionNameContext = functionNameWithParameters.directDeclarator()
     if (!functionNameContext) {
@@ -722,23 +716,53 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new Error('Invalid function declaration, parentheses missing')
     }
 
+    let returnType: TypeSpecifier
+    const typeSpecifier = ctx.typeSpecifier()
+    if (typeSpecifier.length == 0) {
+      // Default to int
+      returnType = 'int'
+    } else if (typeSpecifier.length === 1) {
+      returnType = this.typeSpecifierCtxToTypeSpecifier(typeSpecifier[0])
+    } else {
+      throw new NotImplementedError(ctx.text)
+    }
+
     const parameterTypeList = functionNameWithParameters.parameterTypeList()
     const identifierList = functionNameWithParameters.identifierList()
-    if (parameterTypeList) {
-      return {
+
+    const baseFunctionDeclaration: FunctionDeclaration = {
+      type: 'FunctionDeclaration',
+      identifier: functionNameContext.text,
+      functionDefinition: {
         type: 'FunctionDefinition',
-        name: functionNameContext.text,
-        parameters: this.visitParameterTypeList(parameterTypeList),
+        returnType: returnType,
         body: this.visitCompoundStatement(ctx.compoundStatement())
       }
+    }
+    if (parameterTypeList) {
+      baseFunctionDeclaration.functionDefinition.parameters =
+        this.visitParameterTypeList(parameterTypeList)
+      return baseFunctionDeclaration
     } else if (identifierList) {
       throw new NotImplementedError(ctx.text)
     } else {
-      return {
-        type: 'FunctionDefinition',
-        name: functionNameContext.text,
-        body: this.visitCompoundStatement(ctx.compoundStatement())
-      }
+      return baseFunctionDeclaration
+    }
+  }
+
+  typeSpecifierCtxToTypeSpecifier(ctx: TypeSpecifierContext): TypeSpecifier {
+    const text = ctx.text
+    if (
+      text === 'void' ||
+      text === 'char' ||
+      text === 'int' ||
+      text === 'long' ||
+      text === 'float' ||
+      text === 'double'
+    ) {
+      return ctx.text as TypeSpecifier
+    } else {
+      throw new NotImplementedError(ctx.text)
     }
   }
 

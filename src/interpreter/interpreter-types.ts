@@ -13,9 +13,16 @@ import { Environment } from './classes/environment'
  * Memory
  ***************/
 
+export type Address = MemoryAddress | FunctionStackAddress
+
 export interface MemoryAddress {
   type: 'MemoryAddress'
   typeSpecifier: TypeSpecifier
+  location: number
+}
+
+export interface FunctionStackAddress {
+  type: 'FunctionStackAddress'
   location: number
 }
 
@@ -30,7 +37,8 @@ interface BaseInstruction {
 }
 
 export type Instructions =
-  | iAssignment
+  | iValueAssignment
+  | iFunctionAssignment
   | iBinaryOperation
   | iIf
   | iWhileStatement
@@ -43,8 +51,13 @@ export type Instructions =
   | iBreak
   | iCase
 
-export interface iAssignment extends BaseInstruction {
-  type: 'assmt_i'
+export interface iValueAssignment extends BaseInstruction {
+  type: 'value_assmt_i'
+  identifier: string
+}
+
+export interface iFunctionAssignment extends BaseInstruction {
+  type: 'function_assmt_i'
   identifier: string
 }
 

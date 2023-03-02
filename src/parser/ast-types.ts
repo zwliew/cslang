@@ -182,23 +182,24 @@ export interface Return extends BaseStatement {
 //
 
 // TODO: separate into sections
-export type Declarations =
-  | Declaration
-  | FunctionDefinition
-  | ParameterList
-  | ParameterDeclaration
-  | Declarator
+export type Declarations = Declaration | ParameterList | ParameterDeclaration | Declarator
 
-export interface Declaration extends BaseNode {
-  type: 'Declaration'
+export type Declaration = ValueDeclaration | FunctionDeclaration
+export interface ValueDeclaration extends BaseNode {
+  type: 'ValueDeclaration'
   typeSpecifier: TypeSpecifier // TODO: Have a proper list of types
   identifier: string
   value?: Expression
 }
 
+export interface FunctionDeclaration extends BaseNode {
+  type: 'FunctionDeclaration'
+  identifier: string
+  functionDefinition: FunctionDefinition
+}
 export interface FunctionDefinition extends BaseNode {
   type: 'FunctionDefinition'
-  name: string
+  returnType: TypeSpecifier
   parameters?: ParameterList
   body: Block
 }
