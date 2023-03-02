@@ -1,4 +1,3 @@
-import { cslangRunner } from '../runner/runner'
 import { runTests } from './utils'
 
 const singleDeclaration = [`int i = 0;`, 0]
@@ -11,7 +10,7 @@ int k = 2;
   1
 ]
 
-const semicolon = [`;`, undefined]
+const semicolon = [`;`, 0]
 
 const helloWorld = [
   `
@@ -20,7 +19,7 @@ main()
   printf("Hello world!");
 }
 `,
-  undefined
+  0
 ]
 
 const topLevelDeclarationWithExpression = [`int x = 3 + 3;`, 6]

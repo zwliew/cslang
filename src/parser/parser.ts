@@ -3,6 +3,7 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
+import { UNDEFINED_LITERAL } from '../interpreter/constants'
 
 import { CLexer } from '../lang/CLexer'
 import {
@@ -20,6 +21,7 @@ import {
   ExclusiveOrExpressionContext,
   ExpressionContext,
   ExpressionStatementContext,
+  ExternalDeclarationContext,
   InclusiveOrExpressionContext,
   IterationStatementContext,
   JumpStatementContext,
@@ -538,6 +540,21 @@ export class CGenerator implements CVisitor<AstNode> {
       identifier: identifier,
       value: value
     }
+  }
+
+  visitExternalDeclaration(ctx: ExternalDeclarationContext): AstNode {
+    const declaration = ctx.declaration()
+    if (declaration) {
+      return this.visitDeclaration(declaration)
+    }
+
+    const functionDefinition = ctx.functionDefinition()
+    if (functionDefinition) {
+      throw new NotImplementedError(ctx.text)
+    }
+
+    // This is a stray ';'
+    return UNDEFINED_LITERAL
   }
 }
 
