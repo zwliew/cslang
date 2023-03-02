@@ -12,16 +12,19 @@ import {
   AssignmentExpressionContext,
   BlockItemContext,
   CastExpressionContext,
+  CompilationUnitContext,
   CompoundStatementContext,
   ConditionalExpressionContext,
   ConstantExpressionContext,
   CParser,
   DeclarationContext,
+  DeclaratorContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
   ExpressionContext,
   ExpressionStatementContext,
   ExternalDeclarationContext,
+  FunctionDefinitionContext,
   InclusiveOrExpressionContext,
   IterationStatementContext,
   JumpStatementContext,
@@ -29,6 +32,8 @@ import {
   LogicalAndExpressionContext,
   LogicalOrExpressionContext,
   MultiplicativeExpressionContext,
+  ParameterDeclarationContext,
+  ParameterTypeListContext,
   PostfixExpressionContext,
   PrimaryExpressionContext,
   RelationalExpressionContext,
@@ -46,8 +51,13 @@ import {
   BinaryOperator,
   Block,
   Declaration,
+  Declarations,
+  Declarator,
   Expression,
+  FunctionDefinition,
   If,
+  ParameterDeclaration,
+  ParameterList,
   Statement,
   SwitchCase,
   TypeSpecifier,
@@ -63,6 +73,11 @@ export class CGenerator implements CVisitor<AstNode> {
     // From what I can tell, if we don't override one of the visitors for a rule,
     // It would use this visit method instead.
     console.warn('[Warn] Using undefined visitor method! ' + node.constructor.name)
+    // console.warn(`Number of children: ${node.childCount}`)
+    // console.warn(`Text: ${node.text}`)
+    // for (let i = 0; i < node.childCount; i++) {
+    //   console.warn(`Child ${i}: ${node.getChild(i).text}`)
+    // }
 
     // Just return the first child for now
     return node.getChild(0).accept(this)
@@ -77,6 +92,40 @@ export class CGenerator implements CVisitor<AstNode> {
   visitErrorNode(node: ErrorNode): AstNode {
     throw 'Visited ErrorNode: ' + JSON.stringify(node)
   }
+
+  visitCompilationUnit(ctx: CompilationUnitContext): AstNode {
+    const compoundStatement = ctx.compoundStatement()
+    const externalDeclarations = ctx.externalDeclaration()
+    if (compoundStatement) {
+      return this.visitCompoundStatement(compoundStatement)
+    } else if (externalDeclarations.length > 0) {
+      return {
+        type: 'CompilationUnit',
+        declarations: externalDeclarations.map(externalDeclaration =>
+          this.visitExternalDeclaration(externalDeclaration)
+        )
+      }
+    } else {
+      // Empty string
+      return UNDEFINED_LITERAL
+    }
+  }
+
+  // zx
+  visitExternalDeclaration(ctx: ExternalDeclarationContext): Declarations {
+    console.log(`From external declaration, text: ${ctx.text}`)
+    // Flatten this node away
+    const declaration = ctx.declaration()
+    if (declaration) {
+      return this.visitDeclaration(declaration)
+    } else {
+      return this.visitFunctionDefinition(ctx.functionDefinition()!)
+    }
+  }
+
+  //   // This is a stray ';'
+  //   return UNDEFINED_LITERAL
+  // }
 
   //
   //
@@ -527,6 +576,18 @@ export class CGenerator implements CVisitor<AstNode> {
       return {
         type: 'Break'
       }
+    } else if (ctx.Return()) {
+      const expression = ctx.expression()
+      if (expression) {
+        return {
+          type: 'Return',
+          expression: this.visitExpression(expression)
+        }
+      } else {
+        return {
+          type: 'Return'
+        }
+      }
     } else {
       throw new NotImplementedError(ctx.text)
     }
@@ -550,8 +611,6 @@ export class CGenerator implements CVisitor<AstNode> {
       const expression = this.visitExpression(ctx.expression())
       // There must be only one statement, which is the compound statement in {}
       const switchBlock = this.visitCompoundStatement(ctx.statement()[0].compoundStatement()!)
-      // .blockItem()
-      // .map(blockItem => this.visitBlockItem(blockItem))
       return {
         type: 'Switch',
         expression: expression,
@@ -651,19 +710,85 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitExternalDeclaration(ctx: ExternalDeclarationContext): AstNode {
-    const declaration = ctx.declaration()
-    if (declaration) {
-      return this.visitDeclaration(declaration)
+  visitFunctionDefinition(ctx: FunctionDefinitionContext): FunctionDefinition {
+    const typeSpecifier = ctx.typeSpecifier()
+    if (typeSpecifier.length == 0) {
+      // Default to int
+    }
+    const functionNameWithParameters = ctx.declarator().directDeclarator()
+    const functionNameContext = functionNameWithParameters.directDeclarator()
+    if (!functionNameContext) {
+      // Invalid declaration
+      throw new Error('Invalid function declaration, parentheses missing')
     }
 
-    const functionDefinition = ctx.functionDefinition()
-    if (functionDefinition) {
+    const parameterTypeList = functionNameWithParameters.parameterTypeList()
+    const identifierList = functionNameWithParameters.identifierList()
+    if (parameterTypeList) {
+      return {
+        type: 'FunctionDefinition',
+        name: functionNameContext.text,
+        parameters: this.visitParameterTypeList(parameterTypeList),
+        body: this.visitCompoundStatement(ctx.compoundStatement())
+      }
+    } else if (identifierList) {
+      throw new NotImplementedError(ctx.text)
+    } else {
+      return {
+        type: 'FunctionDefinition',
+        name: functionNameContext.text,
+        body: this.visitCompoundStatement(ctx.compoundStatement())
+      }
+    }
+  }
+
+  visitParameterTypeList(ctx: ParameterTypeListContext): ParameterList {
+    console.log(`In ParameterTypeList: ${ctx}`)
+    const parameterList: ParameterList = {
+      type: 'ParameterList',
+      parameters: ctx
+        .parameterList()
+        .parameterDeclaration()
+        .map(parameterDeclaration => this.visitParameterDeclaration(parameterDeclaration))
+    }
+
+    if (ctx.Ellipsis()) {
+      // TODO: add a varargs: true property to the visited ParameterList
       throw new NotImplementedError(ctx.text)
     }
 
-    // This is a stray ';'
-    return UNDEFINED_LITERAL
+    return parameterList
+  }
+
+  visitParameterDeclaration(ctx: ParameterDeclarationContext): ParameterDeclaration {
+    if (ctx.abstractDeclarator()) {
+      throw new NotImplementedError(ctx.text)
+    }
+    const typeSpecifier = ctx.typeSpecifier()
+    if (typeSpecifier.length != 1) {
+      throw new NotImplementedError(ctx.text)
+    }
+
+    return {
+      type: 'ParameterDeclaration',
+      typeSpecifier: typeSpecifier[0].text as TypeSpecifier,
+      name: this.visitDeclarator(ctx.declarator()!)
+    }
+  }
+
+  visitDeclarator(ctx: DeclaratorContext): Declarator {
+    if (ctx.pointer()) {
+      throw new NotImplementedError(ctx.text)
+    }
+    const identifier = ctx.directDeclarator().Identifier()
+    if (!identifier) {
+      throw new NotImplementedError(ctx.text)
+    }
+    return {
+      type: 'Declarator',
+      name: identifier.text,
+      pointerDepth: 0
+    }
   }
 }
 

@@ -2,7 +2,12 @@ interface BaseNode {
   type: string
 }
 
-export type AstNode = Expression | Statement | Declaration
+export interface CompilationUnit extends BaseNode {
+  type: 'CompilationUnit'
+  declarations: Array<Declarations>
+}
+
+export type AstNode = CompilationUnit | Expression | Statement | Declarations
 
 //
 //
@@ -107,8 +112,9 @@ export type Statement =
   | SwitchCase
   | Switch
   | WhileStatement
+  | Break
   | DoWhileStatement
-  | Jump
+  | Return
 
 export interface ExpressionStatement extends BaseStatement {
   type: 'ExpressionStatement'
@@ -160,8 +166,13 @@ export interface DoWhileStatement extends BaseStatement {
   body: Statement
 }
 
-export interface Jump extends BaseStatement {
+export interface Break extends BaseStatement {
   type: 'Break'
+}
+
+export interface Return extends BaseStatement {
+  type: 'Return'
+  expression?: Expression
 }
 
 //
@@ -170,11 +181,45 @@ export interface Jump extends BaseStatement {
 //
 //
 
-export interface Declaration {
+// TODO: separate into sections
+export type Declarations =
+  | Declaration
+  | FunctionDefinition
+  | ParameterList
+  | ParameterDeclaration
+  | Declarator
+
+export interface Declaration extends BaseNode {
   type: 'Declaration'
   typeSpecifier: TypeSpecifier // TODO: Have a proper list of types
   identifier: string
   value?: Expression
+}
+
+export interface FunctionDefinition extends BaseNode {
+  type: 'FunctionDefinition'
+  name: string
+  parameters?: ParameterList
+  body: Block
+}
+
+export interface ParameterList extends BaseNode {
+  type: 'ParameterList'
+  parameters: Array<ParameterDeclaration>
+  // varargs: boolean
+}
+
+export interface ParameterDeclaration extends BaseNode {
+  type: 'ParameterDeclaration'
+  typeSpecifier: TypeSpecifier
+  name: Declarator
+}
+
+// A Declaration can consist of multiple Declarators. In `int x = 0`, `int x` is the Declarator
+export interface Declarator extends BaseNode {
+  type: 'Declarator'
+  name: string
+  pointerDepth: number // * = 1, ** = 2 etc.
 }
 
 export type TypeSpecifier =

@@ -1,5 +1,8 @@
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
+import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 import { NotImplementedError } from '../utils/errors'
+import { Environment } from './classes/environment'
+import { Memory, sizeOfTypes } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
   CASE_INSTRUCTION,
@@ -7,9 +10,7 @@ import {
   SWITCH_DEFAULT_INSTRUCTION,
   UNDEFINED_LITERAL
 } from './constants'
-import { Environment } from './classes/environment'
 import { AgendaItems } from './interpreter-types'
-import { Memory, sizeOfTypes } from './classes/memory'
 import {
   add,
   bitwiseAnd,
@@ -28,7 +29,6 @@ import {
   rightShift,
   subtract
 } from './operations'
-import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
@@ -172,6 +172,11 @@ function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItem
 
 const microcode = (code: AgendaItems) => {
   switch (code.type) {
+    case 'CompilationUnit':
+      // TODO: After all declarations, call main with argc and argv
+      A.push(...code.declarations.slice().reverse())
+      break
+
     case 'Literal':
       S.push(code)
       break
@@ -263,6 +268,10 @@ const microcode = (code: AgendaItems) => {
       } else {
         error(code, 'Unknown command: ')
       }
+      break
+
+    case 'FunctionDefinition':
+      // name, body, parameters
       break
 
     /******************

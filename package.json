@@ -1,5 +1,5 @@
 {
-  "name": "calc-slang",
+  "name": "cslang",
   "version": "1.0.10",
   "license": "Apache-2.0",
   "description": "Calc language as a start point for CS4215's project",
@@ -39,7 +39,7 @@
     "calc-slang": "dist/repl/repl.js"
   },
   "scripts": {
-    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o ./",
+    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o ./src/lang/",
     "autocomplete": "node ./scripts/updateAutocompleteDocs.js",
     "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn tsc --build --force",

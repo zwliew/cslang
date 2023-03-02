@@ -84,5 +84,35 @@ export const bitwiseXor = `{
 }`
 
 export const whileLoop = `{
-    while (0) {}
+  while (0) {}
 }`
+
+// Function declarations without type default to int
+export const fnDeclarationWithoutType = `{
+  notype() {
+    return 0;
+  }
+}`
+
+export const simpleFunction = `int one() {}`
+
+// Should return 7
+export const fnDeclaration = `int main() {
+  return 7;
+}`
+
+// Should return 7
+export const fnApplication = `int seven() {
+  return 7;
+}
+int main() {
+  return seven();
+}
+`
+
+// Should return 7
+export const globalDeclaration = `int x = 7;
+int main() {
+  return x;
+}
+`
