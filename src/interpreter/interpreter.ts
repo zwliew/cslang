@@ -11,6 +11,7 @@ import { Environment } from './classes/environment'
 import { AgendaItems } from './interpreter-types'
 import { Memory, sizeOfTypes } from './classes/memory'
 import { add, divide, equals, mod, multiply, subtract } from './operations'
+import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 
 function error(val: any, message: string) {
   throw message + JSON.stringify(val)
@@ -201,8 +202,7 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'WhileStatement':
-      // Note: statements don't leave anything in the operand stash
-      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
+      A.push(UNDEFINED_LITERAL, { type: 'while_i', pred: code.pred, body: code.body }, code.pred)
       break
 
     case 'Switch':
@@ -338,10 +338,12 @@ export const execute = (program: AstNode) => {
   M = new Memory(100)
   let i = 0
   while (i < step_limit) {
-    // console.log('Step', i)
-    // console.log(A)
-    // console.log(S)
-    // console.log(E)
+    if (DEBUG_PRINT_STEPS) {
+      console.log('Step', i)
+      console.log(A)
+      console.log(S)
+      console.log(E)
+    }
     if (A.length === 0) break
 
     // Agenda will always have items on it
@@ -352,6 +354,8 @@ export const execute = (program: AstNode) => {
   if (S.length > 1 || S.length < 1) {
     error(S, 'internal error: stash must be singleton but is: ')
   }
-  M.viewMemory()
-  return console.log(S[0])
+  if (DEBUG_PRINT_MEMORY) {
+    M.viewMemory()
+  }
+  return S[0].value
 }

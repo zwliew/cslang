@@ -4,7 +4,7 @@ const whileLoop = [
   `{
   while (0) {}
 }`,
-  undefined
+  0
 ]
 
 runTests([whileLoop])

@@ -1,6 +1,5 @@
 import { runTests } from './utils'
 
-// evaluates to 1
 const trueConditional = [
   `{
   if (2) {
@@ -12,7 +11,6 @@ const trueConditional = [
   1
 ]
 
-// should evaluate to 1
 const falseConditional = [
   `{
   if (0) {
@@ -21,7 +19,7 @@ const falseConditional = [
     0;
   }
 }`,
-  1
+  0
 ]
 
 // Should evaluate to 7
@@ -39,7 +37,7 @@ const switchCase = [
       break;
   }
 }`,
-  1
+  7
 ]
 
 const switchCaseSimple = [

@@ -1,3 +1,5 @@
+import { runTests } from './utils'
+
 const bitwiseOr = [
   `{
   2 | 4;

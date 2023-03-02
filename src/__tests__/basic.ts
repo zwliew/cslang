@@ -1,14 +1,14 @@
 import { cslangRunner } from '../runner/runner'
 import { runTests } from './utils'
 
-const singleDeclaration = [`int i = 0;`, undefined]
+const singleDeclaration = [`int i = 0;`, 0]
 
 const multipleDeclaration = [
   `
 int j = 1;
 int k = 2;
 `,
-  undefined
+  1
 ]
 
 const semicolon = [`;`, undefined]
@@ -23,7 +23,7 @@ main()
   undefined
 ]
 
-const topLevelDeclarationWithExpression = [`int x = 3 + 3;`, undefined]
+const topLevelDeclarationWithExpression = [`int x = 3 + 3;`, 6]
 
 const topLevelExpression = [`3 + 3;`, undefined]
 
