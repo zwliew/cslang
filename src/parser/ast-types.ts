@@ -107,6 +107,7 @@ export type Statement =
   | SwitchCase
   | Switch
   | WhileStatement
+  | DoWhileStatement
   | Jump
 
 export interface ExpressionStatement extends BaseStatement {
@@ -149,6 +150,12 @@ export interface Block extends BaseStatement {
 // Loops
 export interface WhileStatement extends BaseStatement {
   type: 'WhileStatement'
+  pred: Expression
+  body: Statement
+}
+
+export interface DoWhileStatement extends BaseStatement {
+  type: 'DoWhileStatement'
   pred: Expression
   body: Statement
 }

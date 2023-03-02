@@ -7,4 +7,11 @@ const whileLoop = [
   0
 ]
 
-runTests([whileLoop])
+const doWhileLoop = [
+  `{
+  do {} while (0);
+}`,
+  0
+]
+
+runTests([whileLoop, doWhileLoop])

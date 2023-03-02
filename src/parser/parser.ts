@@ -495,14 +495,20 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitIterationStatement(ctx: IterationStatementContext): Statement {
-    if (ctx.While()) {
+    if (ctx.Do()) {
+      return {
+        type: 'DoWhileStatement',
+        pred: this.visitExpression(ctx.expression()!) as Expression, // expression should be defined for do-while
+        body: this.visitStatement(ctx.statement()) as Statement
+      }
+    } else if (ctx.While()) {
       return {
         type: 'WhileStatement',
         pred: this.visitExpression(ctx.expression()!) as Expression, // expression should be defined for while
         body: this.visitStatement(ctx.statement()) as Statement
       }
     } else {
-      // TODO: implement for and do-while loops
+      // TODO: implement for loops
       throw new NotImplementedError(ctx.text)
     }
   }

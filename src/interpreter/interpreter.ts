@@ -205,6 +205,16 @@ const microcode = (code: AgendaItems) => {
       A.push(UNDEFINED_LITERAL, { type: 'while_i', pred: code.pred, body: code.body }, code.pred)
       break
 
+    case 'DoWhileStatement':
+      A.push(
+        UNDEFINED_LITERAL,
+        { type: 'while_i', pred: code.pred, body: code.body },
+        code.pred,
+        POP_INSTRUCTION,
+        code.body
+      )
+      break
+
     case 'Switch':
       A.push({ type: 'switch_env_i', environment: E })
       A.push({ type: 'switch_i', block: code.block }, code.expression)
