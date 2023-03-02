@@ -10,7 +10,24 @@ import {
 import { Environment } from './classes/environment'
 import { AgendaItems } from './interpreter-types'
 import { Memory, sizeOfTypes } from './classes/memory'
-import { add, divide, equals, mod, multiply, subtract } from './operations'
+import {
+  add,
+  bitwiseAnd,
+  bitwiseOr,
+  bitwiseXor,
+  divide,
+  equals,
+  greaterThan,
+  greaterThanOrEqual,
+  leftShift,
+  lessThan,
+  lessThanOrEqual,
+  mod,
+  multiply,
+  notEquals,
+  rightShift,
+  subtract
+} from './operations'
 import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 
 function error(val: any, message: string) {
@@ -67,7 +84,17 @@ const binop_microcode = {
   '*': multiply,
   '/': divide,
   '%': mod,
-  '==': equals
+  '==': equals,
+  '!=': notEquals,
+  '<': lessThan,
+  '>': greaterThan,
+  '<=': lessThanOrEqual,
+  '>=': greaterThanOrEqual,
+  '|': bitwiseOr,
+  '&': bitwiseAnd,
+  '^': bitwiseXor,
+  '<<': leftShift,
+  '>>': rightShift
 }
 
 const apply_binop = (op: BinaryOperator, v2: Literal, v1: Literal) => binop_microcode[op](v1, v2)

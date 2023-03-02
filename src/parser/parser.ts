@@ -161,69 +161,171 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): AstNode {
+  visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): Expression {
     const exclusiveOrExpression = ctx.exclusiveOrExpression()
     if (exclusiveOrExpression.length === 1) {
-      return exclusiveOrExpression[0].accept(this)
+      return this.visitExclusiveOrExpression(exclusiveOrExpression[0])
     } else {
       // Bitwise or (|)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: '|',
+        left: this.visitExclusiveOrExpression(exclusiveOrExpression[0]),
+        right: this.visitExclusiveOrExpression(exclusiveOrExpression[1])
+      }
+
+      for (let i = 2; i < exclusiveOrExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: '|',
+          left: expression,
+          right: this.visitExclusiveOrExpression(exclusiveOrExpression[i])
+        }
+      }
+      return expression
     }
   }
 
-  visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): AstNode {
+  visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): Expression {
     const andExpression = ctx.andExpression()
     if (andExpression.length === 1) {
-      return andExpression[0].accept(this)
+      return this.visitAndExpression(andExpression[0])
     } else {
       // Bitwise xor (^)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: '^',
+        left: this.visitAndExpression(andExpression[0]),
+        right: this.visitAndExpression(andExpression[1])
+      }
+
+      for (let i = 2; i < andExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: '^',
+          left: expression,
+          right: this.visitAndExpression(andExpression[i])
+        }
+      }
+      return expression
     }
   }
 
-  visitAndExpression(ctx: AndExpressionContext): AstNode {
+  visitAndExpression(ctx: AndExpressionContext): Expression {
     const equalityExpression = ctx.equalityExpression()
     if (equalityExpression.length === 1) {
-      return equalityExpression[0].accept(this)
+      return this.visitEqualityExpression(equalityExpression[0])
     } else {
       // Bitwise and (&)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: '&',
+        left: this.visitEqualityExpression(equalityExpression[0]),
+        right: this.visitEqualityExpression(equalityExpression[1])
+      }
+
+      for (let i = 2; i < equalityExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: '&',
+          left: expression,
+          right: this.visitEqualityExpression(equalityExpression[i])
+        }
+      }
+      return expression
     }
   }
 
-  visitEqualityExpression(ctx: EqualityExpressionContext): AstNode {
+  visitEqualityExpression(ctx: EqualityExpressionContext): Expression {
     const relationalExpression = ctx.relationalExpression()
     if (relationalExpression.length === 1) {
-      return relationalExpression[0].accept(this)
+      return this.visitRelationalExpression(relationalExpression[0])
     } else {
       // Equality comparison (==, !=)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: ctx.getChild(1).text as BinaryOperator,
+        left: this.visitRelationalExpression(relationalExpression[0]),
+        right: this.visitRelationalExpression(relationalExpression[1])
+      }
+
+      for (let i = 2; i < relationalExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
+          left: expression,
+          right: this.visitRelationalExpression(relationalExpression[i])
+        }
+      }
+      return expression
     }
   }
 
-  visitRelationalExpression(ctx: RelationalExpressionContext): AstNode {
+  visitRelationalExpression(ctx: RelationalExpressionContext): Expression {
     const shiftExpression = ctx.shiftExpression()
     if (shiftExpression.length === 1) {
-      return shiftExpression[0].accept(this)
+      return this.visitShiftExpression(shiftExpression[0])
     } else {
       // Relational comparison (<, >, <=, >=)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: ctx.getChild(1).text as BinaryOperator,
+        left: this.visitShiftExpression(shiftExpression[0]),
+        right: this.visitShiftExpression(shiftExpression[1])
+      }
+
+      for (let i = 2; i < shiftExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
+          left: expression,
+          right: this.visitShiftExpression(shiftExpression[i])
+        }
+      }
+      return expression
     }
   }
 
-  visitShiftExpression(ctx: ShiftExpressionContext): AstNode {
+  visitShiftExpression(ctx: ShiftExpressionContext): Expression {
     const additiveExpression = ctx.additiveExpression()
     if (additiveExpression.length === 1) {
-      return additiveExpression[0].accept(this)
+      return this.visitAdditiveExpression(additiveExpression[0])
     } else {
       // Bitshift (<<, >>)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      // There may be more than one set.
+      // Assume these operations are left associative
+
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: ctx.getChild(1).text as BinaryOperator,
+        left: this.visitAdditiveExpression(additiveExpression[0]),
+        right: this.visitAdditiveExpression(additiveExpression[1])
+      }
+
+      for (let i = 2; i < additiveExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: ctx.getChild(2 * i - 1).text as BinaryOperator,
+          left: expression,
+          right: this.visitAdditiveExpression(additiveExpression[i])
+        }
+      }
+      return expression
     }
   }
 

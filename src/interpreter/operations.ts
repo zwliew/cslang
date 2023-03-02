@@ -79,3 +79,83 @@ export function equals(left: Literal, right: Literal): Literal {
     value: left.value === right.value ? 1 : 0
   }
 }
+
+export function notEquals(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value !== right.value ? 1 : 0
+  }
+}
+
+export function lessThan(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value < right.value ? 1 : 0
+  }
+}
+
+export function greaterThan(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value > right.value ? 1 : 0
+  }
+}
+
+export function greaterThanOrEqual(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value >= right.value ? 1 : 0
+  }
+}
+
+export function lessThanOrEqual(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: '_Bool',
+    value: left.value <= right.value ? 1 : 0
+  }
+}
+
+export function bitwiseOr(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
+    value: left.value | right.value
+  }
+}
+
+export function bitwiseAnd(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
+    value: left.value & right.value
+  }
+}
+
+export function bitwiseXor(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
+    value: left.value ^ right.value
+  }
+}
+
+export function leftShift(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
+    value: left.value << right.value
+  }
+}
+
+export function rightShift(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
+    value: left.value >> right.value
+  }
+}
