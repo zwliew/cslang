@@ -34,6 +34,8 @@ The usual dev workflow is:
 3. Run `yarn runner-test "test program name here"` or `yarn parser-test "test program name here"` to test your changes.
 4. Repeat steps 2 and 3.
 
+**Everything below might be outdated**
+
 To build,
 
 ```{.}
@@ -78,6 +80,25 @@ Hint: In `bash` you can take the `PROGRAM_STRING` out of a file as follows:
 $ calc-slang -n -e "$(< my_source_program.js)"
 ```
 
+# Git workflow guide
+
+**Simplest way**
+1. Before starting dev, rebase your branch on top of main (to ensure that you have synced all the changes from main)
+2. Code and create your commits
+3. git merge your commits to main locally without the merge commit
+4. git push the main branch
+
+Example:
+1. git checkout ownBranch -> git fetch main -> git rebase main
+3. git checkout main -> git merge ownBranch
+
+**Shawn's way**
+Same as above, up until step 2.
+3. git push your branch
+4. On GitHub, create a PR from your branch to main and add notes as you please
+5. Merge the pull request (without the merge commit)
+
+
 # Documentation
 
 Source is documented here: [https://docs.sourceacademy.org/](https://docs.sourceacademy.org/)
@@ -121,6 +142,14 @@ edit `src/editors/ace/docTooltip/index.ts`
 and `./scripts/updateAutocompleteDocs.py`.
 
 # Testing
+
+To run the test cases, run the following command:
+
+```bash
+$ yarn test
+```
+
+**Everything below might be outdated**
 
 `js-slang` comes with an extensive test suite. To run the tests after you made
 your modifications, run `yarn test`. Regression tests are run automatically when
