@@ -1,4 +1,4 @@
-import { runTests } from './utils'
+import { FAIL_RESULT, runTests } from './utils'
 
 const singleDeclaration = [`int i = 0;`, 0]
 
@@ -24,7 +24,7 @@ main()
 
 const topLevelDeclarationWithExpression = [`int x = 3 + 3;`, 6]
 
-const topLevelExpression = [`3 + 3;`, undefined]
+const topLevelExpression = [`3 + 3;`, FAIL_RESULT]
 
 runTests([
   singleDeclaration,
