@@ -74,6 +74,7 @@ import { StaticAssertDeclarationContext } from "./CParser";
 import { StatementContext } from "./CParser";
 import { LabeledStatementContext } from "./CParser";
 import { CompoundStatementContext } from "./CParser";
+import { BlockItemListContext } from "./CParser";
 import { BlockItemContext } from "./CParser";
 import { ExpressionStatementContext } from "./CParser";
 import { SelectionStatementContext } from "./CParser";
@@ -593,6 +594,13 @@ export interface CVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitCompoundStatement?: (ctx: CompoundStatementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `CParser.blockItemList`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBlockItemList?: (ctx: BlockItemListContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `CParser.blockItem`.

@@ -322,9 +322,13 @@ labeledStatement:
 	| 'case' constantExpression ':' statement
 	| 'default' ':' statement;
 
-compoundStatement: '{' blockItem+ '}';
+compoundStatement
+    :   '{' blockItemList? '}'
+    ;
 
-// blockItemList: blockItem+;
+blockItemList
+    :   blockItem+
+    ;
 
 blockItem: statement | declaration;
 

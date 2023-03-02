@@ -74,6 +74,7 @@ import { StaticAssertDeclarationContext } from "./CParser";
 import { StatementContext } from "./CParser";
 import { LabeledStatementContext } from "./CParser";
 import { CompoundStatementContext } from "./CParser";
+import { BlockItemListContext } from "./CParser";
 import { BlockItemContext } from "./CParser";
 import { ExpressionStatementContext } from "./CParser";
 import { SelectionStatementContext } from "./CParser";
@@ -874,6 +875,17 @@ export interface CListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitCompoundStatement?: (ctx: CompoundStatementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `CParser.blockItemList`.
+	 * @param ctx the parse tree
+	 */
+	enterBlockItemList?: (ctx: BlockItemListContext) => void;
+	/**
+	 * Exit a parse tree produced by `CParser.blockItemList`.
+	 * @param ctx the parse tree
+	 */
+	exitBlockItemList?: (ctx: BlockItemListContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `CParser.blockItem`.

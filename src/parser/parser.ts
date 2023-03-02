@@ -378,9 +378,10 @@ export class CGenerator implements CVisitor<AstNode> {
   //
 
   visitCompoundStatement(ctx: CompoundStatementContext): Block {
+    const blockItemList = ctx.blockItemList()?.blockItem() ?? []
     return {
       type: 'Block',
-      statements: ctx.blockItem().map(v => v.accept(this)) as Statement[]
+      statements: blockItemList.map(v => v.accept(this)) as Statement[]
     }
   }
 
