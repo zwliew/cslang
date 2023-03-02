@@ -217,13 +217,14 @@ alignmentSpecifier:
 
 declarator: pointer? directDeclarator gccDeclaratorExtension*;
 
-directDeclarator: Identifier;
-// | '(' declarator ')' | directDeclarator '[' typeQualifierList? assignmentExpression? ']' |
-// directDeclarator '[' 'static' typeQualifierList? assignmentExpression ']' | directDeclarator '['
-// typeQualifierList 'static' assignmentExpression ']' | directDeclarator '[' typeQualifierList? '*'
-// ']' | directDeclarator '(' parameterTypeList ')' | directDeclarator '(' identifierList? ')' |
-// Identifier ':' DigitSequence // bit field | vcSpecificModifer Identifier // Visual C Extension |
-// '(' vcSpecificModifer declarator ')'; // Visual C Extension
+directDeclarator:
+	Identifier
+	| directDeclarator '[' typeQualifierList? assignmentExpression? ']';
+// | '(' declarator ')' | directDeclarator '[' 'static' typeQualifierList? assignmentExpression ']'
+// | directDeclarator '[' typeQualifierList 'static' assignmentExpression ']' | directDeclarator '['
+// typeQualifierList? '*' ']' | directDeclarator '(' parameterTypeList ')' | directDeclarator '('
+// identifierList? ')' | Identifier ':' DigitSequence // bit field | vcSpecificModifer Identifier //
+// Visual C Extension | '(' vcSpecificModifer declarator ')'; // Visual C Extension
 
 vcSpecificModifer: (
 		'__cdecl'
