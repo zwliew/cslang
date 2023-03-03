@@ -1,6 +1,6 @@
-import { FAIL_RESULT, runTests } from './utils'
+import { FAIL_RESULT, JestTestCase, runTests } from '../utils/jest-utils'
 
-const singleDeclaration = [`{int i = 0;}`, 0]
+const singleDeclaration: JestTestCase = [`{int i = 0;}`, 0]
 
 const multipleDeclaration = [
   `
@@ -29,11 +29,12 @@ const topLevelDeclarationWithExpression = [`int x = 3 + 3; main() {}`, undefined
 
 const topLevelExpression = [`3 + 3;`, FAIL_RESULT]
 
-runTests([
+export const basicTests = {
   singleDeclaration,
   multipleDeclaration,
   semicolon,
   helloWorld,
   topLevelDeclarationWithExpression,
   topLevelExpression
-])
+}
+runTests(basicTests)

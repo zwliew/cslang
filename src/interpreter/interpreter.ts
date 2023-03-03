@@ -326,9 +326,7 @@ const microcode = (code: AgendaItems) => {
     case 'Return':
       // TODO: tag this to signify it is a return value
       // TODO: typechecking
-      console.log(`At Return`)
       while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
-        console.log(`Popping ${JSON.stringify(A.at(-1)!)}`)
         A.pop()
       }
       if (code.expression) {

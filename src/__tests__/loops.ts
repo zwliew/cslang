@@ -1,4 +1,4 @@
-import { runTests } from './utils'
+import { runTests } from '../utils/jest-utils'
 
 const whileLoop = [
   `{
@@ -14,4 +14,4 @@ const doWhileLoop = [
   0
 ]
 
-runTests([whileLoop, doWhileLoop])
+runTests({ whileLoop, doWhileLoop })

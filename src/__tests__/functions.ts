@@ -1,4 +1,4 @@
-import { FAIL_RESULT, runTests } from './utils'
+import { FAIL_RESULT, runTests } from '../utils/jest-utils'
 
 const redeclareArguments = [
   `hasarg(int x) {
@@ -17,7 +17,8 @@ main() {
   return 2;
   int y = 3;
 }
-`
+`,
+  2
 ]
 
 // Function declarations without type default to int
@@ -56,4 +57,13 @@ int main() {
   7
 ]
 
-runTests([fnDeclarationWithoutType, fnDeclaration, fnApplication, globalDeclaration])
+export const functionTests = {
+  redeclareArguments,
+  returnInterruptsFlow,
+  fnDeclarationWithoutType,
+  fnDeclaration,
+  fnApplication,
+  globalDeclaration
+}
+
+runTests(functionTests)

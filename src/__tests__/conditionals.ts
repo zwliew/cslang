@@ -1,4 +1,4 @@
-import { runTests } from './utils'
+import { runTests } from '../utils/jest-utils'
 
 const trueConditional = [
   `{
@@ -58,4 +58,4 @@ const ternaryOperator = [
   1
 ]
 
-runTests([trueConditional, falseConditional, switchCase, switchCaseSimple, ternaryOperator])
+runTests({ trueConditional, falseConditional, switchCase, switchCaseSimple, ternaryOperator })

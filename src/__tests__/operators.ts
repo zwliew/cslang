@@ -1,4 +1,4 @@
-import { runTests } from './utils'
+import { runTests } from '../utils/jest-utils'
 
 const inclusiveOrExpression = [
   `{
@@ -119,7 +119,7 @@ const falseGreaterThanOrEqualExpression = [
   0
 ]
 
-runTests([
+runTests({
   inclusiveOrExpression,
   andExpression,
   exclusiveOrExpression,
@@ -137,4 +137,4 @@ runTests([
   falseGreaterThanOrEqualExpression,
   trueLessThanOrEqualExpression,
   falseLessThanOrEqualExpression
-])
+})
