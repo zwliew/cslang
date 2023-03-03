@@ -12,7 +12,7 @@ import {
   UNDEFINED_LITERAL
 } from './constants'
 import { UndeclaredIdentifierError } from './errors'
-import { AgendaItems, FunctionStackAddress, MemoryAddress } from './interpreter-types'
+import { AgendaItems, MemoryAddress } from './interpreter-types'
 import {
   add,
   bitwiseAnd,
@@ -176,6 +176,9 @@ function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItem
 
 const microcode = (code: AgendaItems) => {
   switch (code.type) {
+    case 'StraySemicolon':
+      break
+
     case 'CompilationUnit':
       // TODO: After all declarations, call main with argc and argv
       A.push(...code.declarations.slice().reverse())
@@ -281,6 +284,10 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'FunctionDeclaration':
+      // Call main if a main is declared
+      if (code.identifier === 'main') {
+        A.push({ type: 'app_i', identifier: 'main', arity: 0 })
+      }
       // allocate space for the function and declare it on the environment
       E.declare(code.identifier, {
         type: 'FunctionStackAddress',
@@ -291,15 +298,73 @@ const microcode = (code: AgendaItems) => {
       FS.allocateFunction(code.functionDefinition, code.identifier, E.copy())
       break
 
+    case 'FunctionApplication':
+      A.push({ type: 'app_i', identifier: code.identifier, arity: code.arguments.length })
+      const parameterList = FS.getFunctionAndEnv(code.identifier)[0].parameterList
+      if (parameterList) {
+        const parameters = parameterList.parameters.map(parameterDeclaration => ({
+          typeSpecifier: parameterDeclaration.typeSpecifier,
+          name: parameterDeclaration.name.name
+        }))
+        // Push arguments in reverse order. OS will have arguments in the correct order
+        for (let i = 0; i < code.arguments.length; i++) {
+          E.declare(parameters[i].name, {
+            type: 'MemoryAddress',
+            typeSpecifier: parameters[i].typeSpecifier,
+            location: M.allocateStack(sizeOfTypes[parameters[i].typeSpecifier])
+          })
+
+          A.push(
+            { type: 'value_assmt_i', identifier: parameters[i].name },
+            code.arguments[code.arguments.length - i - 1]
+          )
+        }
+      }
+
+      break
+
+    case 'Return':
+      // TODO: tag this to signify it is a return value
+      // TODO: typechecking
+      console.log(`At Return`)
+      while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
+        console.log(`Popping ${JSON.stringify(A.at(-1)!)}`)
+        A.pop()
+      }
+      if (code.expression) {
+        A.push(code.expression)
+      }
+      break
+
     /******************
      * Instructions
      *****************/
 
+    case 'app_i':
+      const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
+      const functionArguments = []
+      for (let i = 0; i < code.arity; i++) {
+        // Makes a copy of each value
+        functionArguments.push(OS.pop())
+      }
+      // Save the current environment
+      A.push({ type: 'fn_env_i', environment: E })
+      // Extend the environment with a frame mapping from parameter to argument value
+      E.extend()
+      A.push(...functionAndEnv[0].body.slice().reverse())
+      break
+
     case 'value_assmt_i': {
       // Get the address the name is refering to
       const addr = E.get(code.identifier) as MemoryAddress
-      // Set the topmost literal value into memory
-      M.setValue(addr, OS.at(-1)!)
+      let value
+      if (E.isGlobal()) {
+        value = OS.pop()!
+      } else {
+        // Set the topmost literal value into memory
+        value = OS.at(-1)!
+      }
+      M.setValue(addr, value)
       break
     }
 
@@ -308,7 +373,6 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'branch_i':
-      console.log(`S: ${OS}`)
       if (is_true(OS.pop()!)) {
         A.push(code.consequent)
       } else if (code.alternative) {
@@ -317,6 +381,8 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'env_i':
+    case 'switch_env_i':
+    case 'fn_env_i':
       // TODO: Reinstate stack pointer for the memory
       E = code.environment
       break
@@ -330,10 +396,6 @@ const microcode = (code: AgendaItems) => {
       if (is_true(pred_val!)) {
         A.push(code, code.pred, { type: 'pop_i' }, code.body)
       }
-      break
-
-    case 'switch_env_i':
-      E = code.environment
       break
 
     case 'switch_i':
@@ -415,7 +477,10 @@ export const execute = (program: AstNode) => {
     microcode(cmd)
     i++
   }
-  if (OS.length > 1 || OS.length < 1) {
+  if (OS.length < 1) {
+    return undefined
+  }
+  if (OS.length > 1) {
     error(OS, 'internal error: stash must be singleton but is: ')
   }
   if (DEBUG_PRINT_MEMORY) {

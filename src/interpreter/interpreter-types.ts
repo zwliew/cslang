@@ -43,6 +43,7 @@ export type Instructions =
   | iIf
   | iWhileStatement
   | iRestoreEnvironment
+  | iFunctionEnvironment
   | iPop
   | iSwitchEnv
   | iSwitch
@@ -50,6 +51,7 @@ export type Instructions =
   | iSwitchDefault
   | iBreak
   | iCase
+  | iFunctionApplication
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
@@ -73,6 +75,11 @@ export interface iIf extends BaseInstruction {
 
 export interface iRestoreEnvironment extends BaseInstruction {
   type: 'env_i'
+  environment: Environment
+}
+
+export interface iFunctionEnvironment extends BaseInstruction {
+  type: 'fn_env_i'
   environment: Environment
 }
 
@@ -112,4 +119,10 @@ export interface iBreak extends BaseInstruction {
 
 export interface iCase extends BaseInstruction {
   type: 'case_i'
+}
+
+export interface iFunctionApplication extends BaseInstruction {
+  type: 'app_i'
+  identifier: string
+  arity: number
 }

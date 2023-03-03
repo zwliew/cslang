@@ -3,8 +3,8 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
-import { UNDEFINED_LITERAL } from '../interpreter/constants'
 
+import { STRAY_SEMICOLON, UNDEFINED_LITERAL } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
 import {
   AdditiveExpressionContext,
@@ -51,11 +51,10 @@ import {
   AstNode,
   BinaryOperator,
   Block,
-  ValueDeclaration,
   Declarations,
   Declarator,
   Expression,
-  FunctionDefinition,
+  FunctionDeclaration,
   If,
   ParameterDeclaration,
   ParameterList,
@@ -63,7 +62,7 @@ import {
   SwitchCase,
   TypeSpecifier,
   UnaryOperator,
-  FunctionDeclaration
+  ValueDeclaration
 } from './ast-types'
 
 export class CGenerator implements CVisitor<AstNode> {
@@ -108,19 +107,24 @@ export class CGenerator implements CVisitor<AstNode> {
         )
       }
     } else {
-      // Empty string
-      return UNDEFINED_LITERAL
+      // Invalid program string
+      // return UNDEFINED_LITERAL
+      throw new NotImplementedError(ctx.text)
     }
   }
 
-  // zx
   visitExternalDeclaration(ctx: ExternalDeclarationContext): Declarations {
     // Flatten this node away
     const declaration = ctx.declaration()
+    const functionDefinition = ctx.functionDefinition()
     if (declaration) {
       return this.visitDeclaration(declaration)
+    } else if (functionDefinition) {
+      return this.visitFunctionDefinition(functionDefinition)
     } else {
-      return this.visitFunctionDefinition(ctx.functionDefinition()!)
+      // stray ;
+      return STRAY_SEMICOLON
+      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -479,7 +483,25 @@ export class CGenerator implements CVisitor<AstNode> {
   visitPostfixExpression(ctx: PostfixExpressionContext): AstNode {
     const primaryExpression = ctx.primaryExpression()
     if (primaryExpression) {
-      return primaryExpression.accept(this)
+      if (ctx.LeftParen().length > 0) {
+        // Is function application
+        const functionArguments = []
+        const argumentExpressionList = ctx.argumentExpressionList()
+        if (argumentExpressionList.length === 1) {
+          for (const assignmentExpression of argumentExpressionList[0].assignmentExpression()) {
+            functionArguments.push(this.visitAssignmentExpression(assignmentExpression))
+          }
+        }
+
+        return {
+          type: 'FunctionApplication',
+          identifier: primaryExpression.text,
+          arguments: functionArguments
+        }
+      } else {
+        // Flatten
+        return primaryExpression.accept(this)
+      }
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
       // TODO: implement parsing
@@ -531,6 +553,11 @@ export class CGenerator implements CVisitor<AstNode> {
       type: 'Block',
       statements: blockItemList.map(v => v.accept(this)) as Statement[]
     }
+  }
+
+  extractFromCompoundStatement(ctx: CompoundStatementContext): Array<Statement> {
+    const blockItemList = ctx.blockItemList()?.blockItem() ?? []
+    return blockItemList.map(v => v.accept(this)) as Statement[]
   }
 
   visitStatement(ctx: StatementContext): AstNode {
@@ -736,11 +763,11 @@ export class CGenerator implements CVisitor<AstNode> {
       functionDefinition: {
         type: 'FunctionDefinition',
         returnType: returnType,
-        body: this.visitCompoundStatement(ctx.compoundStatement())
+        body: this.extractFromCompoundStatement(ctx.compoundStatement())
       }
     }
     if (parameterTypeList) {
-      baseFunctionDeclaration.functionDefinition.parameters =
+      baseFunctionDeclaration.functionDefinition.parameterList =
         this.visitParameterTypeList(parameterTypeList)
       return baseFunctionDeclaration
     } else if (identifierList) {
@@ -767,7 +794,6 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitParameterTypeList(ctx: ParameterTypeListContext): ParameterList {
-    console.log(`In ParameterTypeList: ${ctx}`)
     const parameterList: ParameterList = {
       type: 'ParameterList',
       parameters: ctx

@@ -1,18 +1,36 @@
-import { runTests } from './utils'
+import { FAIL_RESULT, runTests } from './utils'
+
+const redeclareArguments = [
+  `hasarg(int x) {
+    int x = 1;
+  }
+  main() {
+    hasarg(2);
+  }`,
+  FAIL_RESULT
+]
+
+const returnInterruptsFlow = [
+  `
+main() {
+  int x = 1;
+  return 2;
+  int y = 3;
+}
+`
+]
 
 // Function declarations without type default to int
 const fnDeclarationWithoutType = [
-  `{
-  notype() {
-    return 0;
+  `notype() {
+    return 7;
   }
-}`,
-  undefined
+  main() {
+    return notype();
+  }`,
+  7
 ]
 
-const simpleFunction = [`int one() {}`, undefined]
-
-// Should return 7
 const fnDeclaration = [
   `int main() {
   return 7;
@@ -20,18 +38,16 @@ const fnDeclaration = [
   7
 ]
 
-// Should return 7
 const fnApplication = [
-  `int seven() {
-  return 7;
+  `int plusThree(int x) {
+  return x + 3;
 }
 int main() {
-  return seven();
+  return plusThree(4);
 }`,
   7
 ]
 
-// Should return 7
 const globalDeclaration = [
   `int x = 7;
 int main() {
@@ -40,10 +56,4 @@ int main() {
   7
 ]
 
-runTests([
-  fnDeclarationWithoutType,
-  simpleFunction,
-  fnDeclaration,
-  // fnApplication,
-  globalDeclaration
-])
+runTests([fnDeclarationWithoutType, fnDeclaration, fnApplication, globalDeclaration])

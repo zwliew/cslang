@@ -18,8 +18,9 @@ export type AstNode = CompilationUnit | Expression | Statement | Declarations
 interface ExpressionMap {
   AssignmentExpression: AssignmentExpression
   BinaryExpression: BinaryExpression
-  //   ConditionalExpression: ConditionalExpression
+  // ConditionalExpression: ConditionalExpression
   Identifier: Identifier
+  FunctionApplciation: FunctionApplication
   Literal: Literal
   //   LogicalExpression: LogicalExpression
   UnaryExpression: UnaryExpression
@@ -47,6 +48,12 @@ export interface BinaryExpression extends BaseExpression {
 export interface Identifier extends BaseExpression {
   type: 'Identifier'
   identifier: string
+}
+
+export interface FunctionApplication extends BaseExpression {
+  type: 'FunctionApplication'
+  identifier: string
+  arguments: Array<Expression>
 }
 
 export interface Literal extends BaseExpression {
@@ -182,7 +189,13 @@ export interface Return extends BaseStatement {
 //
 
 // TODO: separate into sections
-export type Declarations = Declaration | ParameterList | ParameterDeclaration | Declarator
+export type Declarations =
+  | Declaration
+  | ParameterList
+  | ParameterDeclaration
+  | Declarator
+  | StraySemicolon
+export type StraySemicolon = { type: 'StraySemicolon' }
 
 export type Declaration = ValueDeclaration | FunctionDeclaration
 export interface ValueDeclaration extends BaseNode {
@@ -200,8 +213,8 @@ export interface FunctionDeclaration extends BaseNode {
 export interface FunctionDefinition extends BaseNode {
   type: 'FunctionDefinition'
   returnType: TypeSpecifier
-  parameters?: ParameterList
-  body: Block
+  parameterList?: ParameterList
+  body: Array<Statement>
 }
 
 export interface ParameterList extends BaseNode {

@@ -12,7 +12,7 @@ main()
 }
 `
 
-export const topLevelDeclarationWithExpression = `int x = 3 + 3;`
+export const topLevelDeclarationWithExpression = `int x = 3 + 3; main() {}`
 
 export const topLevelExpression = `3 + 3;`
 
@@ -88,11 +88,17 @@ export const whileLoop = `{
 }`
 
 // Function declarations without type default to int
-export const fnDeclarationWithoutType = `{
+export const fnDeclarationWithoutType = `
   notype() {
     return 0;
   }
-}`
+`
+
+export const fnDeclarationWithArguments = `
+  plusThree(int x) {
+    return x+3;
+  }
+`
 
 export const simpleFunction = `int one() {}`
 
@@ -106,9 +112,20 @@ export const fnApplication = `int seven() {
   return 7;
 }
 int main() {
-  return seven();
+  seven();
 }
 `
+
+// Should return 7
+export const fnApplicationWithArguments = `int plusThree(int x) {
+  return x+3;
+}
+int main() {
+  plusThree(4);
+}
+`
+
+// `int x = plusThree;`
 
 // Should return 7
 export const globalDeclaration = `int x = 7;
@@ -116,3 +133,41 @@ int main() {
   return x;
 }
 `
+
+export const redeclareArguments = `hasarg(int x) {
+  int x = 1;
+}
+main() {
+  hasarg(2);
+}`
+
+export const returnInterruptsFlow = `
+main() {
+  int x = 1;
+  return 2;
+  int y = 3;
+}
+`
+
+export const ifInFunction = `
+other() {
+  if (1 == 1) {
+    return 2;
+  }
+  return 3;
+}
+main() {
+  return other();
+}`
+
+export const breakInWhileFunction = `
+other() {
+  break;
+}
+main() {
+  while (1) {
+    other();
+    break;
+  }
+  return 1;
+}`

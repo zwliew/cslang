@@ -90,3 +90,152 @@ export const simpleFunctionTree = {
     }
   ]
 }
+
+export const fnDeclarationWithArgumentsTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'plusThree',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: {
+          type: 'Block',
+          statements: [
+            {
+              type: 'Return',
+              expression: {
+                type: 'BinaryExpression',
+                operator: '+',
+                left: { type: 'Identifier', identifier: 'x' },
+                right: { type: 'Literal', typeSpecifier: 'int', value: 3 }
+              }
+            }
+          ]
+        },
+        parameters: {
+          type: 'ParameterList',
+          parameters: [
+            {
+              type: 'ParameterDeclaration',
+              typeSpecifier: 'int',
+              name: { type: 'Declarator', name: 'x', pointerDepth: 0 }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+
+export const fnDeclarationTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'main',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: {
+          type: 'Block',
+          statements: [
+            {
+              type: 'Return',
+              expression: { type: 'Literal', typeSpecifier: 'int', value: 7 }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+
+export const fnApplicationWithArgumentsTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'plusThree',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: {
+          type: 'Block',
+          statements: [
+            {
+              type: 'Return',
+              expression: {
+                type: 'BinaryExpression',
+                operator: '+',
+                left: { type: 'Identifier', identifier: 'x' },
+                right: { type: 'Literal', typeSpecifier: 'int', value: 3 }
+              }
+            }
+          ]
+        },
+        parameterList: {
+          type: 'ParameterList',
+          parameters: [
+            {
+              type: 'ParameterDeclaration',
+              typeSpecifier: 'int',
+              name: { type: 'Declarator', name: 'x', pointerDepth: 0 }
+            }
+          ]
+        }
+      }
+    },
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'main',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: {
+          type: 'Block',
+          statements: [
+            {
+              type: 'ExpressionStatement',
+              expression: {
+                type: 'FunctionApplication',
+                identifier: 'plusThree',
+                arguments: [{ type: 'Literal', typeSpecifier: 'int', value: 4 }]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+
+export const globalDeclarationTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'ValueDeclaration',
+      typeSpecifier: 'int',
+      identifier: 'x',
+      value: { type: 'Literal', typeSpecifier: 'int', value: 7 }
+    },
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'main',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: {
+          type: 'Block',
+          statements: [
+            {
+              type: 'Return',
+              expression: { type: 'Identifier', identifier: 'x' }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

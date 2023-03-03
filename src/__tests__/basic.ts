@@ -1,17 +1,20 @@
 import { FAIL_RESULT, runTests } from './utils'
 
-const singleDeclaration = [`int i = 0;`, 0]
+const singleDeclaration = [`{int i = 0;}`, 0]
 
 const multipleDeclaration = [
   `
+{
 int j = 1;
 int k = 2;
+}
 `,
-  1
+  2
 ]
 
-const semicolon = [`;`, 0]
+const semicolon = [`;`, undefined]
 
+// Strings are not implemented
 const helloWorld = [
   `
 main()
@@ -19,10 +22,10 @@ main()
   printf("Hello world!");
 }
 `,
-  0
+  FAIL_RESULT
 ]
 
-const topLevelDeclarationWithExpression = [`int x = 3 + 3;`, 6]
+const topLevelDeclarationWithExpression = [`int x = 3 + 3; main() {}`, undefined]
 
 const topLevelExpression = [`3 + 3;`, FAIL_RESULT]
 

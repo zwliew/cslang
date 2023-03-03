@@ -1,7 +1,7 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
-import { Literal, TypeSpecifier } from '../../parser/ast-types'
+import { Literal } from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'

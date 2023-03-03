@@ -63,4 +63,8 @@ export class Environment {
   copy(): Environment {
     return new Environment(new Map(this.frame))
   }
+
+  isGlobal(): boolean {
+    return this.parent === undefined
+  }
 }
