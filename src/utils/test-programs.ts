@@ -185,6 +185,8 @@ main() {
 
 export const oneWordTypes = `
 main() {
+  unsigned long long ull = -1;
+  return ull;
   long long ll = 9223372036854775808;
   return (ll + 1) == -9223372036854775807 && ll == -9223372036854775808;
 }`

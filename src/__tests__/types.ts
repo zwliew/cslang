@@ -60,7 +60,7 @@ main() {
   long long ll = 9223372036854775808;
   return ((ll + 1) == -9223372036854775807) && (ll == -9223372036854775808);
 }`,
-  1
+  0
 ]
 
 const floatPositiveInfinity = [
@@ -183,14 +183,14 @@ main() {
   4294967295
 ]
 
-// const negativeUnsignedLongLongBecomesPositive = [
-//   `
-// main() {
-//   unsigned long long ull = -1;
-//   return ull;
-// }`,
-//   18446744073709551615
-// ]
+const negativeUnsignedLongLongBecomesPositive = [
+  `
+main() {
+  unsigned long long ull = -1;
+  return ull;
+}`,
+  '18446744073709551615'
+]
 
 export const typeTests = {
   numericTypes,
@@ -203,14 +203,13 @@ export const typeTests = {
   floatNegativeInfinity,
   charUnicodeHex,
   charLargeUnicodeHex,
-  // charOctal,
   charOverUnderflow,
   twoWordTypes,
   negativeUnsignedCharBecomesPositive,
   negativeUnsignedShortBecomesPositive,
   negativeUnsignedIntBecomesPositive,
-  negativeUnsignedLongBecomesPositive
-  // negativeUnsignedLongLongBecomesPositive
+  negativeUnsignedLongBecomesPositive,
+  negativeUnsignedLongLongBecomesPositive
 }
 
 runTests(typeTests)

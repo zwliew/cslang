@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js'
+
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
 import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
 import { NotImplementedError } from '../utils/errors'
@@ -38,7 +40,7 @@ function error(val: any, message: string) {
 }
 
 function is_false(val: Literal): boolean {
-  return val.value == 0
+  return new Decimal(0).equals(val.value)
 }
 
 function is_true(val: Literal): boolean {
@@ -278,7 +280,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'UnaryExpression':
       if (code.operator === '-') {
-        OS.push({ type: 'Literal', typeSpecifier: 'int', value: -1 })
+        OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(-1) })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
       } else {
         error(code, 'Unknown command: ')

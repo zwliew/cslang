@@ -1,6 +1,8 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
+import Decimal from 'decimal.js'
+
 import { Literal, TypeSpecifier } from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
@@ -94,7 +96,7 @@ export class Memory {
     return this.heapIndex
   }
 
-  getValue(memAdd: MemoryAddress): number {
+  getValue(memAdd: MemoryAddress): Decimal {
     const byteOffset = memAdd.location
 
     const typeToGetDataFunction: { [typeSpecifier in TypeSpecifier]: Function } = {
@@ -112,8 +114,8 @@ export class Memory {
       'unsigned char': this.data.getUint8,
       long: this.data.getInt32,
       'unsigned long': this.data.getUint32,
-      'long long': (byteOffset: number) => Number(this.data.getBigInt64(byteOffset)),
-      'unsigned long long': (byteOffset: number) => Number(this.data.getBigUint64(byteOffset)),
+      'long long': (byteOffset: number) => this.data.getBigInt64(byteOffset),
+      'unsigned long long': (byteOffset: number) => this.data.getBigUint64(byteOffset),
       float: this.data.getFloat32,
       double: this.data.getFloat64,
       'long double': () => {
@@ -121,7 +123,9 @@ export class Memory {
       }
     }
 
-    return typeToGetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset)
+    return new Decimal(
+      typeToGetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset).toString()
+    )
   }
 
   setValue(memAdd: MemoryAddress, value: Literal): void {

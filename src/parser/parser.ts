@@ -3,6 +3,7 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
+import Decimal from 'decimal.js'
 
 import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
@@ -542,7 +543,7 @@ export class CGenerator implements CVisitor<AstNode> {
         return {
           type: 'Literal',
           typeSpecifier: 'char',
-          value: charWithoutQuotes.charCodeAt(0)
+          value: new Decimal(charWithoutQuotes.charCodeAt(0))
         }
       }
       // Verify characters to be numeric, "e" or "."
@@ -566,7 +567,7 @@ export class CGenerator implements CVisitor<AstNode> {
           return {
             type: 'Literal',
             typeSpecifier: 'float',
-            value: floatValue
+            value: new Decimal(floatValue)
           }
         }
       } else {
@@ -575,7 +576,7 @@ export class CGenerator implements CVisitor<AstNode> {
           return {
             type: 'Literal',
             typeSpecifier: 'int',
-            value: intValue
+            value: new Decimal(intValue)
           }
         }
       }
@@ -583,6 +584,7 @@ export class CGenerator implements CVisitor<AstNode> {
       const stringLiteral = ctx.StringLiteral()
       if (stringLiteral.length === 1) {
         // Is a string literal
+        throw new NotImplementedError(ctx.text)
       }
 
       throw new NotImplementedError(ctx.text)

@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js'
+
 import { cslangRunner } from '../runner/runner'
 
 export const FAIL_RESULT = '<jest-test-case> FAILURE'
@@ -10,8 +12,10 @@ export function runTests(testCases: any) {
         expect(() => {
           cslangRunner(testCases[testName][0])
         }).toThrow()
-      } else {
+      } else if (testCases[testName][1] === undefined) {
         expect(cslangRunner(testCases[testName][0])).toEqual(testCases[testName][1])
+      } else {
+        expect(cslangRunner(testCases[testName][0])).toEqual(new Decimal(testCases[testName][1]))
       }
     })
     // test('parse ' + testName, () => {

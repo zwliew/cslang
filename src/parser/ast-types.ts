@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js'
+
 interface BaseNode {
   type: string
 }
@@ -59,7 +61,7 @@ export interface FunctionApplication extends BaseExpression {
 export interface Literal extends BaseExpression {
   type: 'Literal'
   typeSpecifier: TypeSpecifier
-  value: number
+  value: Decimal
 }
 
 export interface UnaryExpression extends BaseExpression {

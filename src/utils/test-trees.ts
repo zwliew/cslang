@@ -1,10 +1,12 @@
+import Decimal from 'decimal.js'
+
 import { AstNode } from '../parser/ast-types'
 
 export const singleDeclarationTree: AstNode = {
   type: 'ValueDeclaration',
   typeSpecifier: 'int',
   identifier: 'i',
-  value: { type: 'Literal', typeSpecifier: 'int', value: 0 }
+  value: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) }
 }
 
 export const switchCaseTree: AstNode = {
@@ -12,25 +14,25 @@ export const switchCaseTree: AstNode = {
   statements: [
     {
       type: 'Switch',
-      expression: { type: 'Literal', typeSpecifier: 'int', value: 1 },
+      expression: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) },
       block: {
         type: 'Block',
         statements: [
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', typeSpecifier: 'int', value: 0 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', typeSpecifier: 'int', value: 0 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) }
             }
           },
           { type: 'Break' },
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', typeSpecifier: 'int', value: 1 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', typeSpecifier: 'int', value: 7 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(7) }
             }
           },
           { type: 'Break' },
@@ -41,7 +43,7 @@ export const switchCaseTree: AstNode = {
               expression: {
                 type: 'UnaryExpression',
                 operator: '-',
-                operand: { type: 'Literal', typeSpecifier: 'int', value: 1 }
+                operand: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) }
               }
             }
           },
@@ -57,16 +59,16 @@ export const switchCaseSimpleTree: AstNode = {
   statements: [
     {
       type: 'Switch',
-      expression: { type: 'Literal', typeSpecifier: 'int', value: 1 },
+      expression: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) },
       block: {
         type: 'Block',
         statements: [
           {
             type: 'SwitchCaseBranch',
-            case: { type: 'Literal', typeSpecifier: 'int', value: 1 },
+            case: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) },
             consequent: {
               type: 'ExpressionStatement',
-              expression: { type: 'Literal', typeSpecifier: 'int', value: 1 }
+              expression: { type: 'Literal', typeSpecifier: 'int', value: new Decimal(1) }
             }
           },
           { type: 'Break' }
