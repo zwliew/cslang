@@ -1,8 +1,8 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
-import { Literal } from '../../parser/ast-types'
-import { IllegalArgumentError, NotImplementedError } from '../../utils/errors'
+import { Literal, TypeSpecifier } from '../../parser/ast-types'
+import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
 
@@ -16,7 +16,8 @@ export const sizeOfTypes = {
   int: 4,
   long: 4,
   float: 4,
-  double: 8
+  double: 8,
+  longdouble: 16
 }
 
 /**
@@ -55,7 +56,7 @@ export class Memory {
     if (bytes <= 0) {
       throw new IllegalArgumentError('Provided argument should be positive.')
     }
-    const temp = this.stackIndex
+    const allocatedMemoryAddress = this.stackIndex
 
     // We want our variables to be word aligned
     this.stackIndex += align(bytes)
@@ -64,7 +65,7 @@ export class Memory {
       throw new StackOverflow()
     }
 
-    return temp
+    return allocatedMemoryAddress
   }
 
   reinstateStackPointer(index: number): void {
@@ -96,31 +97,63 @@ export class Memory {
   getValue(memAdd: MemoryAddress): number {
     const byteOffset = memAdd.location
 
-    switch (memAdd.typeSpecifier) {
-      case 'int':
-        return this.data.getInt32(byteOffset)
-
-      case '_Bool':
-        return this.data.getInt8(byteOffset)
-
-      default:
-        throw new NotImplementedError('Other types are not yet implemented')
+    const typeToGetDataFunction: { [typeSpecifier in TypeSpecifier]: Function } = {
+      void: () => {
+        throw new SetVoidValueError()
+      },
+      _Bool: this.data.getInt8,
+      short: this.data.getInt16,
+      'unsigned short': this.data.getUint16,
+      signed: this.data.getInt32,
+      int: this.data.getInt32,
+      'unsigned int': this.data.getUint32,
+      unsigned: this.data.getUint32,
+      char: this.data.getInt8,
+      'unsigned char': this.data.getUint8,
+      long: this.data.getInt32,
+      'unsigned long': this.data.getUint32,
+      'long long': (byteOffset: number) => Number(this.data.getBigInt64(byteOffset)),
+      'unsigned long long': (byteOffset: number) => Number(this.data.getBigUint64(byteOffset)),
+      float: this.data.getFloat32,
+      double: this.data.getFloat64,
+      'long double': () => {
+        throw new NotImplementedError('long double is not implemented yet')
+      }
     }
+
+    return typeToGetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset)
   }
 
   setValue(memAdd: MemoryAddress, value: Literal): void {
     const byteOffset = memAdd.location
 
-    switch (memAdd.typeSpecifier) {
-      case 'int':
-        return this.data.setInt32(byteOffset, value.value)
-
-      case '_Bool':
-        return this.data.setInt8(byteOffset, value.value)
-
-      default:
-        throw new NotImplementedError('Other types are not yet implemented')
+    const typeToSetDataFunction: { [typeSpecifier in TypeSpecifier]: Function } = {
+      void: () => {
+        throw new SetVoidValueError()
+      },
+      _Bool: this.data.setInt8,
+      short: this.data.setInt16,
+      'unsigned short': this.data.setUint16,
+      signed: this.data.setInt32,
+      int: this.data.setInt32,
+      'unsigned int': this.data.setUint32,
+      unsigned: this.data.setUint32,
+      char: this.data.setInt8,
+      'unsigned char': this.data.setUint8,
+      long: this.data.setInt32,
+      'unsigned long': this.data.setUint32,
+      'long long': (byteOffset: number, numberValue: number) =>
+        this.data.setBigInt64(byteOffset, BigInt(numberValue)),
+      'unsigned long long': (byteOffset: number, numberValue: number) =>
+        this.data.setBigUint64(byteOffset, BigInt(numberValue)),
+      float: this.data.setFloat32,
+      double: this.data.setFloat64,
+      'long double': () => {
+        throw new NotImplementedError('long double is not implemented yet')
+      }
     }
+
+    return typeToSetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset, value.value)
   }
 
   viewMemory(): void {

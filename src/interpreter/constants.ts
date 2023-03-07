@@ -11,6 +11,12 @@ export const UNDEFINED_LITERAL: Literal = {
   value: 0
 }
 
+export const INFINITY: Literal = {
+  type: 'Literal',
+  typeSpecifier: 'float',
+  value: Infinity
+}
+
 export const BREAK_INSTRUCTION: iBreak = { type: 'break_i' }
 
 export const CASE_INSTRUCTION: iCase = { type: 'case_i' }

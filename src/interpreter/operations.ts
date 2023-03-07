@@ -1,7 +1,16 @@
 import { Literal, TypeSpecifier } from '../parser/ast-types'
 import { InvalidOperation } from './errors'
 
-const hierarchy: TypeSpecifier[] = ['_Bool', 'char', 'int', 'float']
+const hierarchy: TypeSpecifier[] = [
+  '_Bool',
+  'char',
+  'short',
+  'int',
+  'unsigned int',
+  'long',
+  'long long',
+  'float'
+]
 const rank = (type: TypeSpecifier) => hierarchy.indexOf(type)
 const floatingPointRank = rank('float')
 
@@ -117,6 +126,14 @@ export function lessThanOrEqual(left: Literal, right: Literal): Literal {
     type: 'Literal',
     typeSpecifier: '_Bool',
     value: left.value <= right.value ? 1 : 0
+  }
+}
+
+export function logicalAnd(left: Literal, right: Literal): Literal {
+  return {
+    type: 'Literal',
+    typeSpecifier: 'int',
+    value: left.value && right.value ? 1 : 0
   }
 }
 

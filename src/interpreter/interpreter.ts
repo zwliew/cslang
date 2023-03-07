@@ -25,6 +25,7 @@ import {
   leftShift,
   lessThan,
   lessThanOrEqual,
+  logicalAnd,
   mod,
   multiply,
   notEquals,
@@ -94,6 +95,7 @@ const binop_microcode = {
   '>': greaterThan,
   '<=': lessThanOrEqual,
   '>=': greaterThanOrEqual,
+  '&&': logicalAnd,
   '|': bitwiseOr,
   '&': bitwiseAnd,
   '^': bitwiseXor,
@@ -276,7 +278,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'UnaryExpression':
       if (code.operator === '-') {
-        OS.push({ type: 'Literal', typeSpecifier: 'char', value: -1 })
+        OS.push({ type: 'Literal', typeSpecifier: 'int', value: -1 })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
       } else {
         error(code, 'Unknown command: ')

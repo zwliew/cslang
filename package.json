@@ -23,6 +23,7 @@
     "acorn-walk": "^8.0.0",
     "antlr4ts": "^0.5.0-alpha.4",
     "astring": "^1.4.3",
+    "decimal.js": "^10.4.3",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "gpu.js": "^2.10.4",
     "lodash": "^4.17.20",
@@ -59,7 +60,8 @@
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
     "parser-test": "node ./dist/utils/parser-test.js",
-    "interpreter-test": "node ./dist/utils/interpreter-test.js"
+    "interpreter-test": "node ./dist/utils/interpreter-test.js",
+    "runner-test": "node ./dist/utils/runner-test.js"
   },
   "repository": {
     "type": "git",

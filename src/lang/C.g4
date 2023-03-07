@@ -156,19 +156,15 @@ expression: assignmentExpression (',' assignmentExpression)*;
 
 constantExpression: conditionalExpression;
 
-declaration: typeSpecifier initDeclaratorList ';';
+declaration: declarationSpecifiers initDeclaratorList ';';
 // | staticAssertDeclaration;
 
-// declarationSpecifiers: declarationSpecifier+;
+declarationSpecifiers: declarationSpecifier+;
 
 // declarationSpecifiers2: declarationSpecifier+;
 
-declarationSpecifier:
-	storageClassSpecifier
-	| typeSpecifier
-	| typeQualifier
-	| functionSpecifier
-	| alignmentSpecifier;
+declarationSpecifier: typeSpecifier;
+// | storageClassSpecifier | typeQualifier | functionSpecifier | alignmentSpecifier;
 
 initDeclaratorList: initDeclarator (',' initDeclarator)*;
 

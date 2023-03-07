@@ -239,3 +239,35 @@ export const globalDeclarationTree = {
     }
   ]
 }
+
+export const allDeclarationsTree = {
+  type: 'CompilationUnit',
+  declarations: [
+    {
+      type: 'FunctionDeclaration',
+      identifier: 'main',
+      functionDefinition: {
+        type: 'FunctionDefinition',
+        returnType: 'int',
+        body: [
+          {
+            type: 'ValueDeclaration',
+            typeSpecifier: 'int',
+            identifier: 'i',
+            value: { type: 'Literal', typeSpecifier: 'int', value: 1 }
+          },
+          {
+            type: 'ValueDeclaration',
+            typeSpecifier: 'float',
+            identifier: 'f',
+            value: { type: 'Literal', typeSpecifier: 'float', value: 2.2 }
+          },
+          {
+            type: 'ExpressionStatement',
+            expression: { type: 'Identifier', identifier: 'f' }
+          }
+        ]
+      }
+    }
+  ]
+}

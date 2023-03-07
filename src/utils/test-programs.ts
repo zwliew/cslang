@@ -171,3 +171,50 @@ main() {
   }
   return 1;
 }`
+
+export const numberDeclarations = `
+main() {
+  short s = 1;
+  int i = 2;
+  long l = 3;
+  float f = 4.4;
+  double d = 5.5;
+  d + 6.6;
+}
+`
+
+export const oneWordTypes = `
+main() {
+  long long ll = 9223372036854775808;
+  return (ll + 1) == -9223372036854775807 && ll == -9223372036854775808;
+}`
+
+// `
+// main() {
+//   unsigned long long ull = -1;
+//   return ull;
+// }`
+
+export const twoWordTypes = `
+main() {
+  signed char sc = 255;
+  unsigned char uc = -1;
+  short int si = -32767;
+  signed short int ssi = 32768;
+  unsigned short us = -2;
+  unsigned short int usi = -3;
+  signed int si2 = 32767;
+  unsigned int ui = -5;
+  long int li = 2147483647;
+  signed long sl = -2147483647;
+  signed long int sli = 2147483648;
+  unsigned long ul = -6;
+  unsigned long int uli = -7;
+  long long ll = 9223372036854775807;
+  long long int lli = -9223372036854775807;
+  signed long long sll = 9223372036854775808;
+  signed long long int slli = -9223372036854775808;
+  unsigned long long ull = -8;
+  unsigned long long int ulli = -9;
+  return ulli;
+}`

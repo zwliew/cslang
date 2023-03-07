@@ -4,7 +4,7 @@ import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 
-import { STRAY_SEMICOLON, UNDEFINED_LITERAL } from '../interpreter/constants'
+import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
 import {
   AdditiveExpressionContext,
@@ -45,6 +45,7 @@ import {
   UnaryOperatorContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
+import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier } from '../types'
 import { NotImplementedError } from '../utils/errors'
 import {
   AssignmentOperator,
@@ -124,7 +125,6 @@ export class CGenerator implements CVisitor<AstNode> {
     } else {
       // stray ;
       return STRAY_SEMICOLON
-      throw new NotImplementedError(ctx.text)
     }
   }
 
@@ -206,8 +206,22 @@ export class CGenerator implements CVisitor<AstNode> {
       return inclusiveOrExpression[0].accept(this)
     } else {
       // Logical and (&&)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
+      let expression: Expression = {
+        type: 'BinaryExpression',
+        operator: '&&',
+        left: this.visitInclusiveOrExpression(inclusiveOrExpression[0]),
+        right: this.visitInclusiveOrExpression(inclusiveOrExpression[1])
+      }
+
+      for (let i = 2; i < inclusiveOrExpression.length; i++) {
+        expression = {
+          type: 'BinaryExpression',
+          operator: '&&',
+          left: expression,
+          right: this.visitInclusiveOrExpression(inclusiveOrExpression[i])
+        }
+      }
+      return expression
     }
   }
 
@@ -512,15 +526,65 @@ export class CGenerator implements CVisitor<AstNode> {
   visitPrimaryExpression(ctx: PrimaryExpressionContext): Expression {
     const constantValue = ctx.Constant()
     if (constantValue) {
-      // Assume integers for now
-      const value = parseInt(constantValue.toString())
-      if (!isNaN(value)) {
+      const constantString = constantValue.toString()
+      // Check if it's a character
+      if (
+        constantString.charAt(0) == `'` &&
+        constantString.charAt(constantString.length - 1) == `'`
+      ) {
+        const charWithoutQuotes = constantString.substring(1, constantString.length - 1)
+        // Assert that there is only one character
+        if (!isNaN(charWithoutQuotes.charCodeAt(1))) {
+          throw new NotImplementedError(
+            'Attempting to create char literal of length greater than 1'
+          )
+        }
         return {
           type: 'Literal',
-          typeSpecifier: 'int', // DEFAULT FOR NOW
-          value: value
+          typeSpecifier: 'char',
+          value: charWithoutQuotes.charCodeAt(0)
         }
       }
+      // Verify characters to be numeric, "e" or "."
+      const intOrFloatMatches = RegExp(`^[-+]?(?:[0-9]*[.])?[0-9]+(?:[eE][-+]?[0-9]+)?$`).exec(
+        constantString
+      )
+      if (intOrFloatMatches === null || intOrFloatMatches.length != 1) {
+        throw new NotImplementedError(`'${ctx.text}' is not a valid int or float numeral`)
+      }
+      // Can be integers or floats
+      if (
+        constantString.includes('.') ||
+        constantString.includes('e') ||
+        constantString.includes('E')
+      ) {
+        const floatValue = parseFloat(constantString)
+        if (Math.abs(floatValue) === Infinity) {
+          return INFINITY
+        }
+        if (!isNaN(floatValue)) {
+          return {
+            type: 'Literal',
+            typeSpecifier: 'float',
+            value: floatValue
+          }
+        }
+      } else {
+        const intValue = parseInt(constantString)
+        if (!isNaN(intValue)) {
+          return {
+            type: 'Literal',
+            typeSpecifier: 'int',
+            value: intValue
+          }
+        }
+      }
+
+      const stringLiteral = ctx.StringLiteral()
+      if (stringLiteral.length === 1) {
+        // Is a string literal
+      }
+
       throw new NotImplementedError(ctx.text)
     }
 
@@ -537,7 +601,6 @@ export class CGenerator implements CVisitor<AstNode> {
       }
     }
 
-    // TODO: String literals
     throw new NotImplementedError(ctx.text)
   }
 
@@ -710,7 +773,18 @@ export class CGenerator implements CVisitor<AstNode> {
   //
 
   visitDeclaration(ctx: DeclarationContext): ValueDeclaration {
-    const typeSpecifier = ctx.typeSpecifier().text // TODO: Coerce into the actual class?
+    const typeSpecifiers = ctx
+      .declarationSpecifiers()
+      .declarationSpecifier()
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
+
+    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
+      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
+    }
+
+    const typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+
     const initDeclarator = ctx.initDeclaratorList().initDeclarator()
 
     if (initDeclarator.length != 1) {
@@ -728,7 +802,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
     return {
       type: 'ValueDeclaration',
-      typeSpecifier: typeSpecifier as TypeSpecifier,
+      typeSpecifier: typeSpecifier,
       identifier: identifier,
       value: value
     }
