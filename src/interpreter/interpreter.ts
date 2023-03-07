@@ -482,9 +482,9 @@ export const execute = (program: AstNode) => {
   if (OS.length < 1) {
     return undefined
   }
-  if (OS.length > 1) {
-    error(OS, 'internal error: stash must be singleton but is: ')
-  }
+  // if (OS.length > 1) {
+  //   error(OS, 'internal error: stash must be singleton but is: ')
+  // }
   if (DEBUG_PRINT_MEMORY) {
     M.viewMemory()
   }
