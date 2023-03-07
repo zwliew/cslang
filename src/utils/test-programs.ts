@@ -149,6 +149,13 @@ main() {
 }
 `
 
+export const reassignment = `
+main() {
+  int x = 1;
+  x = 2;
+  return x;
+}`
+
 export const ifInFunction = `
 other() {
   if (1 == 1) {
@@ -220,3 +227,17 @@ main() {
   unsigned long long int ulli = -9;
   return ulli;
 }`
+
+export const wrongReturnType = `
+main() {
+  float x = 1.0;
+  return x;
+}`
+
+export const wrongNumberOfArguments = `int plusThree(int x) {
+  return x+3;
+}
+int main() {
+  plusThree(4,3);
+}
+`

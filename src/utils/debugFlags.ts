@@ -8,3 +8,6 @@ export const DEBUG_PRINT_MEMORY = false
 
 // Print the agenda, stash, and environment before every step
 export const DEBUG_PRINT_STEPS = false
+
+// Print the state of analysis at every step
+export const DEBUG_PRINT_ANALYSIS = false

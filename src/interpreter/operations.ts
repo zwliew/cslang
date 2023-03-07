@@ -1,20 +1,10 @@
 import Decimal from 'decimal.js'
 
 import { Literal, TypeSpecifier } from '../parser/ast-types'
+import { hierarchy, rank } from '../types'
 import { DECIMAL_ONE, DECIMAL_ZERO } from './constants'
 import { InvalidOperation } from './errors'
 
-const hierarchy: TypeSpecifier[] = [
-  '_Bool',
-  'char',
-  'short',
-  'int',
-  'unsigned int',
-  'long',
-  'long long',
-  'float'
-]
-const rank = (type: TypeSpecifier) => hierarchy.indexOf(type)
 const floatingPointRank = rank('float')
 
 function promote(left: TypeSpecifier, right: TypeSpecifier): TypeSpecifier {

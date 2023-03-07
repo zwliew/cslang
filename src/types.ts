@@ -1,5 +1,19 @@
 import { RawTypeSpecifier, TypeSpecifier } from './parser/ast-types'
 
+export const hierarchy: TypeSpecifier[] = [
+  '_Bool',
+  'char',
+  'short',
+  'int',
+  'unsigned int',
+  'long',
+  'long long',
+  'float',
+  'double',
+  'long double'
+]
+export const rank = (type: TypeSpecifier) => hierarchy.indexOf(type)
+
 const rawTypes: Array<string> = [
   'void',
   'char',

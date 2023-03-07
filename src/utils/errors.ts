@@ -19,3 +19,10 @@ export class SetVoidValueError extends Error {
     this.name = 'SetVoidValueError'
   }
 }
+
+export class AnalysisError extends Error {
+  constructor(message?: string) {
+    super('Error in AST found during analysis. ' + message)
+    this.name = 'AnalysisError'
+  }
+}

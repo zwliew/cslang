@@ -60,6 +60,7 @@
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
     "parser-test": "node ./dist/utils/parser-test.js",
+    "analyser-test": "node ./dist/utils/analyser-test.js",
     "interpreter-test": "node ./dist/utils/interpreter-test.js",
     "runner-test": "node ./dist/utils/runner-test.js"
   },

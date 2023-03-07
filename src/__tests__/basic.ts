@@ -25,7 +25,7 @@ main()
   FAIL_RESULT
 ]
 
-const topLevelDeclarationWithExpression = [`int x = 3 + 3; main() {}`, undefined]
+const topLevelDeclarationWithExpression = [`int x = 3 + 3; main() {}`, FAIL_RESULT]
 
 // TODO: fix console.error from showing during yarn test
 // Causes errors to be logged while testing

@@ -4,6 +4,7 @@ import fs from 'fs'
 import { execute } from '../interpreter/interpreter'
 import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
+import { defaultAnalysisState, traverse } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
 import * as programs from './test-programs'
@@ -51,6 +52,26 @@ export function parserTest() {
   const ast = tree.accept(generator)
   console.log('AST:')
   console.dir(ast, { depth: null })
+  return ast
+}
+
+export function analyserTest() {
+  const programString = determineProgramString()
+
+  const inputStream = CharStreams.fromString(programString)
+  const lexer = new CLexer(inputStream)
+  const tokenStream = new CommonTokenStream(lexer)
+  const parser = new CParser(tokenStream)
+  parser.buildParseTree = true
+
+  const tree = parser.compilationUnit()
+  const generator = new CGenerator()
+  // Extract the body from the program
+  const ast = tree.accept(generator)
+  const analysisState = defaultAnalysisState
+  traverse(ast, analysisState)
+  console.log(`Final analysis state:`)
+  console.dir(analysisState)
   return ast
 }
 
