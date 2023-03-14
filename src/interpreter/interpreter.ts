@@ -302,9 +302,13 @@ const microcode = (code: AgendaItems) => {
       FS.allocateFunction(code.functionDefinition, code.identifier, E.copy())
       break
 
-    case 'FunctionApplication':
+    case 'FunctionApplication': {
+      const functionDefinition = FS.getFunctionAndEnv(code.identifier)[0]
+      if (functionDefinition.returnType === 'void') {
+        A.push(UNDEFINED_LITERAL)
+      }
       A.push({ type: 'app_i', identifier: code.identifier, arity: code.arguments.length })
-      const parameterList = FS.getFunctionAndEnv(code.identifier)[0].parameterList
+      const parameterList = functionDefinition.parameterList
       if (parameterList) {
         const parameters = parameterList.parameters.map(parameterDeclaration => ({
           typeSpecifier: parameterDeclaration.typeSpecifier,
@@ -324,11 +328,10 @@ const microcode = (code: AgendaItems) => {
           )
         }
       }
-
       break
+    }
 
     case 'Return':
-      // TODO: tag this to signify it is a return value
       // TODO: typechecking
       while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
         A.pop()
