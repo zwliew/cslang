@@ -1,5 +1,6 @@
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import fs from 'fs'
+import util from 'node:util'
 
 import { execute } from '../interpreter/interpreter'
 import { CLexer } from '../lang/CLexer'
@@ -51,7 +52,7 @@ export function parserTest() {
   // Extract the body from the program
   const ast = tree.accept(generator)
   console.log('AST:')
-  console.dir(ast, { depth: null })
+  console.log(util.inspect(ast, { depth: null, colors: true }))
   return ast
 }
 

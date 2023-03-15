@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js'
+import Decimal from '../utils/decimal'
 
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
 import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'

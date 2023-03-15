@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js'
+import Decimal from '../utils/decimal'
 
 interface BaseNode {
   type: string

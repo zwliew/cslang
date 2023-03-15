@@ -1,7 +1,7 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
-import Decimal from 'decimal.js'
+import Decimal from '../../utils/decimal'
 
 import { Literal, TypeSpecifier } from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'

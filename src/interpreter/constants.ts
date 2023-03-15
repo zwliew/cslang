@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js'
+import Decimal from '../utils/decimal'
 
 import { Literal, StraySemicolon } from '../parser/ast-types'
 import { iBreak, iCase, iPop, iSwitchDefault } from './interpreter-types'

@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js'
+import Decimal from '../utils/decimal'
 
 import { Literal, TypeSpecifier } from '../parser/ast-types'
 import { hierarchy, rank } from '../types'
