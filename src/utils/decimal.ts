@@ -1,8 +1,9 @@
 import _Decimal from 'decimal.js'
-import util from 'node:util'
+
+const customInspectSymbol = Symbol.for('nodejs.util.inspect.custom')
 
 export default class Decimal extends _Decimal {
-  [Symbol.for('nodejs.util.inspect.custom')]() {
+  [customInspectSymbol](_depth: number, _inspectOptions: any, _inspect: any) {
     return this.toString()
   }
 }
