@@ -1,4 +1,4 @@
-import Decimal from '../utils/decimal'
+import type { DecimalType } from '../utils/decimal'
 
 interface BaseNode {
   type: string
@@ -61,7 +61,7 @@ export interface FunctionApplication extends BaseExpression {
 export interface Literal extends BaseExpression {
   type: 'Literal'
   typeSpecifier: TypeSpecifier
-  value: Decimal
+  value: DecimalType
 }
 
 export interface UnaryExpression extends BaseExpression {

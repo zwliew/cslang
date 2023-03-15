@@ -7,3 +7,5 @@ export default class Decimal extends _Decimal {
     return this.toString()
   }
 }
+
+export type DecimalType = Decimal | _Decimal
