@@ -20,7 +20,7 @@ export type AstNode = CompilationUnit | Expression | Statement | Declarations
 interface ExpressionMap {
   AssignmentExpression: AssignmentExpression
   BinaryExpression: BinaryExpression
-  // ConditionalExpression: ConditionalExpression
+  ConditionalExpression: ConditionalExpression
   Identifier: Identifier
   FunctionApplciation: FunctionApplication
   Literal: Literal
@@ -136,6 +136,14 @@ export interface If extends BaseStatement {
   predicate: AstNode
   consequent: AstNode
   alternative?: AstNode
+}
+
+// Ternary operator
+export interface ConditionalExpression extends BaseStatement {
+  type: 'ConditionalExpression'
+  predicate: Expression
+  consequent: Expression
+  alternative?: Expression
 }
 
 export interface Switch extends BaseStatement {

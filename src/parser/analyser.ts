@@ -1,6 +1,6 @@
 import { DEBUG_PRINT_ANALYSIS } from '../utils/debugFlags'
 import { AnalysisError } from '../utils/errors'
-import { AstNode, Expression, TypeSpecifier } from './ast-types'
+import { AstNode, Expression, Statement, TypeSpecifier } from './ast-types'
 
 interface AnalysisState {
   functions: {
@@ -16,8 +16,6 @@ interface AnalysisState {
   currentFunction: string
 }
 
-// export const analyse
-
 export const defaultAnalysisState = { functions: {}, variables: {}, currentFunction: 'global' }
 // Traverses a given AST and builds information about it in analysisState
 export const traverse = (node: AstNode, analysisState: AnalysisState) => {
@@ -25,6 +23,15 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
     console.log(`At node ${node.type}. Analysis state:`)
     console.dir(analysisState, { depth: null })
     console.log('\n')
+  }
+
+  // Short circuit analysis if a return statement has been reached
+  if (
+    analysisState.currentFunction &&
+    analysisState.currentFunction in analysisState.functions &&
+    analysisState.functions[analysisState.currentFunction].returns
+  ) {
+    return
   }
 
   switch (node.type) {
@@ -68,10 +75,14 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'If':
-      traverse(node.consequent, analysisState)
       traverse(node.predicate, analysisState)
+      traverse(node.consequent, analysisState)
+      const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
       if (node.alternative) {
-        traverse(node.alternative, analysisState)
+        traverse(node.alternative, alternativeAnalysisState)
+        analysisState.functions[analysisState.currentFunction].returns =
+          analysisState.functions[analysisState.currentFunction].returns &&
+          alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
       }
       break
 
@@ -82,7 +93,34 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'Switch':
-      traverse(node.block, analysisState)
+      // Break the block into separate blocks and traverse them with a copy of analysisState
+      // Number of blocks = number of case/default statements, until a break statement is found
+      const blocks: Array<Array<Statement>> = []
+      let current_branch: Array<Statement> = []
+      let inBranch: boolean = false
+      // For each statement, check if it is a SwitchCaseBranch or SwitchCaseDefault, then
+      for (const statement of node.block.statements) {
+        // Ignore statements between break and case/default
+        if (statement.type === 'SwitchCaseBranch' || statement.type === 'SwitchCaseDefault') {
+          current_branch = []
+          inBranch = true
+        } else if (statement.type === 'Break') {
+          blocks.push(current_branch)
+          inBranch = false
+        } else if (!inBranch) {
+          continue
+        }
+
+        current_branch.push(statement)
+      }
+
+      for (const block of blocks) {
+        const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
+        traverse({ type: 'Block', statements: block }, alternativeAnalysisState)
+        analysisState.functions[analysisState.currentFunction].returns =
+          analysisState.functions[analysisState.currentFunction].returns &&
+          alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
+      }
       break
 
     case 'SwitchCaseDefault':
@@ -109,6 +147,9 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'FunctionApplication':
+      if (!(node.identifier in analysisState.functions)) {
+        throw new AnalysisError(`Calling function ${node.identifier} before it is declared`)
+      }
       const parameterCount = analysisState.functions[node.identifier].arity
       const argumentCount = node.arguments.length
       if (parameterCount !== argumentCount) {
@@ -142,6 +183,9 @@ export const staticType = (
   switch (node.type) {
     case 'AssignmentExpression':
       return analysisState.variables[node.identifier]
+    case 'UnaryExpression':
+      // No operations change the type of an expression
+      return staticType(node.operand, analysisState)
     case 'BinaryExpression':
       // No operations change the type of an expression
       return staticType(node.left, analysisState)
@@ -151,6 +195,8 @@ export const staticType = (
       return analysisState.functions[node.identifier].expectedReturnType
     case 'Identifier':
       return analysisState.variables[node.identifier]
+    case 'ConditionalExpression':
+      const consequentType = staticType(node.consequent, analysisState)
+      return consequentType
   }
-  throw new AnalysisError('Unable to find type of return expression')
 }

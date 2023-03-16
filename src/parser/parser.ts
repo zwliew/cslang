@@ -173,7 +173,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitConditionalExpression(ctx: ConditionalExpressionContext): AstNode {
+  visitConditionalExpression(ctx: ConditionalExpressionContext): Expression {
     if (ctx.childCount === 1) {
       return this.visitLogicalOrExpression(ctx.logicalOrExpression())
     } else {
@@ -182,7 +182,7 @@ export class CGenerator implements CVisitor<AstNode> {
       const consequent = this.visitExpression(ctx.expression()!)
       const alternative = this.visitConditionalExpression(ctx.conditionalExpression()!)
       return {
-        type: 'If',
+        type: 'ConditionalExpression',
         predicate: predicate,
         consequent: consequent,
         alternative: alternative
@@ -190,10 +190,10 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitLogicalOrExpression(ctx: LogicalOrExpressionContext): AstNode {
+  visitLogicalOrExpression(ctx: LogicalOrExpressionContext): Expression {
     const logicalAndExpression = ctx.logicalAndExpression()
     if (logicalAndExpression.length === 1) {
-      return logicalAndExpression[0].accept(this)
+      return logicalAndExpression[0].accept(this) as Expression
     } else {
       // Logical or (||)
       // TODO: implement parsing

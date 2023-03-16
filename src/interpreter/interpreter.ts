@@ -122,6 +122,7 @@ function handle_block(blk: Block): AgendaItems[] {
 }
 
 function handle_switch_block(blk: Block): AgendaItems[] {
+  // console.log(`handling switch block: ${blk.statements.map(stmt => JSON.stringify(stmt))}`)
   const stmts = blk.statements
   if (stmts.length === 0) {
     return [UNDEFINED_LITERAL]
@@ -131,6 +132,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   const switch_value = OS.pop()!
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
+    // console.log(`For statement type ${stmt.type}`)
     if (stmt.type === 'SwitchCaseBranch') {
       result.push(stmt.consequent, {
         type: 'switch_branch_i',
@@ -142,10 +144,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
     } else if (stmt.type === 'Break') {
       result.push(BREAK_INSTRUCTION)
     } else {
-      result.push(stmt)
-      if (i == 0) {
-        result.push(POP_INSTRUCTION)
-      }
+      result.push(stmt) // no POP_INSTRUCTION?
     }
   }
   return result
@@ -225,6 +224,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'If':
+    case 'ConditionalExpression':
       A.push(
         {
           type: 'branch_i',

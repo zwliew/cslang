@@ -1,22 +1,24 @@
 import { runTests } from '../utils/jest-utils'
 
 const trueConditional = [
-  `{
+  `
+main() {
   if (2) {
-    1;
+    return 1;
   } else {
-    0;
+    return 0;
   }
 }`,
   1
 ]
 
 const falseConditional = [
-  `{
+  `
+main() {
   if (0) {
-    1;
+    return 1;
   } else {
-    0;
+    return 0;
   }
 }`,
   0
@@ -24,36 +26,37 @@ const falseConditional = [
 
 // Should evaluate to 7
 const switchCase = [
-  `{
+  `
+main() {
   switch (1) {
     case 0:
-      0;
-      break;
+      return 0;
     case 1:
-      7;
-      break;
+      return 7;
     default:
       -1;
-      break;
   }
+  return -2;
 }`,
   7
 ]
 
 const switchCaseSimple = [
-  `{
+  `
+main() {
   switch (1) {
     case 1:
-      1;
-      break;
+      return 1;
   }
+  return 0;
 }`,
   1
 ]
 
 const ternaryOperator = [
-  `{
-  0 ? 2 : 1;
+  `
+main() {
+  return 0 ? 2 : 1;
 }`,
   1
 ]

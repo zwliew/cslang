@@ -24,12 +24,13 @@ export const block = `{
 }`
 
 // evaluates to 1
-export const trueConditional = `{
+export const trueConditional = `main() {
   if (2) {
     1;
   } else {
     0;
   }
+  return 0;
 }`
 
 // should evaluate to 1
@@ -42,18 +43,43 @@ export const falseConditional = `{
 }`
 
 // Should evaluate to 7
-export const switchCase = `{
+export const switchCase = `main() {
   switch (1) {
     case 0:
-      0;
-      break;
+      return 0;
     case 1:
-      7;
-      break;
+      return 7;
     default:
       -1;
-      break;
   }
+  return 1;
+}`
+
+export const switchCaseSimpleNoReturn = `
+main() {
+  switch (0) {
+  }
+}`
+
+export const switchCaseSomeReturnWithNoFinalReturn = `
+main() {
+  switch (0) {
+    case 1:
+      2;
+    default:
+      return 3;
+  }
+}`
+
+export const switchCaseSomeReturnWithFinalReturn = `
+main() {
+  switch (1) {
+    case 1:
+      2;
+    default:
+      return 3;
+  }
+  return 4;
 }`
 
 export const switchCaseSimple = `{
@@ -64,8 +90,8 @@ export const switchCaseSimple = `{
   }
 }`
 
-export const ternaryOperator = `{
-  0 ? 2 : 1;
+export const ternaryOperator = `main() {
+  return 0 ? 2 : 1;
 }`
 
 // should evaluate to 6
@@ -239,5 +265,28 @@ export const wrongNumberOfArguments = `int plusThree(int x) {
 }
 int main() {
   plusThree(4,3);
+}
+`
+
+export const blockWithIf = `{
+  1;
+  if (2) {
+    3;
+  }
+  4;
+}`
+
+export const longFunction = `
+int ret() {
+  1;
+  2;
+  3;
+  4;
+  5;
+  return 6;
+}
+main() {
+  ret();
+  return 0;
 }
 `
