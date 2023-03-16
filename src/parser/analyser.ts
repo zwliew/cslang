@@ -142,8 +142,18 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       for (const statement of node.functionDefinition.body) {
         traverse(statement, analysisState)
       }
-      if (!analysisState.functions[node.identifier].returns) {
+      if (
+        analysisState.functions[node.identifier].expectedReturnType !== 'void' &&
+        !analysisState.functions[node.identifier].returns
+      ) {
         throw new AnalysisError(`Function ${node.identifier} does not return any value`)
+      } else if (
+        analysisState.functions[node.identifier].expectedReturnType === 'void' &&
+        analysisState.functions[node.identifier].returns
+      ) {
+        throw new AnalysisError(
+          `Function ${node.identifier} with void return type attempts to return a value`
+        )
       }
       analysisState.currentFunction = originalScope
       analysisState.variables = originalVariables

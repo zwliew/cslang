@@ -119,6 +119,31 @@ main() {
   3
 ]
 
+const voidNoReturn = [
+  `
+void vfn() {
+  1;
+}
+main() {
+  vfn();
+  return 0;
+}`,
+  0
+]
+
+const voidWithReturn = [
+  `
+void vfn() {
+  return 1;
+}
+main() {
+  vfn();
+  return 0;
+}
+`,
+  ANALYSIS_ERROR
+]
+
 export const analyserTests = {
   wrongNumberOfArguments,
   ifNoReturn,
@@ -128,6 +153,8 @@ export const analyserTests = {
   switchCaseNoReturn,
   switchCaseSomeReturnWithNoFinalReturn,
   switchCaseSomeReturnWithFinalReturn,
-  switchCaseAllReturn
+  switchCaseAllReturn,
+  voidNoReturn,
+  voidWithReturn
 }
 runTests(analyserTests)
