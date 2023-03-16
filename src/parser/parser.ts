@@ -625,7 +625,7 @@ export class CGenerator implements CVisitor<AstNode> {
     return blockItemList.map(v => v.accept(this)) as Statement[]
   }
 
-  visitStatement(ctx: StatementContext): AstNode {
+  visitStatement(ctx: StatementContext): Statement {
     const expressionStatement = ctx.expressionStatement()
     if (expressionStatement) {
       return this.visitExpressionStatement(expressionStatement)
@@ -660,7 +660,7 @@ export class CGenerator implements CVisitor<AstNode> {
     throw new NotImplementedError(ctx.text)
   }
 
-  visitJumpStatement(ctx: JumpStatementContext): AstNode {
+  visitJumpStatement(ctx: JumpStatementContext): Statement {
     if (ctx.Break()) {
       return {
         type: 'Break'
@@ -682,7 +682,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitSelectionStatement(ctx: SelectionStatementContext): AstNode {
+  visitSelectionStatement(ctx: SelectionStatementContext): Statement {
     if (ctx.If()) {
       const statements = ctx.statement()
       const ifStatementNode: If = {
@@ -699,7 +699,24 @@ export class CGenerator implements CVisitor<AstNode> {
       // Is switch case
       const expression = this.visitExpression(ctx.expression())
       // There must be only one statement, which is the compound statement in {}
-      const switchBlock = this.visitCompoundStatement(ctx.statement()[0].compoundStatement()!)
+      const switchBlockRaw = this.visitCompoundStatement(ctx.statement()[0].compoundStatement()!)
+      // Extract consequents and put them after the switch case branch
+      const switchBlock: Block = { type: 'Block', statements: [] }
+      for (const statement of switchBlockRaw.statements) {
+        if (statement.type === 'SwitchCaseBranchRaw') {
+          switchBlock.statements.push(
+            {
+              type: 'SwitchCaseBranch',
+              case: statement.case
+            },
+            statement.consequent
+          )
+        } else if (statement.type === 'SwitchCaseDefaultRaw') {
+          switchBlock.statements.push({ type: 'SwitchCaseDefault' }, statement.consequent)
+        } else {
+          switchBlock.statements.push(statement)
+        }
+      }
       return {
         type: 'Switch',
         expression: expression,
@@ -711,13 +728,13 @@ export class CGenerator implements CVisitor<AstNode> {
   visitLabeledStatement(ctx: LabeledStatementContext): SwitchCase {
     if (ctx.Case()) {
       return {
-        type: 'SwitchCaseBranch',
+        type: 'SwitchCaseBranchRaw',
         case: this.visitConstantExpression(ctx.constantExpression()!),
         consequent: this.visitStatement(ctx.statement())
       }
     } else if (ctx.Default()) {
       return {
-        type: 'SwitchCaseDefault',
+        type: 'SwitchCaseDefaultRaw',
         consequent: this.visitStatement(ctx.statement())
       }
     } else {
@@ -731,7 +748,7 @@ export class CGenerator implements CVisitor<AstNode> {
     return this.visitConditionalExpression(ctx.conditionalExpression())
   }
 
-  visitExpressionStatement(ctx: ExpressionStatementContext): AstNode {
+  visitExpressionStatement(ctx: ExpressionStatementContext): Statement {
     const expression = ctx.expression()
 
     if (expression) {

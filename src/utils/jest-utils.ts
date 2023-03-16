@@ -1,6 +1,5 @@
-import Decimal from './decimal'
-
 import { cslangRunner } from '../runner/runner'
+import Decimal from './decimal'
 import { AnalysisError } from './errors'
 
 export const FAIL_RESULT = '<jest-test-case> FAILURE'

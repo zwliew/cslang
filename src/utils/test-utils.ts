@@ -5,7 +5,7 @@ import util from 'node:util'
 import { execute } from '../interpreter/interpreter'
 import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
-import { defaultAnalysisState, traverse } from '../parser/analyser'
+import { createAnalysisState, traverse } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
 import * as programs from './test-programs'
@@ -69,7 +69,7 @@ export function analyserTest() {
   const generator = new CGenerator()
   // Extract the body from the program
   const ast = tree.accept(generator)
-  const analysisState = defaultAnalysisState
+  const analysisState = createAnalysisState()
   traverse(ast, analysisState)
   console.log(`Final analysis state:`)
   console.dir(analysisState)

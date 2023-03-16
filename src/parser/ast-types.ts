@@ -152,17 +152,30 @@ export interface Switch extends BaseStatement {
   block: Block // non SwitchCase nodes are ignored in the interpreter
 }
 
-export type SwitchCase = SwitchCaseBranch | SwitchCaseDefault
+export type SwitchCase =
+  | SwitchCaseBranch
+  | SwitchCaseDefault
+  | SwitchCaseBranchRaw
+  | SwitchCaseDefaultRaw
 
 export interface SwitchCaseBranch extends BaseStatement {
   type: 'SwitchCaseBranch'
   case: AstNode
-  consequent: AstNode
+}
+
+export interface SwitchCaseBranchRaw extends BaseStatement {
+  type: 'SwitchCaseBranchRaw'
+  case: AstNode
+  consequent: Statement
 }
 
 export interface SwitchCaseDefault extends BaseStatement {
   type: 'SwitchCaseDefault'
-  consequent: AstNode
+}
+
+export interface SwitchCaseDefaultRaw extends BaseStatement {
+  type: 'SwitchCaseDefaultRaw'
+  consequent: Statement
 }
 
 export interface Block extends BaseStatement {

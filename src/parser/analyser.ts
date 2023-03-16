@@ -16,7 +16,9 @@ interface AnalysisState {
   currentFunction: string
 }
 
-export const defaultAnalysisState = { functions: {}, variables: {}, currentFunction: 'global' }
+const defaultAnalysisState = { functions: {}, variables: {}, currentFunction: 'global' }
+export const createAnalysisState = () => JSON.parse(JSON.stringify(defaultAnalysisState))
+
 // Traverses a given AST and builds information about it in analysisState
 export const traverse = (node: AstNode, analysisState: AnalysisState) => {
   if (DEBUG_PRINT_ANALYSIS) {
@@ -76,8 +78,8 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
 
     case 'If':
       traverse(node.predicate, analysisState)
-      traverse(node.consequent, analysisState)
       const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
+      traverse(node.consequent, analysisState)
       if (node.alternative) {
         traverse(node.alternative, alternativeAnalysisState)
         analysisState.functions[analysisState.currentFunction].returns =
@@ -104,7 +106,7 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
         if (statement.type === 'SwitchCaseBranch' || statement.type === 'SwitchCaseDefault') {
           current_branch = []
           inBranch = true
-        } else if (statement.type === 'Break') {
+        } else if (statement.type === 'Break' || statement.type === 'Return') {
           blocks.push(current_branch)
           inBranch = false
         } else if (!inBranch) {
@@ -114,17 +116,18 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
         current_branch.push(statement)
       }
 
-      for (const block of blocks) {
+      const blocksReturn = blocks.map(block => {
         const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
         traverse({ type: 'Block', statements: block }, alternativeAnalysisState)
-        analysisState.functions[analysisState.currentFunction].returns =
-          analysisState.functions[analysisState.currentFunction].returns &&
-          alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
+        return alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
+      })
+      if (blocksReturn.length > 0 && blocksReturn.every(_ => _)) {
+        analysisState.functions[analysisState.currentFunction].returns = true
       }
       break
 
+    case 'SwitchCaseBranch':
     case 'SwitchCaseDefault':
-      traverse(node.consequent, analysisState)
       break
 
     case 'FunctionDeclaration':
@@ -163,9 +166,9 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       analysisState.functions[analysisState.currentFunction].returns = true
       // TODO: compare types
       // Currently, all types can be coerced to each other, so we don't do anything here
-      const expectedReturnType =
-        analysisState.functions[analysisState.currentFunction].expectedReturnType
-      const returnType = staticType(node.expression, analysisState)
+      // const expectedReturnType =
+      //   analysisState.functions[analysisState.currentFunction].expectedReturnType
+      // const returnType = staticType(node.expression, analysisState)
       break
 
     default:

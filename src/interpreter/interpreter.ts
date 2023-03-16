@@ -130,19 +130,18 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   const switch_value = OS.pop()!
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
-    // console.log(`For statement type ${stmt.type}`)
     if (stmt.type === 'SwitchCaseBranch') {
-      result.push(stmt.consequent, {
+      result.push({
         type: 'switch_branch_i',
         switch_value: switch_value,
         case: stmt.case
       })
     } else if (stmt.type === 'SwitchCaseDefault') {
-      result.push(stmt.consequent, SWITCH_DEFAULT_INSTRUCTION)
+      result.push(SWITCH_DEFAULT_INSTRUCTION)
     } else if (stmt.type === 'Break') {
       result.push(BREAK_INSTRUCTION)
     } else {
-      result.push(stmt) // no POP_INSTRUCTION?
+      result.push(stmt)
     }
   }
   return result
@@ -268,7 +267,6 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'SwitchCaseDefault':
-      A.push(code.consequent)
       break
 
     case 'Break':

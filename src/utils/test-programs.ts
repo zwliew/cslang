@@ -61,11 +61,36 @@ main() {
   }
 }`
 
+export const switchLong = `
+main() {
+  switch (0) {
+    case 1:
+      1;
+      2;
+      3;
+    default:
+      4;
+      5;
+      6;
+  }
+  return 1;
+}`
+export const switchCaseAllReturn = `
+main() {
+  switch (0) {
+    case 1:
+      return 2;
+    default:
+      return 3;
+  }
+}`
+
 export const switchCaseSomeReturnWithNoFinalReturn = `
 main() {
   switch (0) {
     case 1:
       2;
+      break;
     default:
       return 3;
   }
@@ -302,3 +327,36 @@ main() {
   return 0;
 }
 `
+
+export const elseIfConditional = `
+main() {
+  if (0) {
+    return 1;
+  } else if (2) {
+    return 2;
+  } else {
+    return 0;
+  }
+}`
+
+export const ifConsequentReturn = `
+main() {
+  if (0) {
+    return 1;
+  } else if (0) {
+    return 2;
+  } else {
+    
+  }
+}`
+
+export const ifAllReturn = `
+main() {
+  if (0) {
+    return 1;
+  } else if (0) {
+    return 2;
+  } else {
+    return 3;
+  }
+}`

@@ -24,6 +24,20 @@ main() {
   0
 ]
 
+const elseIfConditional = [
+  `
+main() {
+  if (0) {
+    return 1;
+  } else if (2) {
+    return 2;
+  } else {
+    return 0;
+  }
+}`,
+  2
+]
+
 // Should evaluate to 7
 const switchCase = [
   `
@@ -61,4 +75,11 @@ main() {
   1
 ]
 
-runTests({ trueConditional, falseConditional, switchCase, switchCaseSimple, ternaryOperator })
+runTests({
+  trueConditional,
+  falseConditional,
+  elseIfConditional,
+  switchCase,
+  switchCaseSimple,
+  ternaryOperator
+})

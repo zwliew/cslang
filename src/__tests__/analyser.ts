@@ -1,4 +1,4 @@
-import { ANALYSIS_ERROR, FAIL_RESULT, runTests } from '../utils/jest-utils'
+import { ANALYSIS_ERROR, runTests } from '../utils/jest-utils'
 
 const wrongNumberOfArguments = [
   `
@@ -10,6 +10,62 @@ int main() {
 }
 `,
   ANALYSIS_ERROR
+]
+
+const ifNoReturn = [
+  `
+main() {
+  if (0) {
+
+  } else if (0) {
+
+  } else {
+
+  }
+}`,
+  ANALYSIS_ERROR
+]
+
+const ifConsequentReturn = [
+  `
+main() {
+  if (0) {
+    return 1;
+  } else if (0) {
+    return 2;
+  } else {
+    
+  }
+}`,
+  ANALYSIS_ERROR
+]
+
+const ifAlternativeReturn = [
+  `
+main() {
+  if (0) {
+
+  } else if (0) {
+    return 2;
+  } else {
+    return 3;
+  }
+}`,
+  ANALYSIS_ERROR
+]
+
+const ifAllReturn = [
+  `
+main() {
+  if (0) {
+    return 1;
+  } else if (0) {
+    return 2;
+  } else {
+    return 3;
+  }
+}`,
+  3
 ]
 
 const switchCaseNoReturn = [
@@ -27,6 +83,7 @@ main() {
   switch (0) {
     case 1:
       2;
+      break;
     default:
       return 3;
   }
@@ -64,6 +121,10 @@ main() {
 
 export const analyserTests = {
   wrongNumberOfArguments,
+  ifNoReturn,
+  ifConsequentReturn,
+  ifAlternativeReturn,
+  ifAllReturn,
   switchCaseNoReturn,
   switchCaseSomeReturnWithNoFinalReturn,
   switchCaseSomeReturnWithFinalReturn,
