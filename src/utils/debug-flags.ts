@@ -3,6 +3,10 @@
  * For now, we have just a few debug flags, but we can set up more fine-grained flags later if needed.
  */
 
+export const DEBUG_FILE = 'log.txt'
+
+export const DEBUG_WRITE_TO_FILE = false
+
 // Print the final memory layout after execution
 export const DEBUG_PRINT_MEMORY = false
 

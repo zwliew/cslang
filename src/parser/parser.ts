@@ -3,7 +3,6 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
-import Decimal from '../utils/decimal'
 
 import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
@@ -47,6 +46,7 @@ import {
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
 import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier } from '../types'
+import Decimal from '../utils/decimal'
 import { NotImplementedError } from '../utils/errors'
 import {
   AssignmentOperator,

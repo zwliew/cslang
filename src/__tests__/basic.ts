@@ -1,12 +1,13 @@
-import { FAIL_RESULT, JestTestCase, runTests } from '../utils/jest-utils'
+import { FAIL_RESULT, runTests } from '../utils/jest-utils'
 
-const singleDeclaration: JestTestCase = [`{int i = 0;}`, 0]
+const singleDeclaration = [`main() {int i = 0; return i;}`, 0]
 
 const multipleDeclaration = [
   `
-{
+main() {
 int j = 1;
 int k = 2;
+return k;
 }
 `,
   2

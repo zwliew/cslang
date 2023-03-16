@@ -76,18 +76,20 @@ main() {
   switch (1) {
     case 1:
       2;
+      break;
     default:
       return 3;
   }
   return 4;
 }`
 
-export const switchCaseSimple = `{
+export const switchCaseSimple = `
+main() {
   switch (1) {
     case 1:
-      1;
-      break;
+      return 1;
   }
+  return 0;
 }`
 
 export const ternaryOperator = `main() {
@@ -203,6 +205,16 @@ main() {
     break;
   }
   return 1;
+}`
+
+export const whileStatementShouldProduceNoValue = `
+main() {
+  int i = 0;
+  while (i < 1) {
+    1;
+    i = i + 1;
+  }
+  return 0;
 }`
 
 export const numberDeclarations = `

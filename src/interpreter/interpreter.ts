@@ -1,7 +1,6 @@
-import Decimal from '../utils/decimal'
-
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
-import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debugFlags'
+import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
+import Decimal from '../utils/decimal'
 import { NotImplementedError } from '../utils/errors'
 import { Environment } from './classes/environment'
 import { FunctionStack } from './classes/function-stack'
@@ -13,7 +12,7 @@ import {
   SWITCH_DEFAULT_INSTRUCTION,
   UNDEFINED_LITERAL
 } from './constants'
-import { UndeclaredIdentifierError } from './errors'
+import { InterpreterError, UndeclaredIdentifierError } from './errors'
 import { AgendaItems, MemoryAddress } from './interpreter-types'
 import {
   add,
@@ -114,10 +113,9 @@ function handle_block(blk: Block): AgendaItems[] {
   }
 
   const result = []
-  for (let i = stmts.length - 1; i > 0; i--) {
-    result.push(stmts[i], POP_INSTRUCTION)
+  for (let i = stmts.length - 1; i > -1; i--) {
+    result.push(stmts[i])
   }
-  result.push(stmts[0])
   return result
 }
 
@@ -214,13 +212,12 @@ const microcode = (code: AgendaItems) => {
 
       if (code.value) {
         // There is a value for this declaration
-        A.push({ type: 'value_assmt_i', identifier: code.identifier })
-        A.push(code.value)
+        A.push(POP_INSTRUCTION, { type: 'value_assmt_i', identifier: code.identifier }, code.value)
       }
       break
 
     case 'ExpressionStatement':
-      A.push(code.expression)
+      A.push(POP_INSTRUCTION, code.expression)
       break
 
     case 'If':
@@ -362,13 +359,8 @@ const microcode = (code: AgendaItems) => {
     case 'value_assmt_i': {
       // Get the address the name is refering to
       const addr = E.get(code.identifier) as MemoryAddress
-      let value
-      if (E.isGlobal()) {
-        value = OS.pop()!
-      } else {
-        // Set the topmost literal value into memory
-        value = OS.at(-1)!
-      }
+      // Set the topmost literal value into memory
+      const value = OS.at(-1)!
       M.setValue(addr, value)
       break
     }
@@ -393,13 +385,17 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'pop_i':
+      // Should throw an error if there is nothing to pop, since this means something is incorrect
+      if (OS.length === 0) {
+        throw new InterpreterError(`Attempting to pop a value from OS of length 0`)
+      }
       OS.pop()
       break
 
     case 'while_i':
       const pred_val = OS.pop()
       if (is_true(pred_val!)) {
-        A.push(code, code.pred, { type: 'pop_i' }, code.body)
+        A.push(code, code.pred, code.body)
       }
       break
 
@@ -417,10 +413,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'break_i':
-      while (
-        A.length > 0 &&
-        (A[A.length - 1].type !== 'switch_env_i' || A[A.length - 1].type !== 'while_i')
-      ) {
+      while (A.length > 0 && A.at(-1)!.type !== 'switch_env_i' && A.at(-1)!.type !== 'while_i') {
         A.pop()
       }
       break
@@ -474,6 +467,7 @@ export const execute = (program: AstNode) => {
       console.log(OS)
       console.log(E)
       console.log(FS)
+      console.log('') // newline separator
     }
     if (A.length === 0) break
 
