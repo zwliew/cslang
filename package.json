@@ -40,7 +40,8 @@
     "calc-slang": "dist/repl/repl.js"
   },
   "scripts": {
-    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o ./src/lang/",
+    "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o .",
+    "antlr4tsz": "antlr4ts -visitor ./src/lang/C.g4 -o ./src/lang/",
     "autocomplete": "node ./scripts/updateAutocompleteDocs.js",
     "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn tsc --build --force",
