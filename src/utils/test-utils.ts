@@ -9,7 +9,6 @@ import { createAnalysisState, traverse } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
 import * as programs from './test-programs'
-import * as trees from './test-trees'
 
 // Obtain the program string based on the parameters passed to the CLI
 export function determineProgramString(): string {
@@ -74,16 +73,6 @@ export function analyserTest() {
   console.log(`Final analysis state:`)
   console.dir(analysisState)
   return ast
-}
-
-export function interpreterTest() {
-  let programTree = trees.singleDeclarationTree
-  if (process.argv.length === 3 && trees[process.argv[2]]) {
-    programTree = trees[process.argv[2]]
-  } else {
-    console.log('Invalid program type/name provided. Defaulting to singleDeclarationTree')
-  }
-  console.log(execute(programTree))
 }
 
 export function runnerTest() {
