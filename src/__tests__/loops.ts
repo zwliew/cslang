@@ -14,4 +14,12 @@ const doWhileLoop = [
   0
 ]
 
+// TODO: fix these tests
+const forLoop = [
+  `main() {
+    for (int i = 0; i < 10; ++i);
+  }`,
+  0
+]
+
 runTests({ whileLoop, doWhileLoop })

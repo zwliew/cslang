@@ -360,3 +360,15 @@ main() {
     return 3;
   }
 }`
+
+
+export const arrayDeclaration = `int arr[10];`
+
+export const arrayDefinition = `int arr[3] = {1, 2};`
+
+export const arrayAccess = `
+main() {
+  int arr[3] = {1, 2};
+  return arr[1];
+}
+`

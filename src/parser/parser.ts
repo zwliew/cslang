@@ -47,7 +47,7 @@ import {
 import { CVisitor } from '../lang/CVisitor'
 import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier } from '../types'
 import Decimal from '../utils/decimal'
-import { NotImplementedError } from '../utils/errors'
+import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
 import {
   AssignmentOperator,
   AstNode,
@@ -811,9 +811,42 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(ctx.text)
     }
 
-    const identifier = initDeclarator[0].declarator().text
-    const initializer = initDeclarator[0].initializer()
+    // Now, we get the left-most direct declarator (the identifier).
+    // This is needed to parse arrays (i.e. int arr[1];)
+    let curDeclarator = initDeclarator[0].declarator().directDeclarator()
+    let directDeclaratorCount = 0
+    for (
+      let nextDeclarator = curDeclarator.directDeclarator();
+      nextDeclarator !== undefined;
+      nextDeclarator = nextDeclarator.directDeclarator()
+    ) {
+      ++directDeclaratorCount
+      curDeclarator = nextDeclarator
+    }
+    const identifier = curDeclarator.text
 
+    // TODO: support multi-dimensional arrays
+    if (directDeclaratorCount > 1) {
+      throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
+    }
+
+    // TODO: make use of `arraySize` to declare an array
+    let arraySize = undefined
+    if (directDeclaratorCount >= 1) {
+      // TODO: support multi-dimensional arrays
+      const assignmentExpression = initDeclarator[0]
+        .declarator()
+        .directDeclarator()
+        .assignmentExpression()
+      if (assignmentExpression) {
+        arraySize = this.visitAssignmentExpression(assignmentExpression)
+        if (arraySize.type !== 'Literal') {
+          throw new IllegalArgumentError('Array size must be a literal')
+        }
+      }
+    }
+
+    const initializer = initDeclarator[0].initializer()
     const value =
       initializer === undefined
         ? undefined
