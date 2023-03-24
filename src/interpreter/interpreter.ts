@@ -147,19 +147,38 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   return result
 }
 
-function handle_assignment_operator(assignExp: AssignmentExpression): AgendaItems[] {
+const fusedAssignmentBinOps: Set<BinaryOperator> = new Set([
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
+  '^',
+  '&',
+  '|',
+  '<<',
+  '>>'
+])
+function handleAssignmentOperator(assignExp: AssignmentExpression): AgendaItems[] {
   const result: AgendaItems[] = [{ type: 'value_assmt_i', identifier: assignExp.identifier }]
 
-  switch (assignExp.operator) {
-    case '=':
-      result.push(assignExp.value)
-      break
-
-    default:
-      throw new NotImplementedError('Only direct assignments are implemented')
+  if (assignExp.operator === '=') {
+    // This is a simple assignment.
+    result.push(assignExp.value)
+    return result
   }
 
-  return result
+  // Otherwise, this is a fused assignment (i.e. +=, >>=, etc.)
+  const binop = assignExp.operator.slice(0, -1) as BinaryOperator
+  if (fusedAssignmentBinOps.has(binop)) {
+    result.push({ type: 'binop_i', operator: binop }, assignExp.value, {
+      type: 'Identifier',
+      identifier: assignExp.identifier
+    })
+    return result
+  }
+
+  throw new NotImplementedError(`'${assignExp}' assignment operator is not implemented`)
 }
 
 /* *********************
@@ -189,7 +208,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'AssignmentExpression':
-      A.push(...handle_assignment_operator(code))
+      A.push(...handleAssignmentOperator(code))
       break
 
     case 'BinaryExpression':
@@ -247,17 +266,11 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'WhileStatement':
-      A.push(UNDEFINED_LITERAL, { type: 'while_i', pred: code.pred, body: code.body }, code.pred)
+      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
       break
 
     case 'DoWhileStatement':
-      A.push(
-        UNDEFINED_LITERAL,
-        { type: 'while_i', pred: code.pred, body: code.body },
-        code.pred,
-        POP_INSTRUCTION,
-        code.body
-      )
+      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred, code.body)
       break
 
     case 'Switch':

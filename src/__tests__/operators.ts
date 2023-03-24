@@ -136,6 +136,116 @@ main() {
   0
 ]
 
+const plusAssignment = [
+  `
+  main() {
+    int x = 0;
+    x += 1;
+    return x;
+  }
+  `,
+  1
+]
+
+const minusAssignment = [
+  `
+  main() {
+    int x = 0;
+    x -= 1;
+    return x;
+  }
+  `,
+  -1
+]
+
+const timesAssignment = [
+  `
+  main() {
+    int x = 1;
+    x *= 3;
+    return x;
+  }
+  `,
+  3
+]
+
+const divideAssignment = [
+  `
+  main() {
+    int x = 6;
+    x /= 2;
+    return x;
+  }
+  `,
+  3
+]
+
+const moduloAssignment = [
+  `
+  main() {
+    int x = 5;
+    x %= 2;
+    return x;
+  }
+  `,
+  1
+]
+
+const leftShiftAssignment = [
+  `
+  main() {
+    int x = 1;
+    x <<= 2;
+    return x;
+  }
+  `,
+  4
+]
+
+const rightShiftAssignment = [
+  `
+  main() {
+    int x = 4;
+    x >>= 1;
+    return x;
+  }
+  `,
+  2
+]
+
+const andAssignment = [
+  `
+  main() {
+    int x = 3;
+    x &= 2;
+    return x;
+  }
+  `,
+  2
+]
+
+const exclusiveOrAssignment = [
+  `
+  main() {
+    int x = 3;
+    x ^= 2;
+    return x;
+  }
+  `,
+  1
+]
+
+const inclusiveOrAssignment = [
+  `
+  main() {
+    int x = 5;
+    x |= 2;
+    return x;
+  }
+  `,
+  7
+]
+
 runTests({
   inclusiveOrExpression,
   andExpression,
@@ -153,5 +263,15 @@ runTests({
   trueGreaterThanOrEqualExpression,
   falseGreaterThanOrEqualExpression,
   trueLessThanOrEqualExpression,
-  falseLessThanOrEqualExpression
+  falseLessThanOrEqualExpression,
+  plusAssignment,
+  minusAssignment,
+  timesAssignment,
+  divideAssignment,
+  moduloAssignment,
+  leftShiftAssignment,
+  rightShiftAssignment,
+  andAssignment,
+  exclusiveOrAssignment,
+  inclusiveOrAssignment
 })

@@ -390,3 +390,10 @@ main() {
 `
 
 export const basicPointer = `int *x;`
+
+export const exclusiveOrAssignment = `
+main() {
+  int x = 3;
+  x ^= 2;
+  return x;
+}`
