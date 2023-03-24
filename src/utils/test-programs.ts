@@ -136,9 +136,25 @@ export const bitwiseXor = `{
   5 ^ 3;
 }`
 
-export const whileLoop = `{
-  while (0) {}
-}`
+export const whileLoop = `
+main() {
+  int x = 0;
+  while (x < 10) {
+    ++x;
+  }
+  return x;
+}
+`
+
+export const doWhileLoop = `
+main() {
+  int x = 1;
+  do {
+    ++x;
+  } while (x < 5);
+  return x;
+}
+`
 
 // Function declarations without type default to int
 export const fnDeclarationWithoutType = `
@@ -372,3 +388,5 @@ main() {
   return arr[1];
 }
 `
+
+export const basicPointer = `int *x;`

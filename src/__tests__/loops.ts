@@ -1,25 +1,44 @@
 import { runTests } from '../utils/jest-utils'
 
 const whileLoop = [
-  `{
-  while (0) {}
+  `
+main() {
+  int x = 0;
+  while (x < 10) {
+    x = x + 1;
+  }
+  return x;
 }`,
-  0
+  10
 ]
 
 const doWhileLoop = [
-  `{
-  do {} while (0);
-}`,
-  0
+  `
+main() {
+  int x = 0;
+  int y = 0;
+  do {
+    x = x + 1;
+    y = 5;
+  } while (x < 0);
+  return x + y;
+}
+`,
+  6
 ]
 
 // TODO: fix these tests
 const forLoop = [
-  `main() {
-    for (int i = 0; i < 10; ++i);
-  }`,
-  0
+  `
+main() {
+  int x = 0;
+  for (int i = 0; i < 7; ++i) {
+    ++x;
+  }
+  return x;
+}
+`,
+  7
 ]
 
 runTests({ whileLoop, doWhileLoop })
