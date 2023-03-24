@@ -41,4 +41,6 @@ main() {
   7
 ]
 
-runTests({ whileLoop, doWhileLoop })
+export const loopTests = { whileLoop, doWhileLoop }
+
+runTests(loopTests)

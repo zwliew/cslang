@@ -75,11 +75,13 @@ main() {
   1
 ]
 
-runTests({
+export const conditionalTests = {
   trueConditional,
   falseConditional,
   elseIfConditional,
   switchCase,
   switchCaseSimple,
   ternaryOperator
-})
+}
+
+runTests(conditionalTests)

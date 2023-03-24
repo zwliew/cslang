@@ -246,7 +246,7 @@ const inclusiveOrAssignment = [
   7
 ]
 
-runTests({
+export const operatorTests = {
   inclusiveOrExpression,
   andExpression,
   exclusiveOrExpression,
@@ -274,4 +274,6 @@ runTests({
   andAssignment,
   exclusiveOrAssignment,
   inclusiveOrAssignment
-})
+}
+
+runTests(operatorTests)

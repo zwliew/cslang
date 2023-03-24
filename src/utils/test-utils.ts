@@ -2,20 +2,20 @@ import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import fs from 'fs'
 import util from 'node:util'
 
-import { execute } from '../interpreter/interpreter'
 import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
 import { createAnalysisState, traverse } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
-import * as programs from './test-programs'
+import testCases from './testCases'
 
 // Obtain the program string based on the parameters passed to the CLI
 export function determineProgramString(): string {
-  let programString = programs.singleDeclaration
+  let programString = undefined
   if (process.argv.length === 3) {
-    if (programs[process.argv[2]]) {
-      programString = programs[process.argv[2]]
+    const testCaseName = process.argv[2]
+    if (testCases[testCaseName]) {
+      programString = testCases[testCaseName][0]
     } else {
       console.log('Invalid program name provided')
     }
@@ -34,6 +34,9 @@ export function determineProgramString(): string {
     }
   }
 
+  if (programString === undefined) {
+    throw new Error('Invalid program name provided')
+  }
   return programString
 }
 

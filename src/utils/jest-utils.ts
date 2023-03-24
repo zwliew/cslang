@@ -7,6 +7,11 @@ export const ANALYSIS_ERROR = '<jest-test-case> ANALYSIS ERROR'
 export type JestTestCase = [string, any]
 
 export function runTests(testCases: any) {
+  if (process.env.JEST_WORKER_ID === undefined) {
+    // Only run tests if we are in a jest worker
+    return
+  }
+  
   for (const testName in testCases) {
     test(testName, () => {
       if (testCases[testName][1] === FAIL_RESULT) {
