@@ -10,6 +10,7 @@ import { MemoryAddress } from '../interpreter-types'
 import { isPointerType } from '../../types'
 
 const WORD_SIZE = 4 // bytes
+export const DEFAULT_STACK_POINTER_START = 8
 
 // Size of types in bytes
 
@@ -65,7 +66,7 @@ export class Memory {
     const buffer = new ArrayBuffer(size_bytes ?? 1e7) // Default 10 MB of storage
     this.data = new DataView(buffer)
 
-    this.stackIndex = 8
+    this.stackIndex = DEFAULT_STACK_POINTER_START
     this.heapIndex = this.data.byteLength // Heap grows backwards
   }
 

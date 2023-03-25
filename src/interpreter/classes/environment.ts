@@ -1,5 +1,6 @@
 import { RedeclarationError, UndeclaredIdentifierError } from '../errors'
 import { Address, FunctionStackAddress, MemoryAddress } from '../interpreter-types'
+import { DEFAULT_STACK_POINTER_START, Memory } from './memory'
 
 type Frame = Map<string, Address>
 
@@ -8,10 +9,15 @@ export class Environment {
   frame: Frame
   parent: Environment | undefined
 
+  // Initial position of the stack pointer of the memory
+  // So that we can reinstate the stack pointer and reuse portions of the memory
+  stackPointer: number
+
   // Constructor for creating a new global frame
-  constructor(values?: Frame) {
+  constructor(stackPointer?: number, values?: Frame) {
     this.parent = undefined
     this.frame = values ?? new Map()
+    this.stackPointer = stackPointer ?? DEFAULT_STACK_POINTER_START
   }
 
   // Get the value of the name in the current environment
@@ -43,8 +49,8 @@ export class Environment {
     throw new UndeclaredIdentifierError(identifier)
   }
 
-  extend(values?: Frame): Environment {
-    const temp = new Environment(values)
+  extend(memory: Memory, values?: Frame): Environment {
+    const temp = new Environment(memory.stackIndex, values)
     temp.parent = this
     return temp
   }
@@ -61,7 +67,7 @@ export class Environment {
   }
 
   copy(): Environment {
-    return new Environment(new Map(this.frame))
+    return new Environment(this.stackPointer, new Map(this.frame))
   }
 
   isGlobal(): boolean {

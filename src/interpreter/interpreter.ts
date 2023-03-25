@@ -223,7 +223,7 @@ const microcode = (code: AgendaItems) => {
     case 'Block':
       A.push({ type: 'env_i', environment: E })
       A.push(...handle_block(code))
-      E = E.extend()
+      E = E.extend(M)
       break
 
     case 'ValueDeclaration':
@@ -297,13 +297,13 @@ const microcode = (code: AgendaItems) => {
       if (code.init) {
         A.push(code.init)
       }
-      E = E.extend()
+      E = E.extend(M)
       break
 
     case 'Switch':
       A.push({ type: 'switch_env_i', environment: E })
       A.push({ type: 'switch_i', block: code.block }, code.expression)
-      E = E.extend()
+      E = E.extend(M)
       break
 
     case 'SwitchCaseDefault':
@@ -414,7 +414,7 @@ const microcode = (code: AgendaItems) => {
       // Save the current environment
       A.push({ type: 'fn_env_i', environment: E })
       // Extend the environment with a frame mapping from parameter to argument value
-      E = E.extend()
+      E = E.extend(M)
       A.push(...functionAndEnv[0].body.slice().reverse())
       break
 
@@ -445,7 +445,7 @@ const microcode = (code: AgendaItems) => {
     case 'env_i':
     case 'switch_env_i':
     case 'fn_env_i':
-      // TODO: Reinstate stack pointer for the memory
+      M.reinstateStackPointer(E.stackPointer)
       E = code.environment
       break
 
