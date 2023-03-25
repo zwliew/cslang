@@ -27,7 +27,7 @@ main() {
         result |= 1;
       }
   }
-  n = 1000000009;
+  n = 1618931;
   _Bool prime = 1;
   for (int d = 2; d * d <= n; d += 1) {
       if (n % d == 0) {

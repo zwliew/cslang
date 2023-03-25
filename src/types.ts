@@ -109,6 +109,14 @@ export function multiwordTypeToTypeSpecifier(multiwordType: RawTypeSpecifier): T
   }
 }
 
+export function isPrimitiveType(typeSpecifier: TypeSpecifier): boolean {
+  return typeof typeSpecifier === 'string'
+}
+
 export function isPointerType(typeSpecifier: TypeSpecifier): boolean {
-  return typeof typeSpecifier !== 'string'
+  return typeof typeSpecifier === 'object' && 'ptrTo' in typeSpecifier
+}
+
+export function isArrayType(typeSpecifier: TypeSpecifier): boolean {
+  return typeof typeSpecifier === 'object' && 'arrOf' in typeSpecifier
 }

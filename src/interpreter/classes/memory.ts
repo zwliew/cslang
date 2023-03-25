@@ -3,11 +3,16 @@
 
 import Decimal from '../../utils/decimal'
 
-import { Literal, PrimitiveTypeSpecifier, TypeSpecifier } from '../../parser/ast-types'
+import {
+  ArrayTypeSpecifier,
+  Literal,
+  PrimitiveTypeSpecifier,
+  TypeSpecifier
+} from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
-import { isPointerType } from '../../types'
+import { isPointerType, isPrimitiveType } from '../../types'
 
 const WORD_SIZE = 4 // bytes
 export const DEFAULT_STACK_POINTER_START = 8
@@ -31,17 +36,21 @@ const sizeOfTypes = {
   'long double': 16
 }
 
-export function sizeOfType(type: TypeSpecifier) {
-  if (!isPointerType(type)) {
+export function sizeOfType(type: TypeSpecifier): number {
+  if (isPrimitiveType(type)) {
     // This is a primitive type.
     const size = sizeOfTypes[type as PrimitiveTypeSpecifier]
     if (size === undefined) {
       throw new NotImplementedError(`Size of type specifier '${type}' is not implemented.`)
     }
     return size
+  } else if (isPointerType(type)) {
+    // This is a pointer to another type.
+    return WORD_SIZE
+  } else {
+    // This is an array type.
+    return sizeOfType((type as ArrayTypeSpecifier).arrOf) * (type as ArrayTypeSpecifier).size
   }
-  // Otherwise, this is a pointer to another type.
-  return WORD_SIZE
 }
 
 /**

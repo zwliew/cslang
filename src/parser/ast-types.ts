@@ -234,6 +234,7 @@ export interface ValueDeclaration extends BaseNode {
   typeSpecifier: TypeSpecifier // TODO: Have a proper list of types
   identifier: string
   value?: Expression
+  arraySize?: Expression
 }
 
 export interface FunctionDeclaration extends BaseNode {
@@ -270,8 +271,12 @@ export interface Declarator extends BaseNode {
   pointerDepth: number // * = 1, ** = 2 etc.
 }
 
-export type PrimitiveTypeSpecifier = Exclude<TypeSpecifier, PointerTypeSpecifier>
+export type PrimitiveTypeSpecifier = Exclude<
+  Exclude<TypeSpecifier, PointerTypeSpecifier>,
+  ArrayTypeSpecifier
+>
 export type PointerTypeSpecifier = { ptrTo: TypeSpecifier }
+export type ArrayTypeSpecifier = { arrOf: TypeSpecifier; size: number }
 export type TypeSpecifier =
   | 'void'
   | 'char'
@@ -291,6 +296,7 @@ export type TypeSpecifier =
   | 'unsigned long'
   | 'unsigned long long'
   | PointerTypeSpecifier // a pointer to a type
+  | ArrayTypeSpecifier
 
 export type RawTypeSpecifier =
   | 'void'

@@ -4,7 +4,7 @@ import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 
-import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
+import { INFINITY, STRAY_SEMICOLON, ZERO } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
 import {
   AdditiveExpressionContext,
@@ -530,7 +530,9 @@ export class CGenerator implements CVisitor<AstNode> {
         const expression = ctx.expression()
         if (expression.length > 1) {
           // TODO: support more than 1 subscripts
-        throw new NotImplementedError("Array subscripting with more than 1 subscript is not supported yet")
+          throw new NotImplementedError(
+            'Array subscripting with more than 1 subscript is not supported yet'
+          )
         }
         return {
           type: 'UnaryExpression',
@@ -896,7 +898,6 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
     }
 
-    // TODO: make use of `arraySize` to declare an array
     let arraySize = undefined
     if (directDeclaratorCount >= 1) {
       // TODO: support multi-dimensional arrays
@@ -909,6 +910,7 @@ export class CGenerator implements CVisitor<AstNode> {
         if (arraySize.type !== 'Literal') {
           throw new IllegalArgumentError('Array size must be a literal')
         }
+        typeSpecifier = { arrOf: typeSpecifier, size: arraySize.value.toNumber() }
       }
     }
 
@@ -920,9 +922,9 @@ export class CGenerator implements CVisitor<AstNode> {
 
     return {
       type: 'ValueDeclaration',
-      typeSpecifier: typeSpecifier,
-      identifier: identifier,
-      value: value
+      typeSpecifier,
+      identifier,
+      value
     }
   }
 
@@ -980,7 +982,6 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
     }
 
-    // TODO: make use of `arraySize` to declare an array
     let arraySize = undefined
     if (directDeclaratorCount >= 1) {
       // TODO: support multi-dimensional arrays
@@ -992,6 +993,9 @@ export class CGenerator implements CVisitor<AstNode> {
         arraySize = this.visitAssignmentExpression(assignmentExpression)
         if (arraySize.type !== 'Literal') {
           throw new IllegalArgumentError('Array size must be a literal')
+        }
+        if (arraySize === ZERO) {
+          throw new IllegalArgumentError('Cannot declare an array of size 0')
         }
       }
     }
@@ -1006,7 +1010,8 @@ export class CGenerator implements CVisitor<AstNode> {
       type: 'ValueDeclaration',
       typeSpecifier: typeSpecifier,
       identifier: identifier,
-      value: value
+      value: value,
+      arraySize
     }
   }
 

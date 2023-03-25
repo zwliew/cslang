@@ -1,10 +1,16 @@
 import Decimal from '../utils/decimal'
 
-import { Literal, PointerTypeSpecifier, TypeSpecifier } from '../parser/ast-types'
-import { hierarchy, isPointerType, rank } from '../types'
+import {
+  ArrayTypeSpecifier,
+  Literal,
+  PointerTypeSpecifier,
+  TypeSpecifier
+} from '../parser/ast-types'
+import { hierarchy, isArrayType, isPointerType, isPrimitiveType, rank } from '../types'
 import { DECIMAL_ONE, DECIMAL_ZERO } from './constants'
 import { InvalidOperation } from './errors'
 import { sizeOfType } from './classes/memory'
+import { IllegalArgumentError } from '../utils/errors'
 
 const floatingPointRank = rank('float')
 
@@ -17,9 +23,9 @@ function promote(left: TypeSpecifier, right: TypeSpecifier): TypeSpecifier {
  ************/
 
 function addPtr(left: Literal, right: Literal): Literal {
-  if (isPointerType(right.typeSpecifier)) {
+  if (!isPrimitiveType(right.typeSpecifier)) {
     throw new InvalidOperation(
-      `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+      `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
   }
   return {
@@ -31,13 +37,41 @@ function addPtr(left: Literal, right: Literal): Literal {
   }
 }
 
+function addArray(left: Literal, right: Literal): Literal {
+  if (!isPrimitiveType(right.typeSpecifier)) {
+    throw new InvalidOperation(
+      `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+    )
+  }
+  if (left.address === undefined) {
+    throw new IllegalArgumentError(
+      'Cannot do pointer arithmetic on array with an undefined address.'
+    )
+  }
+  return {
+    type: 'Literal',
+    typeSpecifier: { ptrTo: (left.typeSpecifier as ArrayTypeSpecifier).arrOf }, // convert to a pointer
+    value: right.value
+      .mul(sizeOfType((left.typeSpecifier as ArrayTypeSpecifier).arrOf))
+      .add(left.address.location)
+  }
+}
+
 export function add(left: Literal, right: Literal): Literal {
+  // Handle pointer arithmetic on both raw pointers and arrays.
   if (isPointerType(left.typeSpecifier)) {
     return addPtr(left, right)
   }
   if (isPointerType(right.typeSpecifier)) {
     return addPtr(right, left)
   }
+  if (isArrayType(left.typeSpecifier)) {
+    return addArray(left, right)
+  }
+  if (isArrayType(right.typeSpecifier)) {
+    return addArray(right, left)
+  }
+
   // Smaller integral types will be promoted, so we can literally just add the values
   return {
     type: 'Literal',
@@ -61,13 +95,41 @@ function subtractPtr(left: Literal, right: Literal): Literal {
   }
 }
 
+function subtractArray(left: Literal, right: Literal): Literal {
+  if (!isPrimitiveType(right.typeSpecifier)) {
+    throw new InvalidOperation(
+      `Invalid operands for '-' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+    )
+  }
+  if (left.address === undefined) {
+    throw new IllegalArgumentError(
+      'Cannot do pointer arithmetic on array with an undefined address.'
+    )
+  }
+  return {
+    type: 'Literal',
+    typeSpecifier: { ptrTo: (left.typeSpecifier as ArrayTypeSpecifier).arrOf }, // convert to a pointer
+    value: right.value
+      .mul(-sizeOfType((left.typeSpecifier as ArrayTypeSpecifier).arrOf))
+      .add(left.address.location)
+  }
+}
+
 export function subtract(left: Literal, right: Literal): Literal {
+  // Handle pointer arithmetic on both raw pointers and arrays.
   if (isPointerType(left.typeSpecifier)) {
     return subtractPtr(left, right)
   }
   if (isPointerType(right.typeSpecifier)) {
     return subtractPtr(right, left)
   }
+  if (isArrayType(left.typeSpecifier)) {
+    return subtractArray(left, right)
+  }
+  if (isArrayType(right.typeSpecifier)) {
+    return subtractArray(right, left)
+  }
+
   return {
     type: 'Literal',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),

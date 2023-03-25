@@ -1,4 +1,13 @@
-import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
+import {
+  ArrayTypeSpecifier,
+  AssignmentExpression,
+  AstNode,
+  BinaryOperator,
+  Block,
+  Literal,
+  PointerTypeSpecifier
+} from '../parser/ast-types'
+import { isArrayType, isPointerType } from '../types'
 import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, RuntimeError } from '../utils/errors'
@@ -10,7 +19,8 @@ import {
   CASE_INSTRUCTION,
   POP_INSTRUCTION,
   SWITCH_DEFAULT_INSTRUCTION,
-  UNDEFINED_LITERAL
+  UNDEFINED_LITERAL,
+  ZERO
 } from './constants'
 import { InterpreterError, UndeclaredIdentifierError } from './errors'
 import { AgendaItems, MemoryAddress } from './interpreter-types'
@@ -431,7 +441,11 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'binop_i':
-      OS.push(apply_binop(code.operator, pop(OS), pop(OS)))
+      {
+        const v2 = pop(OS)
+        const v1 = pop(OS)
+        OS.push(apply_binop(code.operator, v2, v1))
+      }
       break
 
     case 'branch_i':
@@ -524,20 +538,31 @@ const microcode = (code: AgendaItems) => {
 
     case 'dereference_i': {
       const ptr = pop(OS)
-      if (typeof ptr.typeSpecifier !== 'object' || ptr.typeSpecifier.ptrTo === undefined) {
-        throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
+      if (isPointerType(ptr.typeSpecifier)) {
+        // This is a pointer type.
+        const memAddress: MemoryAddress = {
+          type: 'MemoryAddress',
+          typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
+          location: ptr.value.toNumber()
+        }
+        OS.push({
+          type: 'Literal',
+          typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
+          value: M.getValue(memAddress),
+          address: memAddress
+        })
+      } else if (isArrayType(ptr.typeSpecifier)) {
+        // This is an array type.
+        OS.push({
+          type: 'Literal',
+          typeSpecifier: { ptrTo: (ptr.typeSpecifier as ArrayTypeSpecifier).arrOf },
+          value: ptr.value
+        })
+      } else {
+        throw new IllegalArgumentError(
+          'Operand of unary * operator must have pointer or array type.'
+        )
       }
-      const memAddress: MemoryAddress = {
-        type: 'MemoryAddress',
-        typeSpecifier: ptr.typeSpecifier.ptrTo,
-        location: ptr.value.toNumber()
-      }
-      OS.push({
-        type: 'Literal',
-        typeSpecifier: ptr.typeSpecifier.ptrTo,
-        value: M.getValue(memAddress),
-        address: memAddress
-      })
       break
     }
 
