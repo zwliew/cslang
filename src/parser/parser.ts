@@ -155,8 +155,8 @@ export class CGenerator implements CVisitor<AstNode> {
     if (conditionalExpression) {
       return this.visitConditionalExpression(conditionalExpression) as Expression
     }
+
     // Assigning a value to something
-    // TODO: implement parsing
 
     const operator = ctx.assignmentOperator()!.text
 
@@ -524,6 +524,23 @@ export class CGenerator implements CVisitor<AstNode> {
           type: 'FunctionApplication',
           identifier: primaryExpression.text,
           arguments: functionArguments
+        }
+      } else if (ctx.expression().length > 0) {
+        // Array subscripting (6.5.2.1)
+        const expression = ctx.expression()
+        if (expression.length > 1) {
+          // TODO: support more than 1 subscripts
+        throw new NotImplementedError("Array subscripting with more than 1 subscript is not supported yet")
+        }
+        return {
+          type: 'UnaryExpression',
+          operator: '*',
+          operand: {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: this.visitPrimaryExpression(primaryExpression),
+            right: this.visitExpression(expression[0])
+          }
         }
       } else {
         // Flatten
