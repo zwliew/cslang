@@ -1,4 +1,4 @@
-import { FunctionDefinition } from '../../parser/ast-types'
+import { FunctionDefinition, Literal } from '../../parser/ast-types'
 import { Environment } from './environment'
 
 export class FunctionStack {
@@ -8,6 +8,16 @@ export class FunctionStack {
   constructor() {
     this.functionStack = []
     this.functionIndexes = new Map()
+
+    this.allocatePrimitiveFunction(putchar, 'putchar')
+  }
+
+  // Private function only for primitives
+  allocatePrimitiveFunction(fn: FunctionDefinition, fnName: string) {
+    const functionIndex = this.functionStack.length
+    this.functionIndexes[fnName] = functionIndex
+    // We can just allocate a new Environment - the environment is irrelevant here
+    this.functionStack.push([fn, new Environment()])
   }
 
   // Does not actually allocate space on the stack yet
@@ -45,4 +55,42 @@ export class FunctionStack {
   functionIndexes: ${this.functionIndexes}
 }`)
   }
+}
+
+export const primitiveFunctions = []
+
+const primitivePutchar = (ch: Literal): Literal => {
+  const value = ch.value.toNumber()
+
+  // Convert to ascii and print
+  process.stdout.write(String.fromCharCode(value))
+
+  // Return the input type casted to an int
+  return {
+    type: 'Literal',
+    typeSpecifier: 'int',
+    value: ch.value
+  }
+}
+
+const putchar: FunctionDefinition = {
+  type: 'FunctionDefinition',
+  returnType: 'int',
+  parameterList: {
+    type: 'ParameterList',
+    parameters: [
+      {
+        type: 'ParameterDeclaration',
+        typeSpecifier: 'char',
+        name: {
+          type: 'Declarator',
+          name: 'char',
+          pointerDepth: 0
+        }
+      }
+    ]
+  },
+  primitive: true,
+  primitiveFunction: primitivePutchar,
+  body: []
 }

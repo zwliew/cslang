@@ -399,15 +399,22 @@ const microcode = (code: AgendaItems) => {
 
     case 'app_i':
       const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
-      const functionArguments = []
+      const functionArguments: Literal[] = []
       for (let i = 0; i < code.arity; i++) {
         // Makes a copy of each value
-        functionArguments.push(OS.pop())
+        functionArguments.push(OS.pop()!)
       }
+
+      // Primitive functions can be called directly in the interpreter
+      if (functionAndEnv[0].primitive) {
+        OS.push(functionAndEnv[0].primitiveFunction!(...functionArguments))
+        break
+      }
+
       // Save the current environment
       A.push({ type: 'fn_env_i', environment: E })
       // Extend the environment with a frame mapping from parameter to argument value
-      E.extend()
+      E = E.extend()
       A.push(...functionAndEnv[0].body.slice().reverse())
       break
 

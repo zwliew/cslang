@@ -1022,7 +1022,8 @@ export class CGenerator implements CVisitor<AstNode> {
       functionDefinition: {
         type: 'FunctionDefinition',
         returnType: returnType,
-        body: this.extractFromCompoundStatement(ctx.compoundStatement())
+        body: this.extractFromCompoundStatement(ctx.compoundStatement()),
+        primitive: false
       }
     }
     if (parameterTypeList) {

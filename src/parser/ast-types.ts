@@ -247,6 +247,8 @@ export interface FunctionDefinition extends BaseNode {
   returnType: TypeSpecifier
   parameterList?: ParameterList
   body: Array<Statement>
+  primitive: boolean
+  primitiveFunction?: (...varargs: Literal[]) => Literal
 }
 
 export interface ParameterList extends BaseNode {

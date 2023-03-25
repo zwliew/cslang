@@ -16,7 +16,13 @@ interface AnalysisState {
   currentFunction: string
 }
 
-const defaultAnalysisState = { functions: {}, variables: {}, currentFunction: 'global' }
+const defaultAnalysisState = {
+  functions: {
+    putchar: { arity: 1, expectedReturnType: 'int', returns: true }
+  },
+  variables: {},
+  currentFunction: 'global'
+}
 export const createAnalysisState = () => JSON.parse(JSON.stringify(defaultAnalysisState))
 
 // Traverses a given AST and builds information about it in analysisState
