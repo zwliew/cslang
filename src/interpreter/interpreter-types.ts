@@ -54,6 +54,7 @@ export type Instructions =
   | iCase
   | iFunctionApplication
   | iDereference
+  | iSizeof
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
@@ -137,4 +138,8 @@ export interface iFunctionApplication extends BaseInstruction {
 
 export interface iDereference extends BaseInstruction {
   type: 'dereference_i'
+}
+
+export interface iSizeof extends BaseInstruction {
+  type: 'sizeof_i'
 }

@@ -69,7 +69,7 @@ export interface UnaryExpression extends BaseExpression {
   operand: Expression
 }
 
-export type UnaryOperator = '&' | '*' | '+' | '-' | '~' | '!'
+export type UnaryOperator = '&' | '*' | '+' | '-' | '~' | '!' | 'sizeof'
 
 export type BinaryOperator =
   | '*'

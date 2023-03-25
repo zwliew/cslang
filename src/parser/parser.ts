@@ -3,6 +3,7 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
+import { sizeOfType } from '../interpreter/classes/memory'
 
 import { INFINITY, STRAY_SEMICOLON, ZERO } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
@@ -41,6 +42,7 @@ import {
   SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
+  TypeNameContext,
   TypeSpecifierContext,
   UnaryExpressionContext,
   UnaryOperatorContext
@@ -59,7 +61,6 @@ import {
   Expression,
   FunctionDeclaration,
   If,
-  Literal,
   ParameterDeclaration,
   ParameterList,
   Statement,
@@ -468,11 +469,6 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitUnaryExpression(ctx: UnaryExpressionContext): Expression {
-    const postfixExpression = ctx.postfixExpression()
-    if (postfixExpression) {
-      return this.visitPostfixExpression(postfixExpression)
-    }
-
     const unaryOperator = ctx.unaryOperator()
     if (unaryOperator) {
       // unaryOperator castExpression
@@ -481,11 +477,40 @@ export class CGenerator implements CVisitor<AstNode> {
         operator: this.unaryOperatorContextToString(unaryOperator),
         operand: this.visitCastExpression(ctx.castExpression()!)
       }
-    } else {
-      // Unary expression (++, -- prefix)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
     }
+
+    const typeName = ctx.typeName()
+    if (typeName) {
+      // Finding size of a type. Immediately return a literal
+      return {
+        type: 'Literal',
+        typeSpecifier: 'int',
+        value: new Decimal(sizeOfType(this.getTypeName(typeName)))
+      }
+    }
+
+    const sizeOf = ctx.Sizeof()[0]
+    if (sizeOf) {
+      // There are two sizeOf operators in C,
+      // sizeOf(type) and sizeOf(value)
+      // The previous if block already checked for sizeOf(type)
+      // So we are doing sizeOf(value) here instead
+
+      return {
+        type: 'UnaryExpression',
+        operator: 'sizeof',
+        operand: this.visitPostfixExpression(ctx.postfixExpression()!)
+      }
+    }
+
+    const postfixExpression = ctx.postfixExpression()
+    if (postfixExpression) {
+      return this.visitPostfixExpression(postfixExpression)
+    }
+
+    // Unary expression (++, -- prefix)
+    // TODO: implement parsing
+    throw new NotImplementedError(ctx.text)
   }
 
   // Internal method to convert unary operators to strings directly instead of an AstNode
@@ -597,7 +622,8 @@ export class CGenerator implements CVisitor<AstNode> {
         if (!isNaN(floatValue)) {
           return {
             type: 'Literal',
-            typeSpecifier: 'float',
+            // Floating point literals (eg 1.23) have type double
+            typeSpecifier: 'double',
             value: new Decimal(floatValue)
           }
         }
@@ -1118,6 +1144,47 @@ export class CGenerator implements CVisitor<AstNode> {
       name: identifier.text,
       pointerDepth: 0
     }
+  }
+
+  visitTypeName(ctx: TypeNameContext): AstNode {
+    // All visit methods need to return an AstNode, but a "type" isn't an AstNode
+    // So I use another function instead.
+    throw new NotImplementedError('Use the getTypeName method instead!')
+  }
+
+  getTypeName(ctx: TypeNameContext): TypeSpecifier {
+    // Contains the main type
+    const specialQualifierList = ctx.specifierQualifierList()
+    let typeName = specialQualifierList.typeSpecifier()!.text
+
+    let nextWordCtx = specialQualifierList.specifierQualifierList()
+
+    // We need to rebuild the type if it has multiple words, eg "long long".
+    while (nextWordCtx) {
+      typeName += ' ' + nextWordCtx.typeSpecifier()!.text
+      nextWordCtx = nextWordCtx.specifierQualifierList()
+    }
+
+    // This is just to please the typechecking - otherwise I'd reuse typeName
+    let typeSpecifier = typeName as TypeSpecifier
+
+    // Check if pointer
+    const abstractDeclarator = ctx.abstractDeclarator()
+
+    if (abstractDeclarator) {
+      // Determine the number of pointers we need (i.e. for `int **x;`)
+      const pointerChildren = abstractDeclarator.pointer()?.children ?? []
+      for (let child of pointerChildren) {
+        if (child.text !== '*') {
+          // Stop at the first non-pointer child
+          // TODO: support other "pointer-like" keywords like `int *const`.
+          break
+        }
+        typeSpecifier = { ptrTo: typeSpecifier }
+      }
+    }
+
+    return typeSpecifier
   }
 }
 

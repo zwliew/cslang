@@ -342,6 +342,8 @@ const microcode = (code: AgendaItems) => {
       } else if (code.operator === '*') {
         // Dereference operator
         A.push({ type: 'dereference_i' }, code.operand)
+      } else if (code.operator === 'sizeof') {
+        A.push({ type: 'sizeof_i' }, code.operand)
       } else {
         // TODO: implement '~' and '!' unary operators
         error(code, 'Unknown command: ')
@@ -563,6 +565,17 @@ const microcode = (code: AgendaItems) => {
           'Operand of unary * operator must have pointer or array type.'
         )
       }
+      break
+    }
+
+    case 'sizeof_i': {
+      const typeSpecifier = OS.pop()!.typeSpecifier
+
+      OS.push({
+        type: 'Literal',
+        typeSpecifier: 'int',
+        value: new Decimal(sizeOfType(typeSpecifier))
+      })
       break
     }
 

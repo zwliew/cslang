@@ -246,6 +246,55 @@ const inclusiveOrAssignment = [
   7
 ]
 
+const sizeofInt = [
+  `
+  main() {
+    return sizeof(int);
+  }
+  `,
+  4
+]
+
+const sizeofDouble = [
+  `
+  main() {
+    return sizeof(double);
+  }
+  `,
+  8
+]
+
+const sizeofExpression = [
+  `
+  main() {
+    short x = 100;
+    return sizeof x;
+  }
+  `,
+  2
+]
+
+const sizeOfExpressionTypeConversion1 = [
+  `
+  main() {
+    short x = 100;
+    return sizeof (x / 2.0);
+  }
+  `,
+  8
+]
+
+const sizeOfExpressionTypeConversion2 = [
+  `
+  main() {
+    short x = 100;
+    int y = 200;
+    return sizeof (x + y);
+  }
+  `,
+  4
+]
+
 export const operatorTests = {
   inclusiveOrExpression,
   andExpression,
@@ -273,7 +322,12 @@ export const operatorTests = {
   rightShiftAssignment,
   andAssignment,
   exclusiveOrAssignment,
-  inclusiveOrAssignment
+  inclusiveOrAssignment,
+  sizeofInt,
+  sizeofDouble,
+  sizeofExpression,
+  sizeOfExpressionTypeConversion1,
+  sizeOfExpressionTypeConversion2
 }
 
 runTests(operatorTests)
