@@ -80,5 +80,6 @@ export function analyserTest() {
 
 export function runnerTest() {
   const programString = determineProgramString()
-  cslangRunner(programString)
+  const output = cslangRunner(programString)
+  console.log(output)
 }
