@@ -1,7 +1,7 @@
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
 import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
 import Decimal from '../utils/decimal'
-import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
+import { IllegalArgumentError, NotImplementedError, RuntimeError } from '../utils/errors'
 import { Environment } from './classes/environment'
 import { FunctionStack } from './classes/function-stack'
 import { Memory, sizeOfType } from './classes/memory'
@@ -543,7 +543,7 @@ const microcode = (code: AgendaItems) => {
  * interpreter loop
  * ****************/
 
-const step_limit = 1000000
+const STEP_LIMIT = 10000000 // 1e7
 
 export const execute = (program: AstNode) => {
   A = [program]
@@ -552,7 +552,7 @@ export const execute = (program: AstNode) => {
   FS = new FunctionStack()
   M = new Memory(10e3) // Use 10KB of memory
   let i = 0
-  while (i < step_limit) {
+  while (i < STEP_LIMIT) {
     if (DEBUG_PRINT_STEPS) {
       console.log('Step', i)
       console.log(A)
@@ -569,6 +569,10 @@ export const execute = (program: AstNode) => {
     i++
   }
 
+  if (A.length) {
+    throw new RuntimeError('Terminated program due to step limit.')
+  }
+
   if (DEBUG_PRINT_FINAL_OS) {
     console.log('Final OS:', OS)
   }
@@ -582,5 +586,7 @@ export const execute = (program: AstNode) => {
   if (DEBUG_PRINT_MEMORY) {
     M.viewMemory()
   }
+
+  // TODO: Modulo 2^8 = 256 for return values from main
   return OS[0].value
 }

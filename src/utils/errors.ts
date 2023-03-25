@@ -26,3 +26,10 @@ export class AnalysisError extends Error {
     this.name = 'AnalysisError'
   }
 }
+
+export class RuntimeError extends Error {
+  constructor(message?: string) {
+    super(message)
+    this.name = 'RuntimeError'
+  }
+}
