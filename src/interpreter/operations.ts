@@ -1,9 +1,10 @@
 import Decimal from '../utils/decimal'
 
-import { Literal, TypeSpecifier } from '../parser/ast-types'
-import { hierarchy, rank } from '../types'
+import { Literal, PointerTypeSpecifier, TypeSpecifier } from '../parser/ast-types'
+import { hierarchy, isPointerType, rank } from '../types'
 import { DECIMAL_ONE, DECIMAL_ZERO } from './constants'
 import { InvalidOperation } from './errors'
+import { sizeOfType } from './classes/memory'
 
 const floatingPointRank = rank('float')
 
@@ -15,7 +16,28 @@ function promote(left: TypeSpecifier, right: TypeSpecifier): TypeSpecifier {
  * Operations
  ************/
 
+function addPtr(left: Literal, right: Literal): Literal {
+  if (isPointerType(right.typeSpecifier)) {
+    throw new InvalidOperation(
+      `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+    )
+  }
+  return {
+    type: 'Literal',
+    typeSpecifier: left.typeSpecifier,
+    value: left.value.add(
+      right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
+    )
+  }
+}
+
 export function add(left: Literal, right: Literal): Literal {
+  if (isPointerType(left.typeSpecifier)) {
+    return addPtr(left, right)
+  }
+  if (isPointerType(right.typeSpecifier)) {
+    return addPtr(right, left)
+  }
   // Smaller integral types will be promoted, so we can literally just add the values
   return {
     type: 'Literal',
@@ -24,7 +46,28 @@ export function add(left: Literal, right: Literal): Literal {
   }
 }
 
+function subtractPtr(left: Literal, right: Literal): Literal {
+  if (isPointerType(right.typeSpecifier)) {
+    throw new InvalidOperation(
+      `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+    )
+  }
+  return {
+    type: 'Literal',
+    typeSpecifier: left.typeSpecifier,
+    value: left.value.sub(
+      right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
+    )
+  }
+}
+
 export function subtract(left: Literal, right: Literal): Literal {
+  if (isPointerType(left.typeSpecifier)) {
+    return subtractPtr(left, right)
+  }
+  if (isPointerType(right.typeSpecifier)) {
+    return subtractPtr(right, left)
+  }
   return {
     type: 'Literal',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),

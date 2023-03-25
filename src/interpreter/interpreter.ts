@@ -483,7 +483,6 @@ const microcode = (code: AgendaItems) => {
     case 'dereference_i': {
       const ptr = OS.pop()!
       if (typeof ptr.typeSpecifier !== 'object' || ptr.typeSpecifier.ptrTo === undefined) {
-        console.log(ptr)
         throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
       }
       const memAddress: MemoryAddress = {

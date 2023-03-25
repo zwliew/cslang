@@ -108,3 +108,7 @@ export function multiwordTypeToTypeSpecifier(multiwordType: RawTypeSpecifier): T
       return 'long double'
   }
 }
+
+export function isPointerType(typeSpecifier: TypeSpecifier): boolean {
+  return typeof typeSpecifier !== 'string'
+}

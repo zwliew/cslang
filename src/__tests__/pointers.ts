@@ -7,7 +7,7 @@ main() {
   x += 2;
   return x;
 }`,
-  5
+  11
 ]
 
 const pointerDeref = [
@@ -38,9 +38,23 @@ main() {
   5
 ]
 
+const pointerDerefAssmtArithmetic = [
+  `
+main() {
+  int x = 6;
+  int y = 2;
+  int *px = &x;
+  *(px + 1) = 5;
+  return y;
+}
+`,
+  5
+]
+
 export const pointerTests = {
   basicPointer,
   pointerDeref,
-  pointerDerefAssmtSimple
+  pointerDerefAssmtSimple,
+  pointerDerefAssmtArithmetic
 }
 runTests(pointerTests)
