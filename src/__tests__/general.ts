@@ -4,14 +4,15 @@ const fibonacci = [
   `
 main() {
   int n = 12;
-  long long fst = 0;
-  long long snd = 1;
+  long long res[2];
+  res[0] = 0;
+  res[1] = 1;
   for (int i = 2; i <= n; i += 1) {
-      long long tmp = snd;
-      snd += fst;
-      fst = tmp;
+      long long tmp = res[1];
+      res[1] += res[0];
+      res[0] = tmp;
   }
-  return n ? snd : fst;
+  return n ? res[1] : res[0];
 }
 `,
   144
