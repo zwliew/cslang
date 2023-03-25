@@ -7,25 +7,37 @@ import { Literal, PrimitiveTypeSpecifier, TypeSpecifier } from '../../parser/ast
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
+import { isPointerType } from '../../types'
 
 const WORD_SIZE = 4 // bytes
 
 // Size of types in bytes
 
 const sizeOfTypes = {
+  _Bool: 1,
   char: 1,
+  'unsigned char': 1,
   short: 2,
+  'unsigned short': 2,
   int: 4,
+  'unsigned int': 4,
   long: 4,
+  'unsigned long': 4,
   float: 4,
+  'long long': 8,
+  'unsigned long long': 8,
   double: 8,
-  longdouble: 16
+  'long double': 16
 }
 
 export function sizeOfType(type: TypeSpecifier) {
-  if (typeof type === 'string') {
+  if (!isPointerType(type)) {
     // This is a primitive type.
-    return sizeOfTypes[type]
+    const size = sizeOfTypes[type as PrimitiveTypeSpecifier]
+    if (size === undefined) {
+      throw new NotImplementedError(`Size of type specifier '${type}' is not implemented.`)
+    }
+    return size
   }
   // Otherwise, this is a pointer to another type.
   return WORD_SIZE
