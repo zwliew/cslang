@@ -1,10 +1,10 @@
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
 import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
 import Decimal from '../utils/decimal'
-import { NotImplementedError } from '../utils/errors'
+import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
 import { Environment } from './classes/environment'
 import { FunctionStack } from './classes/function-stack'
-import { Memory, sizeOfTypes } from './classes/memory'
+import { Memory, sizeOfType } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
   CASE_INSTRUCTION,
@@ -160,7 +160,7 @@ const fusedAssignmentBinOps: Set<BinaryOperator> = new Set([
   '>>'
 ])
 function handleAssignmentOperator(assignExp: AssignmentExpression): AgendaItems[] {
-  const result: AgendaItems[] = [{ type: 'value_assmt_i', identifier: assignExp.identifier }]
+  const result: AgendaItems[] = [{ type: 'value_assmt_i', identifier: assignExp.assignee }]
 
   if (assignExp.operator === '=') {
     // This is a simple assignment.
@@ -173,7 +173,7 @@ function handleAssignmentOperator(assignExp: AssignmentExpression): AgendaItems[
   if (fusedAssignmentBinOps.has(binop)) {
     result.push({ type: 'binop_i', operator: binop }, assignExp.value, {
       type: 'Identifier',
-      identifier: assignExp.identifier
+      identifier: assignExp.assignee
     })
     return result
   }
@@ -225,7 +225,7 @@ const microcode = (code: AgendaItems) => {
       E.declare(code.identifier, {
         type: 'MemoryAddress',
         typeSpecifier: code.typeSpecifier,
-        location: M.allocateStack(sizeOfTypes[code.typeSpecifier])
+        location: M.allocateStack(sizeOfType(code.typeSpecifier))
       })
 
       if (code.value) {
@@ -290,7 +290,23 @@ const microcode = (code: AgendaItems) => {
       if (code.operator === '-') {
         OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(-1) })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
+      } else if (code.operator === '&') {
+        // Address-of operator
+        if (code.operand.type !== 'Identifier') {
+          // TODO: support more expressions
+          throw new IllegalArgumentError('Address-of operator can only be applied to identifiers')
+        }
+        const addr = E.get(code.operand.identifier) as MemoryAddress
+        OS.push({
+          type: 'Literal',
+          typeSpecifier: { ptrTo: addr.typeSpecifier },
+          value: new Decimal(addr.location)
+        })
+      } else if (code.operator === '*') {
+        // Dereference operator
+        A.push({ type: 'dereference_i' }, code.operand)
       } else {
+        // TODO: implement '~' and '!' unary operators
         error(code, 'Unknown command: ')
       }
       break
@@ -327,7 +343,7 @@ const microcode = (code: AgendaItems) => {
           E.declare(parameters[i].name, {
             type: 'MemoryAddress',
             typeSpecifier: parameters[i].typeSpecifier,
-            location: M.allocateStack(sizeOfTypes[parameters[i].typeSpecifier])
+            location: M.allocateStack(sizeOfType(parameters[i].typeSpecifier))
           })
 
           A.push(
@@ -452,6 +468,23 @@ const microcode = (code: AgendaItems) => {
         }
       }
       break
+
+    case 'dereference_i': {
+      const addr = OS.pop()!
+      if (typeof addr.typeSpecifier === 'string') {
+        throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
+      }
+      OS.push({
+        type: 'Literal',
+        typeSpecifier: addr.typeSpecifier.ptrTo,
+        value: M.getValue({
+          type: 'MemoryAddress',
+          typeSpecifier: addr.typeSpecifier.ptrTo,
+          location: addr.value.toNumber()
+        })
+      })
+      break
+    }
 
     default:
       error(code, 'Unknown command: ')

@@ -146,6 +146,7 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
         analysisState.functions[node.identifier].expectedReturnType !== 'void' &&
         !analysisState.functions[node.identifier].returns
       ) {
+        // TODO: add an implicit return
         throw new AnalysisError(`Function ${node.identifier} does not return any value`)
       } else if (
         analysisState.functions[node.identifier].expectedReturnType === 'void' &&
@@ -195,7 +196,7 @@ export const staticType = (
   }
   switch (node.type) {
     case 'AssignmentExpression':
-      return analysisState.variables[node.identifier]
+      return analysisState.variables[node.assignee]
     case 'UnaryExpression':
       // No operations change the type of an expression
       return staticType(node.operand, analysisState)

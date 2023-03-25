@@ -63,6 +63,7 @@ import {
   Statement,
   SwitchCase,
   TypeSpecifier,
+  UnaryExpression,
   UnaryOperator,
   ValueDeclaration
 } from './ast-types'
@@ -155,20 +156,19 @@ export class CGenerator implements CVisitor<AstNode> {
     // Assigning a value to something
     // TODO: implement parsing
 
+    const operator = ctx.assignmentOperator()!.text
+
     const leftContext = ctx.unaryExpression()
     const rightContext = ctx.assignmentExpression()
-
     if (leftContext === undefined || rightContext === undefined) {
       throw new NotImplementedError(ctx.text)
     }
 
-    const operator = ctx.assignmentOperator()!.text
-
-    // Left should be a name, right should be an expression
+    // Left should be a name or a pointer to some expression, right should be an expression
     return {
       type: 'AssignmentExpression',
       operator: operator as AssignmentOperator,
-      identifier: leftContext.text,
+      assignee: leftContext.text,
       value: this.visitAssignmentExpression(rightContext)
     }
   }
@@ -454,10 +454,10 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitCastExpression(ctx: CastExpressionContext): AstNode {
+  visitCastExpression(ctx: CastExpressionContext): Expression {
     const unaryExpression = ctx.unaryExpression()
     if (unaryExpression) {
-      return unaryExpression.accept(this)
+      return this.visitUnaryExpression(unaryExpression)
     } else {
       // Typecasting ((typeName) expression)
       // TODO: implement parsing
@@ -465,10 +465,10 @@ export class CGenerator implements CVisitor<AstNode> {
     }
   }
 
-  visitUnaryExpression(ctx: UnaryExpressionContext): AstNode {
+  visitUnaryExpression(ctx: UnaryExpressionContext): Expression {
     const postfixExpression = ctx.postfixExpression()
     if (postfixExpression) {
-      return postfixExpression.accept(this)
+      return this.visitPostfixExpression(postfixExpression)
     }
 
     const unaryOperator = ctx.unaryOperator()
@@ -477,7 +477,7 @@ export class CGenerator implements CVisitor<AstNode> {
       return {
         type: 'UnaryExpression',
         operator: this.unaryOperatorContextToString(unaryOperator),
-        operand: this.visitCastExpression(ctx.castExpression()!) as Expression
+        operand: this.visitCastExpression(ctx.castExpression()!)
       }
     } else {
       // Unary expression (++, -- prefix)
@@ -489,13 +489,23 @@ export class CGenerator implements CVisitor<AstNode> {
   // Internal method to convert unary operators to strings directly instead of an AstNode
   unaryOperatorContextToString(ctx: UnaryOperatorContext): UnaryOperator {
     if (ctx.Minus()) {
+      // Unary minus
       return '-'
+    } else if (ctx.And()) {
+      // Address-of operator
+      // TODO: enforce that the operand is a function designator, result of [] or unary * operator, or lvalue (6.5.3.2)
+      return '&'
+    } else if (ctx.Star()) {
+      // Dereference operator
+      // TODO: enforce that the operand has pointer type (6.5.3.2)
+      return '*'
     } else {
+      // TODO: implement '+', '~', and '!' unary operators
       throw new NotImplementedError(ctx.text)
     }
   }
 
-  visitPostfixExpression(ctx: PostfixExpressionContext): AstNode {
+  visitPostfixExpression(ctx: PostfixExpressionContext): Expression {
     const primaryExpression = ctx.primaryExpression()
     if (primaryExpression) {
       if (ctx.LeftParen().length > 0) {
@@ -515,7 +525,7 @@ export class CGenerator implements CVisitor<AstNode> {
         }
       } else {
         // Flatten
-        return primaryExpression.accept(this)
+        return this.visitPrimaryExpression(primaryExpression)
       }
     } else {
       // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
@@ -802,13 +812,25 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
     }
 
-    const typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
 
     const initDeclarator = ctx.initDeclaratorList().initDeclarator()
 
     if (initDeclarator.length != 1) {
       // Multiple declarations on a single line, ie int x = 1, y = 2;
       throw new NotImplementedError(ctx.text)
+    }
+
+    // Determine the number of pointers we need (i.e. for `int **x;`)
+    const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
+    let pointerCount = 0
+    for (let child of pointerChildren) {
+      if (child.text !== '*') {
+        // Stop at the first non-pointer child
+        // TODO: support other "pointer-like" keywords like `int *const`.
+        break
+      }
+      typeSpecifier = { ptrTo: typeSpecifier }
     }
 
     // Now, we get the left-most direct declarator (the identifier).

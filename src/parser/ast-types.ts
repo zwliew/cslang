@@ -36,7 +36,7 @@ interface BaseExpression extends BaseNode {}
 export interface AssignmentExpression extends BaseExpression {
   type: 'AssignmentExpression'
   operator: AssignmentOperator
-  identifier: string
+  assignee: string
   value: Expression
 }
 
@@ -260,6 +260,8 @@ export interface Declarator extends BaseNode {
   pointerDepth: number // * = 1, ** = 2 etc.
 }
 
+export type PrimitiveTypeSpecifier = Exclude<TypeSpecifier, PointerTypeSpecifier>
+export type PointerTypeSpecifier = { ptrTo: TypeSpecifier }
 export type TypeSpecifier =
   | 'void'
   | 'char'
@@ -278,6 +280,7 @@ export type TypeSpecifier =
   | 'unsigned int'
   | 'unsigned long'
   | 'unsigned long long'
+  | PointerTypeSpecifier // a pointer to a type
 
 export type RawTypeSpecifier =
   | 'void'

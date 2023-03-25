@@ -52,6 +52,7 @@ export type Instructions =
   | iBreak
   | iCase
   | iFunctionApplication
+  | iDereference
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
@@ -125,4 +126,8 @@ export interface iFunctionApplication extends BaseInstruction {
   type: 'app_i'
   identifier: string
   arity: number
+}
+
+export interface iDereference extends BaseInstruction {
+  type: 'dereference_i'
 }

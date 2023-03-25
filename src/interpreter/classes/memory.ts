@@ -3,7 +3,7 @@
 
 import Decimal from '../../utils/decimal'
 
-import { Literal, TypeSpecifier } from '../../parser/ast-types'
+import { Literal, PrimitiveTypeSpecifier, TypeSpecifier } from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
@@ -12,7 +12,7 @@ const WORD_SIZE = 4 // bytes
 
 // Size of types in bytes
 
-export const sizeOfTypes = {
+const sizeOfTypes = {
   char: 1,
   short: 2,
   int: 4,
@@ -20,6 +20,15 @@ export const sizeOfTypes = {
   float: 4,
   double: 8,
   longdouble: 16
+}
+
+export function sizeOfType(type: TypeSpecifier) {
+  if (typeof type === 'string') {
+    // This is a primitive type.
+    return sizeOfTypes[type]
+  }
+  // Otherwise, this is a pointer to another type.
+  return WORD_SIZE
 }
 
 /**
@@ -99,7 +108,9 @@ export class Memory {
   getValue(memAdd: MemoryAddress): Decimal {
     const byteOffset = memAdd.location
 
-    const typeToGetDataFunction: { [typeSpecifier in TypeSpecifier]: Function } = {
+    const typeToGetDataFunction: {
+      [typeSpecifier in PrimitiveTypeSpecifier]: Function
+    } = {
       void: () => {
         throw new SetVoidValueError()
       },
@@ -123,15 +134,24 @@ export class Memory {
       }
     }
 
-    return new Decimal(
-      typeToGetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset).toString()
-    )
+    let getDataFunction = undefined
+    if (typeof memAdd.typeSpecifier === 'string') {
+      // This is a primitive type.
+      getDataFunction = typeToGetDataFunction[memAdd.typeSpecifier]
+    } else {
+      // This is a pointer.
+      getDataFunction = this.data.getUint32
+    }
+    return new Decimal(getDataFunction.call(this.data, byteOffset).toString())
   }
 
   setValue(memAdd: MemoryAddress, value: Literal): void {
     const byteOffset = memAdd.location
 
-    const typeToSetDataFunction: { [typeSpecifier in TypeSpecifier]: Function } = {
+    // This object/map is meant for primitive types (i.e. non-pointers).
+    const typeToSetDataFunction: {
+      [typeSpecifier in PrimitiveTypeSpecifier]: Function
+    } = {
       void: () => {
         throw new SetVoidValueError()
       },
@@ -157,7 +177,15 @@ export class Memory {
       }
     }
 
-    return typeToSetDataFunction[memAdd.typeSpecifier].call(this.data, byteOffset, value.value)
+    let setDataFunction = undefined
+    if (typeof memAdd.typeSpecifier === 'string') {
+      // This is a primitive type.
+      setDataFunction = typeToSetDataFunction[memAdd.typeSpecifier]
+    } else {
+      // This is a pointer.
+      setDataFunction = this.data.setUint32
+    }
+    return setDataFunction.call(this.data, byteOffset, value.value)
   }
 
   viewMemory(): void {
