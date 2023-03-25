@@ -994,9 +994,7 @@ export class CGenerator implements CVisitor<AstNode> {
         if (arraySize.type !== 'Literal') {
           throw new IllegalArgumentError('Array size must be a literal')
         }
-        if (arraySize === ZERO) {
-          throw new IllegalArgumentError('Cannot declare an array of size 0')
-        }
+        typeSpecifier = { arrOf: typeSpecifier, size: arraySize.value.toNumber() }
       }
     }
 
@@ -1008,10 +1006,9 @@ export class CGenerator implements CVisitor<AstNode> {
 
     return {
       type: 'ValueDeclaration',
-      typeSpecifier: typeSpecifier,
-      identifier: identifier,
-      value: value,
-      arraySize
+      typeSpecifier,
+      identifier,
+      value
     }
   }
 

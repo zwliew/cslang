@@ -234,7 +234,6 @@ export interface ValueDeclaration extends BaseNode {
   typeSpecifier: TypeSpecifier // TODO: Have a proper list of types
   identifier: string
   value?: Expression
-  arraySize?: Expression
 }
 
 export interface FunctionDeclaration extends BaseNode {
