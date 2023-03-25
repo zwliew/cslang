@@ -196,7 +196,7 @@ export const staticType = (
   }
   switch (node.type) {
     case 'AssignmentExpression':
-      return analysisState.variables[node.assignee]
+      return staticType(node.assignee, analysisState)
     case 'UnaryExpression':
       // No operations change the type of an expression
       return staticType(node.operand, analysisState)

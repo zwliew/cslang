@@ -168,7 +168,7 @@ export class CGenerator implements CVisitor<AstNode> {
     return {
       type: 'AssignmentExpression',
       operator: operator as AssignmentOperator,
-      assignee: leftContext.text,
+      assignee: this.visitUnaryExpression(leftContext),
       value: this.visitAssignmentExpression(rightContext)
     }
   }

@@ -26,8 +26,21 @@ main() {
   6
 ]
 
+const pointerDerefAssmtSimple = [
+  `
+main() {
+  int x = 6;
+  int *px = &x;
+  *px = 5;
+  return x;
+}
+`,
+  5
+]
+
 export const pointerTests = {
   basicPointer,
-  pointerDeref
+  pointerDeref,
+  pointerDerefAssmtSimple
 }
 runTests(pointerTests)

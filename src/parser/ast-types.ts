@@ -1,3 +1,4 @@
+import { MemoryAddress } from '../interpreter/interpreter-types'
 import type { DecimalType } from '../utils/decimal'
 
 interface BaseNode {
@@ -36,7 +37,7 @@ interface BaseExpression extends BaseNode {}
 export interface AssignmentExpression extends BaseExpression {
   type: 'AssignmentExpression'
   operator: AssignmentOperator
-  assignee: string
+  assignee: Expression
   value: Expression
 }
 
@@ -62,6 +63,7 @@ export interface Literal extends BaseExpression {
   type: 'Literal'
   typeSpecifier: TypeSpecifier
   value: DecimalType
+  address?: MemoryAddress
 }
 
 export interface UnaryExpression extends BaseExpression {

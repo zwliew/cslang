@@ -56,7 +56,6 @@ export type Instructions =
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
-  identifier: string
 }
 
 export interface iFunctionAssignment extends BaseInstruction {

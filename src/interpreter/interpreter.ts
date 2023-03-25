@@ -160,7 +160,7 @@ const fusedAssignmentBinOps: Set<BinaryOperator> = new Set([
   '>>'
 ])
 function handleAssignmentOperator(assignExp: AssignmentExpression): AgendaItems[] {
-  const result: AgendaItems[] = [{ type: 'value_assmt_i', identifier: assignExp.assignee }]
+  const result: AgendaItems[] = [{ type: 'value_assmt_i' }, assignExp.assignee]
 
   if (assignExp.operator === '=') {
     // This is a simple assignment.
@@ -171,10 +171,7 @@ function handleAssignmentOperator(assignExp: AssignmentExpression): AgendaItems[
   // Otherwise, this is a fused assignment (i.e. +=, >>=, etc.)
   const binop = assignExp.operator.slice(0, -1) as BinaryOperator
   if (fusedAssignmentBinOps.has(binop)) {
-    result.push({ type: 'binop_i', operator: binop }, assignExp.value, {
-      type: 'Identifier',
-      identifier: assignExp.assignee
-    })
+    result.push({ type: 'binop_i', operator: binop }, assignExp.value, assignExp.assignee)
     return result
   }
 
@@ -230,7 +227,12 @@ const microcode = (code: AgendaItems) => {
 
       if (code.value) {
         // There is a value for this declaration
-        A.push(POP_INSTRUCTION, { type: 'value_assmt_i', identifier: code.identifier }, code.value)
+        A.push(
+          POP_INSTRUCTION,
+          { type: 'value_assmt_i' },
+          { type: 'Identifier', identifier: code.identifier },
+          code.value
+        )
       }
       break
 
@@ -256,7 +258,12 @@ const microcode = (code: AgendaItems) => {
 
       if (addr.type === 'MemoryAddress') {
         // Push the literal value onto the stash
-        OS.push({ type: 'Literal', typeSpecifier: addr.typeSpecifier, value: M.getValue(addr) })
+        OS.push({
+          type: 'Literal',
+          typeSpecifier: addr.typeSpecifier,
+          value: M.getValue(addr),
+          address: addr
+        })
       } else {
         // Function calling is handled in postfixExpression
         throw new UndeclaredIdentifierError(code.identifier)
@@ -347,7 +354,8 @@ const microcode = (code: AgendaItems) => {
           })
 
           A.push(
-            { type: 'value_assmt_i', identifier: parameters[i].name },
+            { type: 'value_assmt_i' },
+            { type: 'Identifier', identifier: parameters[i].name },
             code.arguments[code.arguments.length - i - 1]
           )
         }
@@ -385,10 +393,13 @@ const microcode = (code: AgendaItems) => {
 
     case 'value_assmt_i': {
       // Get the address the name is refering to
-      const addr = E.get(code.identifier) as MemoryAddress
+      const lit = OS.pop()
+      if (lit === undefined || lit.address === undefined) {
+        throw new IllegalArgumentError("Can't assign to a literal without a memory address.")
+      }
       // Set the topmost literal value into memory
       const value = OS.at(-1)!
-      M.setValue(addr, value)
+      M.setValue(lit.address, value)
       break
     }
 
@@ -470,18 +481,21 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'dereference_i': {
-      const addr = OS.pop()!
-      if (typeof addr.typeSpecifier === 'string') {
+      const ptr = OS.pop()!
+      if (typeof ptr.typeSpecifier !== 'object' || ptr.typeSpecifier.ptrTo === undefined) {
+        console.log(ptr)
         throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
+      }
+      const memAddress: MemoryAddress = {
+        type: 'MemoryAddress',
+        typeSpecifier: ptr.typeSpecifier.ptrTo,
+        location: ptr.value.toNumber()
       }
       OS.push({
         type: 'Literal',
-        typeSpecifier: addr.typeSpecifier.ptrTo,
-        value: M.getValue({
-          type: 'MemoryAddress',
-          typeSpecifier: addr.typeSpecifier.ptrTo,
-          location: addr.value.toNumber()
-        })
+        typeSpecifier: ptr.typeSpecifier.ptrTo,
+        value: M.getValue(memAddress),
+        address: memAddress
       })
       break
     }
