@@ -24,6 +24,7 @@ import {
   ExpressionContext,
   ExpressionStatementContext,
   ExternalDeclarationContext,
+  ForDeclarationContext,
   FunctionDefinitionContext,
   InclusiveOrExpressionContext,
   IterationStatementContext,
@@ -798,9 +799,16 @@ export class CGenerator implements CVisitor<AstNode> {
         throw new NotImplementedError('For loop without predicate is not implemented. (6.8.5.3)')
       }
 
+      const forInitExpr = cond.expression()
+      if (forInitExpr !== undefined) {
+        throw new NotImplementedError('For loop with init expressions is not implemented.')
+      }
+
+      const forDecl = cond.forDeclaration()
+
       return {
         type: 'ForStatement',
-        init: undefined, // TODO: implement init for for loops
+        init: forDecl ? this.visitForDeclaration(forDecl) : undefined,
         pred: this.visitExpression(forExpr[0]),
         body: this.visitStatement(ctx.statement()),
         post: this.visitExpression(forExpr[1])
@@ -821,6 +829,7 @@ export class CGenerator implements CVisitor<AstNode> {
   //
 
   visitDeclaration(ctx: DeclarationContext): ValueDeclaration {
+    // TODO: remove duplication of code with visitForDeclaration()
     const typeSpecifiers = ctx
       .declarationSpecifiers()
       .declarationSpecifier()
@@ -834,6 +843,90 @@ export class CGenerator implements CVisitor<AstNode> {
     let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
 
     const initDeclarator = ctx.initDeclaratorList().initDeclarator()
+
+    if (initDeclarator.length != 1) {
+      // Multiple declarations on a single line, ie int x = 1, y = 2;
+      throw new NotImplementedError(ctx.text)
+    }
+
+    // Determine the number of pointers we need (i.e. for `int **x;`)
+    const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
+    for (let child of pointerChildren) {
+      if (child.text !== '*') {
+        // Stop at the first non-pointer child
+        // TODO: support other "pointer-like" keywords like `int *const`.
+        break
+      }
+      typeSpecifier = { ptrTo: typeSpecifier }
+    }
+
+    // Now, we get the left-most direct declarator (the identifier).
+    // This is needed to parse arrays (i.e. int arr[1];)
+    let curDeclarator = initDeclarator[0].declarator().directDeclarator()
+    let directDeclaratorCount = 0
+    for (
+      let nextDeclarator = curDeclarator.directDeclarator();
+      nextDeclarator !== undefined;
+      nextDeclarator = nextDeclarator.directDeclarator()
+    ) {
+      ++directDeclaratorCount
+      curDeclarator = nextDeclarator
+    }
+    const identifier = curDeclarator.text
+
+    // TODO: support multi-dimensional arrays
+    if (directDeclaratorCount > 1) {
+      throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
+    }
+
+    // TODO: make use of `arraySize` to declare an array
+    let arraySize = undefined
+    if (directDeclaratorCount >= 1) {
+      // TODO: support multi-dimensional arrays
+      const assignmentExpression = initDeclarator[0]
+        .declarator()
+        .directDeclarator()
+        .assignmentExpression()
+      if (assignmentExpression) {
+        arraySize = this.visitAssignmentExpression(assignmentExpression)
+        if (arraySize.type !== 'Literal') {
+          throw new IllegalArgumentError('Array size must be a literal')
+        }
+      }
+    }
+
+    const initializer = initDeclarator[0].initializer()
+    const value =
+      initializer === undefined
+        ? undefined
+        : this.visitAssignmentExpression(initializer.assignmentExpression())
+
+    return {
+      type: 'ValueDeclaration',
+      typeSpecifier: typeSpecifier,
+      identifier: identifier,
+      value: value
+    }
+  }
+
+  visitForDeclaration(ctx: ForDeclarationContext): ValueDeclaration {
+    // TODO: remove duplication of code with visitDeclaration()
+    const typeSpecifiers = ctx
+      .typeSpecifier()
+      .map(typeSpecifier => typeSpecifier.text)
+      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
+
+    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
+      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
+    }
+
+    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+
+    const initDeclaratorList = ctx.initDeclaratorList()
+    if (initDeclaratorList === undefined) {
+      throw new IllegalArgumentError('For loop declaration init declarator list is undefined.')
+    }
+    const initDeclarator = initDeclaratorList.initDeclarator()
 
     if (initDeclarator.length != 1) {
       // Multiple declarations on a single line, ie int x = 1, y = 2;

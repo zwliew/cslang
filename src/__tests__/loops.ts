@@ -34,8 +34,7 @@ const forLoop = [
   `
 main() {
   int x = 0;
-  int i = 0;
-  for (; i < 3; i += 1) {
+  for (int i = 0; i < 3; i += 1) {
     x += 2;
   }
   return x;

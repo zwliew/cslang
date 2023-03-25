@@ -6,8 +6,7 @@ main() {
   int n = 12;
   long long fst = 0;
   long long snd = 1;
-  int i = 2;
-  for (; i <= n; i += 1) {
+  for (int i = 2; i <= n; i += 1) {
       long long tmp = snd;
       snd += fst;
       fst = tmp;
