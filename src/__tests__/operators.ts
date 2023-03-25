@@ -295,6 +295,15 @@ const sizeOfExpressionTypeConversion2 = [
   4
 ]
 
+const sizeOfArray = [
+  `
+  main() {
+    short x[10];
+    return sizeof x;
+  }`,
+  20
+]
+
 export const operatorTests = {
   inclusiveOrExpression,
   andExpression,
@@ -327,7 +336,8 @@ export const operatorTests = {
   sizeofDouble,
   sizeofExpression,
   sizeOfExpressionTypeConversion1,
-  sizeOfExpressionTypeConversion2
+  sizeOfExpressionTypeConversion2,
+  sizeOfArray
 }
 
 runTests(operatorTests)
