@@ -18,18 +18,15 @@ export type AstNode = CompilationUnit | Expression | Statement | Declarations
 //
 //
 
-interface ExpressionMap {
-  AssignmentExpression: AssignmentExpression
-  BinaryExpression: BinaryExpression
-  ConditionalExpression: ConditionalExpression
-  Identifier: Identifier
-  FunctionApplciation: FunctionApplication
-  Literal: Literal
-  //   LogicalExpression: LogicalExpression
-  UnaryExpression: UnaryExpression
-}
-
-export type Expression = ExpressionMap[keyof ExpressionMap]
+export type Expression =
+  | AssignmentExpression
+  | BinaryExpression
+  | ConditionalExpression
+  | Identifier
+  | FunctionApplication
+  | Literal
+  | UnaryExpression
+//  | LogicalExpression
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface BaseExpression extends BaseNode {}
@@ -125,6 +122,7 @@ export type Statement =
   | WhileStatement
   | Break
   | DoWhileStatement
+  | ForStatement
   | Return
 
 export interface ExpressionStatement extends BaseStatement {
@@ -196,6 +194,14 @@ export interface DoWhileStatement extends BaseStatement {
   type: 'DoWhileStatement'
   pred: Expression
   body: Statement
+}
+
+export interface ForStatement extends BaseStatement {
+  type: 'ForStatement'
+  init?: ValueDeclaration
+  pred: Expression
+  body: Statement
+  post?: Expression
 }
 
 export interface Break extends BaseStatement {

@@ -58,6 +58,7 @@ import {
   Expression,
   FunctionDeclaration,
   If,
+  Literal,
   ParameterDeclaration,
   ParameterList,
   Statement,
@@ -775,19 +776,37 @@ export class CGenerator implements CVisitor<AstNode> {
     if (ctx.Do()) {
       return {
         type: 'DoWhileStatement',
-        pred: this.visitExpression(ctx.expression()!) as Expression, // expression should be defined for do-while
-        body: this.visitStatement(ctx.statement()) as Statement
+        pred: this.visitExpression(ctx.expression()!), // expression should be defined for do-while
+        body: this.visitStatement(ctx.statement())
       }
     } else if (ctx.While()) {
       return {
         type: 'WhileStatement',
-        pred: this.visitExpression(ctx.expression()!) as Expression, // expression should be defined for while
-        body: this.visitStatement(ctx.statement()) as Statement
+        pred: this.visitExpression(ctx.expression()!), // expression should be defined for while
+        body: this.visitStatement(ctx.statement())
       }
-    } else {
-      // TODO: implement for loops
-      throw new NotImplementedError(ctx.text)
+    } else if (ctx.For()) {
+      // This is a for loop.
+      const cond = ctx.forCondition()
+      if (!cond) {
+        throw new IllegalArgumentError('For loop must have a condition.')
+      }
+
+      const forExpr = cond.forExpression()
+      if (!forExpr || forExpr.length <= 1) {
+        // TODO: support omission of expressions
+        throw new NotImplementedError('For loop without predicate is not implemented. (6.8.5.3)')
+      }
+
+      return {
+        type: 'ForStatement',
+        init: undefined, // TODO: implement init for for loops
+        pred: this.visitExpression(forExpr[0]),
+        body: this.visitStatement(ctx.statement()),
+        post: this.visitExpression(forExpr[1])
+      }
     }
+    throw new NotImplementedError(ctx.text)
   }
 
   visitBlockItem(ctx: BlockItemContext): AstNode {
@@ -823,7 +842,6 @@ export class CGenerator implements CVisitor<AstNode> {
 
     // Determine the number of pointers we need (i.e. for `int **x;`)
     const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
-    let pointerCount = 0
     for (let child of pointerChildren) {
       if (child.text !== '*') {
         // Stop at the first non-pointer child

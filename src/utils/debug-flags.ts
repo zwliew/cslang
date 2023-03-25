@@ -10,6 +10,9 @@ export const DEBUG_WRITE_TO_FILE = false
 // Print the final memory layout after execution
 export const DEBUG_PRINT_MEMORY = false
 
+// Print the final OS after execution
+export const DEBUG_PRINT_FINAL_OS = false
+
 // Print the agenda, stash, and environment before every step
 export const DEBUG_PRINT_STEPS = false
 

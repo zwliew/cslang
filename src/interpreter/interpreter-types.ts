@@ -42,6 +42,7 @@ export type Instructions =
   | iBinaryOperation
   | iIf
   | iWhileStatement
+  | iForStatement
   | iRestoreEnvironment
   | iFunctionEnvironment
   | iPop
@@ -91,6 +92,13 @@ export interface iWhileStatement extends BaseInstruction {
   type: 'while_i'
   pred: Expression
   body: Statement
+}
+
+export interface iForStatement extends BaseInstruction {
+  type: 'for_i'
+  pred: Expression
+  body: Statement
+  post?: Expression
 }
 
 export interface iSwitchEnv extends BaseInstruction {

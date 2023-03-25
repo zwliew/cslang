@@ -1,5 +1,5 @@
 import { AssignmentExpression, AstNode, BinaryOperator, Block, Literal } from '../parser/ast-types'
-import { DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
+import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
 import { Environment } from './classes/environment'
@@ -76,6 +76,14 @@ let A: Array<AgendaItems> = []
 
 let OS: Array<Literal>
 
+// Pop while enforcing that the array is non-empty.
+function pop<T>(arr: Array<T>): T {
+  if (!arr.length) {
+    throw new IllegalArgumentError('Cannot pop from empty array.')
+  }
+  return arr.pop()!
+}
+
 // Execution initialize environment E as the global environment.
 
 let E: Environment
@@ -127,7 +135,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   }
 
   const result: AgendaItems[] = []
-  const switch_value = OS.pop()!
+  const switch_value = pop(OS)
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
     if (stmt.type === 'SwitchCaseBranch') {
@@ -280,6 +288,18 @@ const microcode = (code: AgendaItems) => {
       A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred, code.body)
       break
 
+    case 'ForStatement':
+      A.push(
+        { type: 'env_i', environment: E },
+        { type: 'for_i', pred: code.pred, body: code.body, post: code.post },
+        code.pred
+      )
+      if (code.init) {
+        A.push(code.init)
+      }
+      E = E.extend()
+      break
+
     case 'Switch':
       A.push({ type: 'switch_env_i', environment: E })
       A.push({ type: 'switch_i', block: code.block }, code.expression)
@@ -404,11 +424,11 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'binop_i':
-      OS.push(apply_binop(code.operator, OS.pop()!, OS.pop()!))
+      OS.push(apply_binop(code.operator, pop(OS), pop(OS)))
       break
 
     case 'branch_i':
-      if (is_true(OS.pop()!)) {
+      if (is_true(pop(OS))) {
         A.push(code.consequent)
       } else if (code.alternative) {
         A.push(code.alternative)
@@ -431,9 +451,24 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'while_i':
-      const pred_val = OS.pop()
-      if (is_true(pred_val!)) {
-        A.push(code, code.pred, code.body)
+      {
+        const pred_val = pop(OS)
+        if (is_true(pred_val)) {
+          A.push(code, code.pred, code.body)
+        }
+      }
+      break
+
+    case 'for_i':
+      {
+        const pred_val = pop(OS)
+        if (is_true(pred_val)) {
+          A.push(code, code.pred)
+          if (code.post) {
+            A.push(POP_INSTRUCTION, code.post)
+          }
+          A.push(code.body)
+        }
       }
       break
 
@@ -457,7 +492,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'case_i':
-      if (is_false(OS.pop()!)) {
+      if (is_false(pop(OS))) {
         // Pop agenda until next case/default statement
         while (
           A.length > 0 &&
@@ -481,7 +516,7 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'dereference_i': {
-      const ptr = OS.pop()!
+      const ptr = pop(OS)
       if (typeof ptr.typeSpecifier !== 'object' || ptr.typeSpecifier.ptrTo === undefined) {
         throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
       }
@@ -515,7 +550,7 @@ export const execute = (program: AstNode) => {
   OS = []
   E = new Environment()
   FS = new FunctionStack()
-  M = new Memory(100)
+  M = new Memory(10e3) // Use 10KB of memory
   let i = 0
   while (i < step_limit) {
     if (DEBUG_PRINT_STEPS) {
@@ -533,6 +568,11 @@ export const execute = (program: AstNode) => {
     microcode(cmd)
     i++
   }
+
+  if (DEBUG_PRINT_FINAL_OS) {
+    console.log('Final OS:', OS)
+  }
+
   if (OS.length < 1) {
     return undefined
   }
