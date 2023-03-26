@@ -553,17 +553,8 @@ const microcode = (code: AgendaItems) => {
           value: M.getValue(memAddress),
           address: memAddress
         })
-      } else if (isArrayType(ptr.typeSpecifier)) {
-        // This is an array type.
-        OS.push({
-          type: 'Literal',
-          typeSpecifier: { ptrTo: (ptr.typeSpecifier as ArrayTypeSpecifier).arrOf },
-          value: ptr.value
-        })
       } else {
-        throw new IllegalArgumentError(
-          'Operand of unary * operator must have pointer or array type.'
-        )
+        throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
       }
       break
     }
