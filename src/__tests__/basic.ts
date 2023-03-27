@@ -5,9 +5,9 @@ const singleDeclaration = [`main() {int i = 0; return i;}`, 0]
 const multipleDeclaration = [
   `
 main() {
-int j = 1;
-int k = 2;
-return k;
+  int j = 1;
+  int k = 2;
+  return k;
 }
 `,
   2

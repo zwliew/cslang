@@ -1,4 +1,47 @@
-import { RawTypeSpecifier, TypeSpecifier } from './parser/ast-types'
+import { WORD_SIZE } from './interpreter/classes/memory'
+import {
+  ArrayTypeSpecifier,
+  PrimitiveTypeSpecifier,
+  RawTypeSpecifier,
+  TypeSpecifier
+} from './parser/ast-types'
+import { NotImplementedError } from './utils/errors'
+
+// Size of types in bytes
+
+const sizeOfTypes = {
+  _Bool: 1,
+  char: 1,
+  'unsigned char': 1,
+  short: 2,
+  'unsigned short': 2,
+  int: 4,
+  'unsigned int': 4,
+  long: 4,
+  'unsigned long': 4,
+  float: 4,
+  'long long': 8,
+  'unsigned long long': 8,
+  double: 8,
+  'long double': 16
+}
+
+export function sizeOfType(type: TypeSpecifier): number {
+  if (isPrimitiveType(type)) {
+    // This is a primitive type.
+    const size = sizeOfTypes[type as PrimitiveTypeSpecifier]
+    if (size === undefined) {
+      throw new NotImplementedError(`Size of type specifier '${type}' is not implemented.`)
+    }
+    return size
+  } else if (isPointerType(type)) {
+    // This is a pointer to another type.
+    return WORD_SIZE
+  } else {
+    // This is an array type.
+    return sizeOfType((type as ArrayTypeSpecifier).arrOf) * (type as ArrayTypeSpecifier).size
+  }
+}
 
 export const hierarchy: TypeSpecifier[] = [
   '_Bool',

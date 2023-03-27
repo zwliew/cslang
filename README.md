@@ -1,6 +1,6 @@
-# calc-slang
+# CSlang
 
-Calculator language modified from js-slang.
+An interpreter for a subset of C. Based off the interpreter for the Calculator language modified from js-slang.
 
 ## Possible Issues (and manual solutions)
 

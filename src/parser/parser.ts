@@ -3,9 +3,8 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
-import { sizeOfType } from '../interpreter/classes/memory'
 
-import { INFINITY, STRAY_SEMICOLON, ZERO } from '../interpreter/constants'
+import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
 import {
   AdditiveExpressionContext,
@@ -48,7 +47,7 @@ import {
   UnaryOperatorContext
 } from '../lang/CParser'
 import { CVisitor } from '../lang/CVisitor'
-import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier } from '../types'
+import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier, sizeOfType } from '../types'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
 import {
@@ -67,7 +66,6 @@ import {
   Statement,
   SwitchCase,
   TypeSpecifier,
-  UnaryExpression,
   UnaryOperator,
   ValueDeclaration
 } from './ast-types'
@@ -907,7 +905,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
     // Determine the number of pointers we need (i.e. for `int **x;`)
     const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
-    for (let child of pointerChildren) {
+    for (const child of pointerChildren) {
       if (child.text !== '*') {
         // Stop at the first non-pointer child
         // TODO: support other "pointer-like" keywords like `int *const`.
@@ -991,7 +989,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
     // Determine the number of pointers we need (i.e. for `int **x;`)
     const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
-    for (let child of pointerChildren) {
+    for (const child of pointerChildren) {
       if (child.text !== '*') {
         // Stop at the first non-pointer child
         // TODO: support other "pointer-like" keywords like `int *const`.
@@ -1185,7 +1183,7 @@ export class CGenerator implements CVisitor<AstNode> {
     if (abstractDeclarator) {
       // Determine the number of pointers we need (i.e. for `int **x;`)
       const pointerChildren = abstractDeclarator.pointer()?.children ?? []
-      for (let child of pointerChildren) {
+      for (const child of pointerChildren) {
         if (child.text !== '*') {
           // Stop at the first non-pointer child
           // TODO: support other "pointer-like" keywords like `int *const`.

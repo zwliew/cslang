@@ -27,8 +27,9 @@ const multiplePutchar = [
   100
 ]
 
-export const primitiveFunctionsTest = {
-  putchar
+export const primitiveFunctionsTests = {
+  putchar,
+  multiplePutchar
 }
 
-runTests(primitiveFunctionsTest)
+runTests(primitiveFunctionsTests)

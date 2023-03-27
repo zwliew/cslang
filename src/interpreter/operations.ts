@@ -1,16 +1,14 @@
-import Decimal from '../utils/decimal'
-
 import {
   ArrayTypeSpecifier,
   Literal,
   PointerTypeSpecifier,
   TypeSpecifier
 } from '../parser/ast-types'
-import { hierarchy, isArrayType, isPointerType, isPrimitiveType, rank } from '../types'
+import { hierarchy, isArrayType, isPointerType, isPrimitiveType, rank, sizeOfType } from '../types'
+import Decimal from '../utils/decimal'
+import { IllegalArgumentError } from '../utils/errors'
 import { DECIMAL_ONE, DECIMAL_ZERO } from './constants'
 import { InvalidOperation } from './errors'
-import { sizeOfType } from './classes/memory'
-import { IllegalArgumentError } from '../utils/errors'
 
 const floatingPointRank = rank('float')
 

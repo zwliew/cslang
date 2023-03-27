@@ -7,7 +7,7 @@ import { CParser } from '../lang/CParser'
 import { createAnalysisState, traverse } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
-import testCases from './testCases'
+import testCases from './test-cases'
 
 // Obtain the program string based on the parameters passed to the CLI
 export function determineProgramString(): string {

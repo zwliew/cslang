@@ -1,57 +1,14 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
+import { Literal, PrimitiveTypeSpecifier } from '../../parser/ast-types'
 import Decimal from '../../utils/decimal'
-
-import {
-  ArrayTypeSpecifier,
-  Literal,
-  PrimitiveTypeSpecifier,
-  TypeSpecifier
-} from '../../parser/ast-types'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
-import { isPointerType, isPrimitiveType } from '../../types'
 
-const WORD_SIZE = 4 // bytes
+export const WORD_SIZE = 4 // bytes
 export const DEFAULT_STACK_POINTER_START = 8
-
-// Size of types in bytes
-
-const sizeOfTypes = {
-  _Bool: 1,
-  char: 1,
-  'unsigned char': 1,
-  short: 2,
-  'unsigned short': 2,
-  int: 4,
-  'unsigned int': 4,
-  long: 4,
-  'unsigned long': 4,
-  float: 4,
-  'long long': 8,
-  'unsigned long long': 8,
-  double: 8,
-  'long double': 16
-}
-
-export function sizeOfType(type: TypeSpecifier): number {
-  if (isPrimitiveType(type)) {
-    // This is a primitive type.
-    const size = sizeOfTypes[type as PrimitiveTypeSpecifier]
-    if (size === undefined) {
-      throw new NotImplementedError(`Size of type specifier '${type}' is not implemented.`)
-    }
-    return size
-  } else if (isPointerType(type)) {
-    // This is a pointer to another type.
-    return WORD_SIZE
-  } else {
-    // This is an array type.
-    return sizeOfType((type as ArrayTypeSpecifier).arrOf) * (type as ArrayTypeSpecifier).size
-  }
-}
 
 /**
  * Round the input up to the next multiple of WORD_SIZE.

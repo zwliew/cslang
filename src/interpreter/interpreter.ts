@@ -1,5 +1,4 @@
 import {
-  ArrayTypeSpecifier,
   AssignmentExpression,
   AstNode,
   BinaryOperator,
@@ -7,20 +6,19 @@ import {
   Literal,
   PointerTypeSpecifier
 } from '../parser/ast-types'
-import { isArrayType, isPointerType } from '../types'
+import { isPointerType, sizeOfType } from '../types'
 import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, RuntimeError } from '../utils/errors'
 import { Environment } from './classes/environment'
 import { FunctionStack } from './classes/function-stack'
-import { Memory, sizeOfType } from './classes/memory'
+import { Memory } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
   CASE_INSTRUCTION,
   POP_INSTRUCTION,
   SWITCH_DEFAULT_INSTRUCTION,
-  UNDEFINED_LITERAL,
-  ZERO
+  UNDEFINED_LITERAL
 } from './constants'
 import { InterpreterError, UndeclaredIdentifierError } from './errors'
 import { AgendaItems, iFunctionEnvironment, MemoryAddress } from './interpreter-types'
@@ -353,7 +351,7 @@ const microcode = (code: AgendaItems) => {
     case 'FunctionDeclaration':
       // Call main if a main is declared
       if (code.identifier === 'main') {
-        A.push({ type: 'app_i', identifier: 'main', arity: 0 })
+        A.push({ type: 'FunctionApplication', identifier: 'main', arguments: [] })
       }
       // allocate space for the function and declare it on the environment
       E.declare(code.identifier, {
@@ -366,7 +364,13 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'FunctionApplication': {
-      const functionDefinition = FS.getFunctionAndEnv(code.identifier)[0]
+      const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
+      // Save the current environment
+      A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
+      // Extend the environment with a frame mapping from parameter to argument value
+      E = E.extend(M)
+
+      const functionDefinition = functionAndEnv[0]
       if (functionDefinition.returnType === 'void') {
         A.push(UNDEFINED_LITERAL)
       }
@@ -429,10 +433,6 @@ const microcode = (code: AgendaItems) => {
         break
       }
 
-      // Save the current environment
-      A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
-      // Extend the environment with a frame mapping from parameter to argument value
-      E = E.extend(M)
       A.push(...functionAndEnv[0].body.slice().reverse())
       break
 
