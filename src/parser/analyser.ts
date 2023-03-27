@@ -218,5 +218,7 @@ export const staticType = (
     case 'ConditionalExpression':
       const consequentType = staticType(node.consequent, analysisState)
       return consequentType
+    case 'CastExpression':
+      return node.typeSpecifier
   }
 }

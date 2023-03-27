@@ -26,6 +26,7 @@ export type Expression =
   | FunctionApplication
   | Literal
   | UnaryExpression
+  | CastExpression
 //  | LogicalExpression
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -104,6 +105,11 @@ export type AssignmentOperator =
   | '^='
   | '|='
 
+export interface CastExpression extends BaseExpression {
+  type: 'CastExpression'
+  typeSpecifier: TypeSpecifier
+  operand: Expression
+}
 //
 //
 // STATEMENTS

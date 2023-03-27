@@ -304,6 +304,33 @@ const sizeOfArray = [
   20
 ]
 
+const typeCasting = [
+  `
+  main() {
+    char x;
+    return sizeof ((double) x);
+  }`,
+  8
+]
+
+const typeCasting2 = [
+  `
+  main() {
+    double x;
+    return sizeof ((short) x);
+  }`,
+  2
+]
+
+const typeCasting3 = [
+  `
+  main() {
+    char x;
+    return sizeof ((short *) x);
+  }`,
+  4
+]
+
 export const operatorTests = {
   inclusiveOrExpression,
   andExpression,
@@ -337,7 +364,10 @@ export const operatorTests = {
   sizeofExpression,
   sizeOfExpressionTypeConversion1,
   sizeOfExpressionTypeConversion2,
-  sizeOfArray
+  sizeOfArray,
+  typeCasting,
+  typeCasting2,
+  typeCasting3
 }
 
 runTests(operatorTests)

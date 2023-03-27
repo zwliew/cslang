@@ -23,7 +23,7 @@ import {
   ZERO
 } from './constants'
 import { InterpreterError, UndeclaredIdentifierError } from './errors'
-import { AgendaItems, MemoryAddress } from './interpreter-types'
+import { AgendaItems, iFunctionEnvironment, MemoryAddress } from './interpreter-types'
 import {
   add,
   bitwiseAnd,
@@ -400,9 +400,15 @@ const microcode = (code: AgendaItems) => {
       while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
         A.pop()
       }
+      // TODO: Assert that the top element is a `fn_env_i`.
+      const typeSpecifier = (A.at(-1) as iFunctionEnvironment).functionReturnType
       if (code.expression) {
-        A.push(code.expression)
+        A.push({ type: 'cast_i', typeSpecifier: typeSpecifier }, code.expression)
       }
+      break
+
+    case 'CastExpression':
+      A.push({ type: 'cast_i', typeSpecifier: code.typeSpecifier }, code.operand)
       break
 
     /******************
@@ -424,7 +430,7 @@ const microcode = (code: AgendaItems) => {
       }
 
       // Save the current environment
-      A.push({ type: 'fn_env_i', environment: E })
+      A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
       // Extend the environment with a frame mapping from parameter to argument value
       E = E.extend(M)
       A.push(...functionAndEnv[0].body.slice().reverse())
@@ -569,6 +575,15 @@ const microcode = (code: AgendaItems) => {
       })
       break
     }
+
+    case 'cast_i':
+      OS.push({
+        type: 'Literal',
+        typeSpecifier: code.typeSpecifier,
+        // TODO: Need to ensure values are bounded
+        value: OS.pop()!.value
+      })
+      break
 
     default:
       error(code, 'Unknown command: ')

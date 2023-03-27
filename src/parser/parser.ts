@@ -63,6 +63,7 @@ import {
   If,
   ParameterDeclaration,
   ParameterList,
+  RawTypeSpecifier,
   Statement,
   SwitchCase,
   TypeSpecifier,
@@ -461,11 +462,21 @@ export class CGenerator implements CVisitor<AstNode> {
     const unaryExpression = ctx.unaryExpression()
     if (unaryExpression) {
       return this.visitUnaryExpression(unaryExpression)
-    } else {
-      // Typecasting ((typeName) expression)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
     }
+
+    const typeName = ctx.typeName()
+
+    if (typeName) {
+      // Typecasting ((typeName) expression)
+      const typeSpecifier = this.getTypeName(typeName)
+      return {
+        type: 'CastExpression',
+        typeSpecifier: typeSpecifier,
+        operand: this.visitCastExpression(ctx.castExpression()!)
+      }
+    }
+
+    throw new NotImplementedError(ctx.text)
   }
 
   visitUnaryExpression(ctx: UnaryExpressionContext): Expression {
@@ -1166,7 +1177,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     // This is just to please the typechecking - otherwise I'd reuse typeName
-    let typeSpecifier = typeName as TypeSpecifier
+    let typeSpecifier = multiwordTypeToTypeSpecifier(typeName as RawTypeSpecifier)
 
     // Check if pointer
     const abstractDeclarator = ctx.abstractDeclarator()

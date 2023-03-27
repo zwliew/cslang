@@ -57,13 +57,26 @@ int main() {
   7
 ]
 
+const implicitReturnTypeCast = [
+  `
+  char foo() {
+    int x = 200;
+    return x; // This converts it to a char
+  }
+  main() {
+    return sizeof foo();
+  }`,
+  1
+]
+
 export const functionTests = {
   redeclareArguments,
   returnInterruptsFlow,
   fnDeclarationWithoutType,
   fnDeclaration,
   fnApplication,
-  globalDeclaration
+  globalDeclaration,
+  implicitReturnTypeCast
 }
 
 runTests(functionTests)

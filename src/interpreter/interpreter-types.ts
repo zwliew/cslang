@@ -55,6 +55,7 @@ export type Instructions =
   | iFunctionApplication
   | iDereference
   | iSizeof
+  | iCast
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
@@ -83,6 +84,7 @@ export interface iRestoreEnvironment extends BaseInstruction {
 export interface iFunctionEnvironment extends BaseInstruction {
   type: 'fn_env_i'
   environment: Environment
+  functionReturnType: TypeSpecifier
 }
 
 export interface iPop extends BaseInstruction {
@@ -142,4 +144,9 @@ export interface iDereference extends BaseInstruction {
 
 export interface iSizeof extends BaseInstruction {
   type: 'sizeof_i'
+}
+
+export interface iCast extends BaseInstruction {
+  type: 'cast_i'
+  typeSpecifier: TypeSpecifier
 }
