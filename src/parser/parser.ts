@@ -889,7 +889,7 @@ export class CGenerator implements CVisitor<AstNode> {
     const typeSpecifiers = ctx
       .declarationSpecifiers()
       .declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
       .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
 
     if (!isValidRawTypeSpecifier(typeSpecifiers)) {
@@ -898,7 +898,7 @@ export class CGenerator implements CVisitor<AstNode> {
 
     let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
 
-    const initDeclarator = ctx.initDeclaratorList().initDeclarator()
+    const initDeclarator = ctx.initDeclaratorList()!.initDeclarator()
 
     if (initDeclarator.length != 1) {
       // Multiple declarations on a single line, ie int x = 1, y = 2;
@@ -986,7 +986,7 @@ export class CGenerator implements CVisitor<AstNode> {
     const typeSpecifiers = ctx
       .declarationSpecifiers()
       ?.declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
       .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
     if (typeSpecifiers === undefined) {
       // Default function return types to int
@@ -1048,7 +1048,7 @@ export class CGenerator implements CVisitor<AstNode> {
     const typeSpecifiers = ctx
       .declarationSpecifiers()
       .declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
       .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
 
     if (!isValidRawTypeSpecifier(typeSpecifiers)) {
