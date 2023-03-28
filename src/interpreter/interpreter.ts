@@ -435,7 +435,7 @@ const microcode = (code: AgendaItems) => {
 
       // Primitive functions can be called directly in the interpreter
       if (functionAndEnv[0].primitive) {
-        OS.push(functionAndEnv[0].primitiveFunction!(...functionArguments))
+        OS.push(functionAndEnv[0].primitiveFunction!(M, ...functionArguments))
         break
       }
 
@@ -624,7 +624,7 @@ export const execute = (program: AstNode) => {
   OS = []
   E = new Environment()
   FS = new FunctionStack()
-  M = new Memory(10e3) // Use 10KB of memory
+  M = new Memory(1e4) // Use 10KB of memory
   let i = 0
   while (i < STEP_LIMIT) {
     if (DEBUG_PRINT_STEPS) {

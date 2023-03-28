@@ -1,3 +1,4 @@
+import { Memory } from '../interpreter/classes/memory'
 import { MemoryAddress } from '../interpreter/interpreter-types'
 import type { DecimalType } from '../utils/decimal'
 
@@ -254,7 +255,7 @@ export interface FunctionDefinition extends BaseNode {
   parameterList?: ParameterList
   body: Array<Statement>
   primitive: boolean
-  primitiveFunction?: (...varargs: Literal[]) => Literal
+  primitiveFunction?: (m: Memory, ...varargs: Literal[]) => Literal
 }
 
 export interface ParameterList extends BaseNode {

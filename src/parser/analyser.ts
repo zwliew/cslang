@@ -18,7 +18,9 @@ interface AnalysisState {
 
 const defaultAnalysisState = {
   functions: {
-    putchar: { arity: 1, expectedReturnType: 'int', returns: true }
+    putchar: { arity: 1, expectedReturnType: 'int', returns: true },
+    malloc: { arity: 1, expectedReturnType: { ptrTo: 'int' }, returns: true },
+    free: { arity: 1, returns: false }
   },
   variables: {},
   currentFunction: 'global'

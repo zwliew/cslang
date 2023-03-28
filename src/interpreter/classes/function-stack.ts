@@ -1,5 +1,8 @@
 import { FunctionDefinition, Literal } from '../../parser/ast-types'
+import Decimal from '../../utils/decimal'
 import { Environment } from './environment'
+import { Memory } from './memory'
+import { UNDEFINED_LITERAL } from '../constants'
 
 export class FunctionStack {
   functionStack: Array<[FunctionDefinition, Environment]>
@@ -10,6 +13,8 @@ export class FunctionStack {
     this.functionIndexes = new Map()
 
     this.allocatePrimitiveFunction(putchar, 'putchar')
+    this.allocatePrimitiveFunction(malloc, 'malloc')
+    this.allocatePrimitiveFunction(free, 'free')
   }
 
   // Private function only for primitives
@@ -59,7 +64,7 @@ export class FunctionStack {
 
 export const primitiveFunctions = []
 
-const primitivePutchar = (ch: Literal): Literal => {
+const primitivePutchar = (M: Memory, ch: Literal): Literal => {
   const value = ch.value.toNumber()
 
   // Convert to ascii and print
@@ -88,5 +93,58 @@ const putchar: FunctionDefinition = {
   },
   primitive: true,
   primitiveFunction: primitivePutchar,
+  body: []
+}
+
+const primitiveMalloc = (M: Memory, size: Literal): Literal => {
+  const length = size.value.toNumber()
+
+  const addr = M.allocateHeap(length)
+
+  return {
+    type: 'Literal',
+    typeSpecifier: { ptrTo: 'void' },
+    value: addr === -1 ? new Decimal(0) : new Decimal(addr)
+  }
+}
+
+const malloc: FunctionDefinition = {
+  type: 'FunctionDefinition',
+  returnType: { ptrTo: 'void' },
+  parameterList: {
+    type: 'ParameterList',
+    parameters: [
+      {
+        type: 'ParameterDeclaration',
+        typeSpecifier: 'int',
+        identifier: 'size'
+      }
+    ]
+  },
+  primitive: true,
+  primitiveFunction: primitiveMalloc,
+  body: []
+}
+
+const primitiveFree = (M: Memory, ptr: Literal): Literal => {
+  // Do nothing for now
+  return UNDEFINED_LITERAL
+}
+
+const free: FunctionDefinition = {
+  type: 'FunctionDefinition',
+  returnType: 'void',
+  parameterList: {
+    type: 'ParameterList',
+    parameters: [
+      {
+        type: 'ParameterDeclaration',
+        typeSpecifier: { ptrTo: 'void' },
+        identifier: 'ptr'
+      }
+    ]
+  },
+  primitive: true,
+  primitiveFunction: primitiveFree,
   body: []
 }

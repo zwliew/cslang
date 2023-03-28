@@ -68,20 +68,28 @@ export class Memory {
   /**
    * Allocates a specified number of bytes on the heap.
    *
+   * One additional word before the returned pointer will be used to keep
+   * track of the size of the allocated region of memory.
+   *
    * @param bytes The number of bytes to allocate.
-   * @returns The address to the bytes allocated
+   * @returns The address to the bytes allocated, -1 if there is not enough space
    */
   allocateHeap(bytes: number): number {
     if (bytes <= 0) {
       throw new IllegalArgumentError('Provided argument should be positive.')
     }
 
-    this.heapIndex -= align(bytes)
-    if (this.stackIndex >= this.heapIndex) {
-      throw new HeapOverflow()
+    const totalSize = align(bytes) + 4
+
+    if (this.stackIndex >= this.heapIndex - totalSize) {
+      // There isn't enough space.
+      return -1
     }
 
-    return this.heapIndex
+    this.heapIndex -= totalSize
+    this.data.setUint32(this.heapIndex, bytes)
+
+    return this.heapIndex + 1
   }
 
   getValue(memAdd: MemoryAddress): Decimal {
