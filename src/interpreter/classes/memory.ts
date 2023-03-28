@@ -125,11 +125,15 @@ export class Memory {
     if (typeof memAdd.typeSpecifier === 'string') {
       // This is a primitive type.
       getDataFunction = typeToGetDataFunction[memAdd.typeSpecifier]
+    } else if (memAdd.typeSpecifier.hasOwnProperty('arrOf')) {
+      // This is an array type. It should act like a pointer - The value is the
+      // location of the first element of the array.
+      return new Decimal(memAdd.location)
     } else {
       // This is a pointer.
       getDataFunction = this.data.getUint32
     }
-    return new Decimal(getDataFunction.call(this.data, byteOffset).toString())
+    return new Decimal(getDataFunction.call(this.data, byteOffset))
   }
 
   setValue(memAdd: MemoryAddress, value: Literal): void {
