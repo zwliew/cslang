@@ -18,6 +18,7 @@ import {
   ConstantExpressionContext,
   CParser,
   DeclarationContext,
+  DeclarationSpecifiersContext,
   DeclaratorContext,
   EqualityExpressionContext,
   ExclusiveOrExpressionContext,
@@ -41,6 +42,7 @@ import {
   SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
+  StructOrUnionSpecifierContext,
   TypeNameContext,
   TypeSpecifierContext,
   UnaryExpressionContext,
@@ -56,6 +58,7 @@ import {
   BinaryOperator,
   Block,
   Declarations,
+  DeclarationSpecifiers,
   Declarator,
   Expression,
   FunctionDeclaration,
@@ -886,25 +889,15 @@ export class CGenerator implements CVisitor<AstNode> {
 
   visitDeclaration(ctx: DeclarationContext): ValueDeclaration {
     // TODO: remove duplication of code with visitForDeclaration()
-    const typeSpecifiers = ctx
-      .declarationSpecifiers()
-      .declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
-      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
-
-    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
-      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
-    }
-
-    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+    const declarationSpecifiers = this.visitDeclarationSpecifiers(ctx.declarationSpecifiers())
 
     const initDeclarator = ctx.initDeclaratorList()!.initDeclarator()
-
     if (initDeclarator.length != 1) {
       // Multiple declarations on a single line, ie int x = 1, y = 2;
       throw new NotImplementedError(ctx.text)
     }
 
+    let typeSpecifier = declarationSpecifiers.typeSpecifier
     const declarator = this.visitDeclarator(initDeclarator[0].declarator())
     for (let i = 0; i < declarator.pointerDepth; ++i) {
       typeSpecifier = { ptrTo: typeSpecifier }
@@ -983,19 +976,12 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     let returnType: TypeSpecifier
-    const typeSpecifiers = ctx
-      .declarationSpecifiers()
-      ?.declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
-      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
-    if (typeSpecifiers === undefined) {
+    if (ctx.declarationSpecifiers() === undefined) {
       // Default function return types to int
       returnType = 'int'
     } else {
-      if (!isValidRawTypeSpecifier(typeSpecifiers)) {
-        throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
-      }
-      returnType = multiwordTypeToTypeSpecifier(typeSpecifiers)
+      const declarationSpecifiers = this.visitDeclarationSpecifiers(ctx.declarationSpecifiers()!)
+      returnType = declarationSpecifiers.typeSpecifier
     }
 
     const parameterTypeList = functionNameWithParameters.parameterTypeList()
@@ -1045,17 +1031,7 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(ctx.text)
     }
 
-    const typeSpecifiers = ctx
-      .declarationSpecifiers()
-      .declarationSpecifier()
-      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
-      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
-
-    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
-      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
-    }
-
-    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+    const declarationSpecifiers = this.visitDeclarationSpecifiers(ctx.declarationSpecifiers())
 
     const declarator = ctx.declarator()
     if (!declarator) {
@@ -1065,6 +1041,7 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     const { pointerDepth, arraySize, identifier } = this.visitDeclarator(declarator)
+    let typeSpecifier = declarationSpecifiers.typeSpecifier
     for (let i = 0; i < pointerDepth; ++i) {
       typeSpecifier = { ptrTo: typeSpecifier }
     }
@@ -1128,6 +1105,23 @@ export class CGenerator implements CVisitor<AstNode> {
       identifier: curDeclarator.text,
       pointerDepth,
       arraySize
+    }
+  }
+
+  visitDeclarationSpecifiers(ctx: DeclarationSpecifiersContext): DeclarationSpecifiers {
+    const typeSpecifiers = ctx
+      .declarationSpecifier()
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier()!.text)
+      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
+
+    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
+      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
+    }
+
+    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+    return {
+      type: 'DeclarationSpecifiers',
+      typeSpecifier
     }
   }
 
