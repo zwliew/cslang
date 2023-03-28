@@ -1,5 +1,21 @@
 import { runTests } from '../utils/jest-utils'
 
+const notExpressionFalse = [
+  `
+main() {
+  return !3;
+}`,
+  0
+]
+
+const notExpressionTrue = [
+  `
+main() {
+  return !0;
+}`,
+  1
+]
+
 const inclusiveOrExpression = [
   `
 main() {
@@ -332,6 +348,8 @@ const typeCasting3 = [
 ]
 
 export const operatorTests = {
+  notExpressionFalse,
+  notExpressionTrue,
   inclusiveOrExpression,
   andExpression,
   exclusiveOrExpression,

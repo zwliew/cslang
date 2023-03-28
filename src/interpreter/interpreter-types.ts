@@ -55,6 +55,7 @@ export type Instructions =
   | iFunctionApplication
   | iFunctionParamDeclaration
   | iDereference
+  | iNot
   | iSizeof
   | iCast
 
@@ -146,6 +147,10 @@ export interface iFunctionParamDeclaration extends BaseInstruction {
 
 export interface iDereference extends BaseInstruction {
   type: 'dereference_i'
+}
+
+export interface iNot extends BaseInstruction {
+  type: 'not_i'
 }
 
 export interface iSizeof extends BaseInstruction {

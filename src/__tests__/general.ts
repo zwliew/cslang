@@ -20,24 +20,22 @@ main() {
 
 const primalityTest = [
   `
+int isPrime(int n) {
+  for (int d = 2; d * d <= n; d += 1) {
+      if (n % d == 0) {
+        return 0;
+      }
+  }
+  return 1;
+}
 main() {
   int n = 1234567892;
   char result = 0;
-  for (int d = 2; d * d <= n; d += 1) {
-      if (n % d == 0) {
-        result |= 1;
-      }
+  if (!isPrime(n)) {
+    result |= 1;
   }
   n = 1618931;
-  _Bool prime = 1;
-  for (int d = 2; d * d <= n; d += 1) {
-      if (n % d == 0) {
-        prime = 0;
-      }
-  }
-  if (prime) {
-    result |= 2;
-  }
+  result = isPrime(n) ? result ^ 2 : result;
   return result;
 }
 `,

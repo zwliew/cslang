@@ -342,9 +342,12 @@ const microcode = (code: AgendaItems) => {
         A.push({ type: 'dereference_i' }, code.operand)
       } else if (code.operator === 'sizeof') {
         A.push({ type: 'sizeof_i' }, code.operand)
+      } else if (code.operator === '!') {
+        OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) })
+        A.push({ type: 'binop_i', operator: '==' }, code.operand)
       } else {
-        // TODO: implement '~' and '!' unary operators
-        error(code, 'Unknown command: ')
+        // TODO: implement '~' and '+' unary operator
+        throw new NotImplementedError("Unary operator '" + code.operator + "' is not implemented")
       }
       break
 
@@ -566,27 +569,28 @@ const microcode = (code: AgendaItems) => {
       }
       break
 
-    case 'dereference_i': {
-      const ptr = pop(OS)
-      if (isPointerType(ptr.typeSpecifier)) {
-        // This is a pointer type.
-        const memAddress: MemoryAddress = {
-          type: 'MemoryAddress',
-          typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
-          location: ptr.value.toNumber()
-        }
+    case 'dereference_i':
+      {
+        const ptr = pop(OS)
+        if (isPointerType(ptr.typeSpecifier)) {
+          // This is a pointer type.
+          const memAddress: MemoryAddress = {
+            type: 'MemoryAddress',
+            typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
+            location: ptr.value.toNumber()
+          }
 
-        OS.push({
-          type: 'Literal',
-          typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
-          value: M.getValue(memAddress),
-          address: memAddress
-        })
-      } else {
-        throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
+          OS.push({
+            type: 'Literal',
+            typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
+            value: M.getValue(memAddress),
+            address: memAddress
+          })
+        } else {
+          throw new IllegalArgumentError('Operand of unary * operator must have pointer type.')
+        }
       }
       break
-    }
 
     case 'sizeof_i': {
       const typeSpecifier = OS.pop()!.typeSpecifier

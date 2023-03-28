@@ -535,8 +535,10 @@ export class CGenerator implements CVisitor<AstNode> {
       // Dereference operator
       // TODO: enforce that the operand has pointer type (6.5.3.2)
       return '*'
+    } else if (ctx.Not()) {
+      return '!'
     } else {
-      // TODO: implement '+', '~', and '!' unary operators
+      // TODO: implement '+', '~' unary operators
       throw new NotImplementedError(ctx.text)
     }
   }
