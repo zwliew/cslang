@@ -81,11 +81,38 @@ main() {
   19162
 ]
 
+const extendedEuclideanAlgorithm = [
+  `
+int egcd(int a, int b, int *s, int *t) {
+  if (!b) {
+    *s = 1;
+    *t = 0;
+    return a;
+  }
+  int d = egcd(b, a % b, s, t);
+  int tmp = *s;
+  *s = *t;
+  *t = tmp - *t * (a / b);
+  return d;
+}
+main() {
+  int a = 3732738;
+  int b = 198316554;
+  int s;
+  int t;
+  int d = egcd(a, b, &s, &t);
+  return s * a + t * b + d / 2;
+}
+`,
+  9
+]
+
 export const generalTests = {
   fibonacci,
   primalityTest,
   binaryExponentiation,
-  swap
+  swap,
+  extendedEuclideanAlgorithm
 }
 
 runTests(generalTests)
