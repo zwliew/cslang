@@ -2,8 +2,7 @@ import { runTests } from '../utils/jest-utils'
 
 const fibonacci = [
   `
-main() {
-  int n = 12;
+int fib(int n) {
   long long res[2];
   res[0] = 0;
   res[1] = 1;
@@ -14,13 +13,17 @@ main() {
   }
   return n ? res[1] : res[0];
 }
+main() {
+  char n = 12;
+  return fib(n);
+}
 `,
   144
 ]
 
 const primalityTest = [
   `
-int isPrime(int n) {
+_Bool isPrime(int n) {
   for (int d = 2; d * d <= n; d += 1) {
       if (n % d == 0) {
         return 0;

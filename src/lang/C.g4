@@ -404,7 +404,7 @@ externalDeclaration:
 	| ';'; // stray ;
 
 functionDefinition:
-	typeSpecifier* declarator declarationList? compoundStatement;
+	declarationSpecifiers? declarator declarationList? compoundStatement;
 
 declarationList: declaration+;
 

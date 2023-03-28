@@ -983,14 +983,19 @@ export class CGenerator implements CVisitor<AstNode> {
     }
 
     let returnType: TypeSpecifier
-    const typeSpecifier = ctx.typeSpecifier()
-    if (typeSpecifier.length == 0) {
-      // Default to int
+    const typeSpecifiers = ctx
+      .declarationSpecifiers()
+      ?.declarationSpecifier()
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
+    if (typeSpecifiers === undefined) {
+      // Default function return types to int
       returnType = 'int'
-    } else if (typeSpecifier.length === 1) {
-      returnType = this.typeSpecifierCtxToTypeSpecifier(typeSpecifier[0])
     } else {
-      throw new NotImplementedError(ctx.text)
+      if (!isValidRawTypeSpecifier(typeSpecifiers)) {
+        throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
+      }
+      returnType = multiwordTypeToTypeSpecifier(typeSpecifiers)
     }
 
     const parameterTypeList = functionNameWithParameters.parameterTypeList()
@@ -1014,22 +1019,6 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(ctx.text)
     } else {
       return baseFunctionDeclaration
-    }
-  }
-
-  typeSpecifierCtxToTypeSpecifier(ctx: TypeSpecifierContext): TypeSpecifier {
-    const text = ctx.text
-    if (
-      text === 'void' ||
-      text === 'char' ||
-      text === 'int' ||
-      text === 'long' ||
-      text === 'float' ||
-      text === 'double'
-    ) {
-      return ctx.text as TypeSpecifier
-    } else {
-      throw new NotImplementedError(ctx.text)
     }
   }
 
