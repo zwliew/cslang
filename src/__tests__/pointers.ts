@@ -51,10 +51,25 @@ main() {
   5
 ]
 
+const pointerParamInFunction = [
+  `
+void set(int *x) {
+  *x = 1337;
+}
+main() {
+  int x = -31173;
+  set(&x);
+  return x;
+}
+`,
+  1337
+]
+
 export const pointerTests = {
   basicPointer,
   pointerDeref,
   pointerDerefAssmtSimple,
-  pointerDerefAssmtArithmetic
+  pointerDerefAssmtArithmetic,
+  pointerParamInFunction
 }
 runTests(pointerTests)

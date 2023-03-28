@@ -53,6 +53,7 @@ export type Instructions =
   | iBreak
   | iCase
   | iFunctionApplication
+  | iFunctionParamDeclaration
   | iDereference
   | iSizeof
   | iCast
@@ -136,6 +137,11 @@ export interface iFunctionApplication extends BaseInstruction {
   type: 'app_i'
   identifier: string
   arity: number
+}
+
+export interface iFunctionParamDeclaration extends BaseInstruction {
+  type: 'param_decl_i'
+  declarations: { name: string; typeSpecifier: TypeSpecifier }[]
 }
 
 export interface iDereference extends BaseInstruction {

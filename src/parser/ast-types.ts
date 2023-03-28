@@ -266,14 +266,15 @@ export interface ParameterList extends BaseNode {
 export interface ParameterDeclaration extends BaseNode {
   type: 'ParameterDeclaration'
   typeSpecifier: TypeSpecifier
-  name: Declarator
+  identifier: string
 }
 
 // A Declaration can consist of multiple Declarators. In `int x = 0`, `int x` is the Declarator
 export interface Declarator extends BaseNode {
   type: 'Declarator'
-  name: string
-  pointerDepth: number // * = 1, ** = 2 etc.
+  identifier: string
+  pointerDepth: number // Indicates how many pointers we need (i.e. char *c = 1, int **i = 2)
+  arraySize?: number // Indicates the size of the array (i.e. int arr[5] = 5)
 }
 
 export type PrimitiveTypeSpecifier = Exclude<

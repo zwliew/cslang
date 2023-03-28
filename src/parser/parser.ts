@@ -903,50 +903,12 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(ctx.text)
     }
 
-    // Determine the number of pointers we need (i.e. for `int **x;`)
-    const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
-    for (const child of pointerChildren) {
-      if (child.text !== '*') {
-        // Stop at the first non-pointer child
-        // TODO: support other "pointer-like" keywords like `int *const`.
-        break
-      }
+    const declarator = this.visitDeclarator(initDeclarator[0].declarator())
+    for (let i = 0; i < declarator.pointerDepth; ++i) {
       typeSpecifier = { ptrTo: typeSpecifier }
     }
-
-    // Now, we get the left-most direct declarator (the identifier).
-    // This is needed to parse arrays (i.e. int arr[1];)
-    let curDeclarator = initDeclarator[0].declarator().directDeclarator()
-    let directDeclaratorCount = 0
-    for (
-      let nextDeclarator = curDeclarator.directDeclarator();
-      nextDeclarator !== undefined;
-      nextDeclarator = nextDeclarator.directDeclarator()
-    ) {
-      ++directDeclaratorCount
-      curDeclarator = nextDeclarator
-    }
-    const identifier = curDeclarator.text
-
-    // TODO: support multi-dimensional arrays
-    if (directDeclaratorCount > 1) {
-      throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
-    }
-
-    let arraySize = undefined
-    if (directDeclaratorCount >= 1) {
-      // TODO: support multi-dimensional arrays
-      const assignmentExpression = initDeclarator[0]
-        .declarator()
-        .directDeclarator()
-        .assignmentExpression()
-      if (assignmentExpression) {
-        arraySize = this.visitAssignmentExpression(assignmentExpression)
-        if (arraySize.type !== 'Literal') {
-          throw new IllegalArgumentError('Array size must be a literal')
-        }
-        typeSpecifier = { arrOf: typeSpecifier, size: arraySize.value.toNumber() }
-      }
+    if (declarator.arraySize) {
+      typeSpecifier = { arrOf: typeSpecifier, size: declarator.arraySize }
     }
 
     const initializer = initDeclarator[0].initializer()
@@ -958,7 +920,7 @@ export class CGenerator implements CVisitor<AstNode> {
     return {
       type: 'ValueDeclaration',
       typeSpecifier,
-      identifier,
+      identifier: declarator.identifier,
       value
     }
   }
@@ -987,50 +949,12 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(ctx.text)
     }
 
-    // Determine the number of pointers we need (i.e. for `int **x;`)
-    const pointerChildren = initDeclarator[0].declarator().pointer()?.children ?? []
-    for (const child of pointerChildren) {
-      if (child.text !== '*') {
-        // Stop at the first non-pointer child
-        // TODO: support other "pointer-like" keywords like `int *const`.
-        break
-      }
+    const declarator = this.visitDeclarator(initDeclarator[0].declarator())
+    for (let i = 0; i < declarator.pointerDepth; ++i) {
       typeSpecifier = { ptrTo: typeSpecifier }
     }
-
-    // Now, we get the left-most direct declarator (the identifier).
-    // This is needed to parse arrays (i.e. int arr[1];)
-    let curDeclarator = initDeclarator[0].declarator().directDeclarator()
-    let directDeclaratorCount = 0
-    for (
-      let nextDeclarator = curDeclarator.directDeclarator();
-      nextDeclarator !== undefined;
-      nextDeclarator = nextDeclarator.directDeclarator()
-    ) {
-      ++directDeclaratorCount
-      curDeclarator = nextDeclarator
-    }
-    const identifier = curDeclarator.text
-
-    // TODO: support multi-dimensional arrays
-    if (directDeclaratorCount > 1) {
-      throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
-    }
-
-    let arraySize = undefined
-    if (directDeclaratorCount >= 1) {
-      // TODO: support multi-dimensional arrays
-      const assignmentExpression = initDeclarator[0]
-        .declarator()
-        .directDeclarator()
-        .assignmentExpression()
-      if (assignmentExpression) {
-        arraySize = this.visitAssignmentExpression(assignmentExpression)
-        if (arraySize.type !== 'Literal') {
-          throw new IllegalArgumentError('Array size must be a literal')
-        }
-        typeSpecifier = { arrOf: typeSpecifier, size: arraySize.value.toNumber() }
-      }
+    if (declarator.arraySize) {
+      typeSpecifier = { arrOf: typeSpecifier, size: declarator.arraySize }
     }
 
     const initializer = initDeclarator[0].initializer()
@@ -1042,7 +966,7 @@ export class CGenerator implements CVisitor<AstNode> {
     return {
       type: 'ValueDeclaration',
       typeSpecifier,
-      identifier,
+      identifier: declarator.identifier,
       value
     }
   }
@@ -1126,32 +1050,93 @@ export class CGenerator implements CVisitor<AstNode> {
 
   visitParameterDeclaration(ctx: ParameterDeclarationContext): ParameterDeclaration {
     if (ctx.abstractDeclarator()) {
+      // TODO: implement abstract declarators (i.e. void f(int *) without an identifier)
       throw new NotImplementedError(ctx.text)
     }
-    const typeSpecifier = ctx.typeSpecifier()
-    if (typeSpecifier.length != 1) {
-      throw new NotImplementedError(ctx.text)
+
+    const typeSpecifiers = ctx
+      .declarationSpecifiers()
+      .declarationSpecifier()
+      .map(declarationSpecifier => declarationSpecifier.typeSpecifier().text)
+      .reduce((nextType, previousTypes) => nextType + ' ' + previousTypes)
+
+    if (!isValidRawTypeSpecifier(typeSpecifiers)) {
+      throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
+    }
+
+    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+
+    const declarator = ctx.declarator()
+    if (!declarator) {
+      throw new NotImplementedError(
+        "Parameter declarations without declarators aren't supported yet."
+      )
+    }
+
+    const { pointerDepth, arraySize, identifier } = this.visitDeclarator(declarator)
+    for (let i = 0; i < pointerDepth; ++i) {
+      typeSpecifier = { ptrTo: typeSpecifier }
+    }
+    if (arraySize) {
+      typeSpecifier = { arrOf: typeSpecifier, size: arraySize }
     }
 
     return {
       type: 'ParameterDeclaration',
-      typeSpecifier: typeSpecifier[0].text as TypeSpecifier,
-      name: this.visitDeclarator(ctx.declarator()!)
+      typeSpecifier,
+      identifier
     }
   }
 
   visitDeclarator(ctx: DeclaratorContext): Declarator {
-    if (ctx.pointer()) {
-      throw new NotImplementedError(ctx.text)
+    // Determine the number of pointers we need (i.e. for `int **x;`)
+    let pointerDepth = 0
+    const pointerChildren = ctx.pointer()?.children ?? []
+    for (const child of pointerChildren) {
+      if (child.text !== '*') {
+        // Stop at the first non-pointer child
+        // TODO: support other "pointer-like" keywords like `int *const`.
+        break
+      }
+      ++pointerDepth
     }
-    const identifier = ctx.directDeclarator().Identifier()
-    if (!identifier) {
-      throw new NotImplementedError(ctx.text)
+
+    // Now, we get the left-most direct declarator (the identifier).
+    // This is needed to parse arrays (i.e. int arr[1];)
+    let curDeclarator = ctx.directDeclarator()
+    let directDeclaratorCount = 0
+    for (
+      let nextDeclarator = curDeclarator.directDeclarator();
+      nextDeclarator !== undefined;
+      nextDeclarator = nextDeclarator.directDeclarator()
+    ) {
+      ++directDeclaratorCount
+      curDeclarator = nextDeclarator
     }
+
+    let arraySize = undefined
+    if (directDeclaratorCount >= 1) {
+      // TODO: support multi-dimensional arrays
+      const assignmentExpression = ctx.directDeclarator().assignmentExpression()
+      if (assignmentExpression) {
+        arraySize = this.visitAssignmentExpression(assignmentExpression)
+        if (arraySize.type !== 'Literal') {
+          throw new IllegalArgumentError('Array size must be a literal')
+        }
+        arraySize = arraySize.value.toNumber()
+      }
+    }
+
+    // TODO: support multi-dimensional arrays
+    if (directDeclaratorCount > 1) {
+      throw new NotImplementedError("Multi-dimensional arrays aren't supported yet")
+    }
+
     return {
       type: 'Declarator',
-      name: identifier.text,
-      pointerDepth: 0
+      identifier: curDeclarator.text,
+      pointerDepth,
+      arraySize
     }
   }
 

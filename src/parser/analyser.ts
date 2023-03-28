@@ -1,4 +1,4 @@
-import { DEBUG_PRINT_ANALYSIS } from '../utils/debug-flags'
+import { DEBUG_PRINT_ANALYSIS } from '../utils/debug'
 import { AnalysisError } from '../utils/errors'
 import { AstNode, Expression, Statement, TypeSpecifier } from './ast-types'
 

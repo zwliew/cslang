@@ -63,10 +63,28 @@ main() {
   50653 // TODO: mod 2^8 = 256 for return values from main
 ]
 
+const swap = [
+  `
+void swap(int *x, int *y) {
+  int tmp = *x;
+  *x = *y;
+  *y = tmp;
+}
+main() {
+  int x = 83;
+  int y = 19245;
+  swap(&x, &y);
+  return x - y;
+}
+`,
+  19162
+]
+
 export const generalTests = {
   fibonacci,
   primalityTest,
-  binaryExponentiation
+  binaryExponentiation,
+  swap
 }
 
 runTests(generalTests)

@@ -18,3 +18,14 @@ export const DEBUG_PRINT_STEPS = false
 
 // Print the state of analysis at every step
 export const DEBUG_PRINT_ANALYSIS = false
+
+export function dbg(s?: any) {
+  const LOCAL_DEBUG = false
+  if (LOCAL_DEBUG) {
+    if (s === undefined) {
+      console.debug()
+    } else {
+      console.debug(s)
+    }
+  }
+}

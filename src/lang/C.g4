@@ -298,8 +298,8 @@ parameterTypeList: parameterList (',' '...')?;
 parameterList: parameterDeclaration (',' parameterDeclaration)*;
 
 parameterDeclaration:
-	typeSpecifier+ declarator
-	| typeSpecifier+ abstractDeclarator?;
+	declarationSpecifiers declarator
+	| declarationSpecifiers abstractDeclarator?;
 
 identifierList: Identifier (',' Identifier)*;
 

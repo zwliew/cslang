@@ -82,11 +82,7 @@ const putchar: FunctionDefinition = {
       {
         type: 'ParameterDeclaration',
         typeSpecifier: 'char',
-        name: {
-          type: 'Declarator',
-          name: 'char',
-          pointerDepth: 0
-        }
+        identifier: 'char'
       }
     ]
   },

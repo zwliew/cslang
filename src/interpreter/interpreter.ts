@@ -7,7 +7,7 @@ import {
   PointerTypeSpecifier
 } from '../parser/ast-types'
 import { isPointerType, sizeOfType } from '../types'
-import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug-flags'
+import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, RuntimeError } from '../utils/errors'
 import { Environment } from './classes/environment'
@@ -367,34 +367,40 @@ const microcode = (code: AgendaItems) => {
       const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
       // Save the current environment
       A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
-      // Extend the environment with a frame mapping from parameter to argument value
-      E = E.extend(M)
 
       const functionDefinition = functionAndEnv[0]
       if (functionDefinition.returnType === 'void') {
         A.push(UNDEFINED_LITERAL)
       }
-      A.push({ type: 'app_i', identifier: code.identifier, arity: code.arguments.length })
       const parameterList = functionDefinition.parameterList
-      if (parameterList) {
-        const parameters = parameterList.parameters.map(parameterDeclaration => ({
+      const parameters =
+        parameterList?.parameters.map(parameterDeclaration => ({
           typeSpecifier: parameterDeclaration.typeSpecifier,
-          name: parameterDeclaration.name.name
-        }))
-        // Push arguments in reverse order. OS will have arguments in the correct order
-        for (let i = 0; i < code.arguments.length; i++) {
-          E.declare(parameters[i].name, {
-            type: 'MemoryAddress',
-            typeSpecifier: parameters[i].typeSpecifier,
-            location: M.allocateStack(sizeOfType(parameters[i].typeSpecifier))
-          })
+          name: parameterDeclaration.identifier
+        })) ?? []
 
-          A.push(
-            { type: 'value_assmt_i' },
-            { type: 'Identifier', identifier: parameters[i].name },
-            code.arguments[code.arguments.length - i - 1]
-          )
-        }
+      if (code.arguments.length !== parameters.length) {
+        throw new RuntimeError('Number of arguments does not match number of parameters')
+      }
+
+      A.push({
+        type: 'app_i',
+        identifier: code.identifier,
+        arity: code.arguments.length
+      })
+
+      // We can only declare parameters *after* evaluating all arguments to the function.
+      const declarations = []
+      for (let i = 0; i < code.arguments.length; i++) {
+        // Push the literal back onto the OS to be copied by 'app_i'
+        A.push({ type: 'Identifier', identifier: parameters[i].name })
+
+        declarations.push({ name: parameters[i].name, typeSpecifier: parameters[i].typeSpecifier })
+      }
+      A.push({ type: 'param_decl_i', declarations })
+
+      for (let i = code.arguments.length - 1; i >= 0; --i) {
+        A.push(code.arguments[i])
       }
       break
     }
@@ -424,7 +430,7 @@ const microcode = (code: AgendaItems) => {
       const functionArguments: Literal[] = []
       for (let i = 0; i < code.arity; i++) {
         // Makes a copy of each value
-        functionArguments.push(OS.pop()!)
+        functionArguments.push(pop(OS))
       }
 
       // Primitive functions can be called directly in the interpreter
@@ -436,10 +442,26 @@ const microcode = (code: AgendaItems) => {
       A.push(...functionAndEnv[0].body.slice().reverse())
       break
 
+    case 'param_decl_i':
+      // Extend the environment with a frame mapping from parameter to argument value
+      E = E.extend(M)
+      for (const { name, typeSpecifier } of code.declarations) {
+        const address: MemoryAddress = {
+          type: 'MemoryAddress',
+          typeSpecifier,
+          location: M.allocateStack(sizeOfType(typeSpecifier))
+        }
+        E.declare(name, address)
+
+        // Push arguments in reverse order. OS will have arguments in the correct order
+        A.push(POP_INSTRUCTION, { type: 'value_assmt_i' }, { type: 'Identifier', identifier: name })
+      }
+      break
+
     case 'value_assmt_i': {
       // Get the address the name is refering to
-      const lit = OS.pop()
-      if (lit === undefined || lit.address === undefined) {
+      const lit = pop(OS)
+      if (lit.address === undefined) {
         throw new IllegalArgumentError("Can't assign to a literal without a memory address.")
       }
       // Set the topmost literal value into memory
@@ -553,6 +575,7 @@ const microcode = (code: AgendaItems) => {
           typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
           location: ptr.value.toNumber()
         }
+
         OS.push({
           type: 'Literal',
           typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
