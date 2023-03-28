@@ -8,6 +8,7 @@ interface AnalysisState {
       arity: number
       expectedReturnType: TypeSpecifier
       returns: boolean
+      returnsAValue: boolean
     }
   }
   variables: {
@@ -16,9 +17,9 @@ interface AnalysisState {
   currentFunction: string
 }
 
-const defaultAnalysisState = {
+const defaultAnalysisState: AnalysisState = {
   functions: {
-    putchar: { arity: 1, expectedReturnType: 'int', returns: true }
+    putchar: { arity: 1, expectedReturnType: 'int', returns: true, returnsAValue: true }
   },
   variables: {},
   currentFunction: 'global'
@@ -34,6 +35,7 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
   }
 
   // Short circuit analysis if a return statement has been reached
+  // TODO: we should still analyse the rest of the AST even when a return statement has been reached.
   if (
     analysisState.currentFunction &&
     analysisState.currentFunction in analysisState.functions &&
@@ -91,6 +93,9 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
         analysisState.functions[analysisState.currentFunction].returns =
           analysisState.functions[analysisState.currentFunction].returns &&
           alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
+        analysisState.functions[analysisState.currentFunction].returnsAValue =
+          analysisState.functions[analysisState.currentFunction].returnsAValue &&
+          alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returnsAValue
       }
       break
 
@@ -125,10 +130,21 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       const blocksReturn = blocks.map(block => {
         const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
         traverse({ type: 'Block', statements: block }, alternativeAnalysisState)
-        return alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
+        return {
+          returns:
+            alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns,
+          returnsAValue:
+            alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction]
+              .returnsAValue
+        }
       })
-      if (blocksReturn.length > 0 && blocksReturn.every(_ => _)) {
-        analysisState.functions[analysisState.currentFunction].returns = true
+      if (blocksReturn.length > 0) {
+        analysisState.functions[analysisState.currentFunction].returns = blocksReturn.every(
+          ret => ret.returns
+        )
+        analysisState.functions[analysisState.currentFunction].returnsAValue = blocksReturn.every(
+          ret => ret.returnsAValue
+        )
       }
       break
 
@@ -140,7 +156,8 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       analysisState.functions[node.identifier] = {
         arity: node.functionDefinition.parameterList?.parameters.length ?? 0,
         expectedReturnType: node.functionDefinition.returnType,
-        returns: false
+        returns: false,
+        returnsAValue: false
       }
       const originalVariables = analysisState.variables
       const originalScope = analysisState.currentFunction
@@ -150,13 +167,13 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       }
       if (
         analysisState.functions[node.identifier].expectedReturnType !== 'void' &&
-        !analysisState.functions[node.identifier].returns
+        !analysisState.functions[node.identifier].returnsAValue
       ) {
         // TODO: add an implicit return
         throw new AnalysisError(`Function ${node.identifier} does not return any value`)
       } else if (
         analysisState.functions[node.identifier].expectedReturnType === 'void' &&
-        analysisState.functions[node.identifier].returns
+        analysisState.functions[node.identifier].returnsAValue
       ) {
         throw new AnalysisError(
           `Function ${node.identifier} with void return type attempts to return a value`
@@ -181,6 +198,9 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
 
     case 'Return':
       analysisState.functions[analysisState.currentFunction].returns = true
+      if (node.expression) {
+        analysisState.functions[analysisState.currentFunction].returnsAValue = true
+      }
       // TODO: compare types
       // Currently, all types can be coerced to each other, so we don't do anything here
       // const expectedReturnType =

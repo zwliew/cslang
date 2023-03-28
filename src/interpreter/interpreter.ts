@@ -368,13 +368,15 @@ const microcode = (code: AgendaItems) => {
 
     case 'FunctionApplication': {
       const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
-      // Save the current environment
-      A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
 
       const functionDefinition = functionAndEnv[0]
       if (functionDefinition.returnType === 'void') {
+        // There might not be a 'return' statement for void functions, so we need to push a dummy value here preemptively.
         A.push(UNDEFINED_LITERAL)
       }
+
+      // Save the current environment
+      A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
       const parameterList = functionDefinition.parameterList
       const parameters =
         parameterList?.parameters.map(parameterDeclaration => ({
@@ -416,6 +418,8 @@ const microcode = (code: AgendaItems) => {
       // TODO: Assert that the top element is a `fn_env_i`.
       const typeSpecifier = (A.at(-1) as iFunctionEnvironment).functionReturnType
       if (code.expression) {
+        // Only push the return value if the function is not void.
+        // If it is void, we would have already pushed a dummy value in 'FunctionApplication'
         A.push({ type: 'cast_i', typeSpecifier: typeSpecifier }, code.expression)
       }
       break
