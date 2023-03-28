@@ -79,7 +79,7 @@ export class Memory {
       throw new IllegalArgumentError('Provided argument should be positive.')
     }
 
-    const totalSize = align(bytes) + 4
+    const totalSize = align(bytes) + WORD_SIZE
 
     if (this.stackIndex >= this.heapIndex - totalSize) {
       // There isn't enough space.
@@ -89,7 +89,7 @@ export class Memory {
     this.heapIndex -= totalSize
     this.data.setUint32(this.heapIndex, bytes)
 
-    return this.heapIndex + 1
+    return this.heapIndex + WORD_SIZE
   }
 
   getValue(memAdd: MemoryAddress): Decimal {
@@ -133,7 +133,7 @@ export class Memory {
       // This is a pointer.
       getDataFunction = this.data.getUint32
     }
-    return new Decimal(getDataFunction.call(this.data, byteOffset))
+    return new Decimal(getDataFunction.call(this.data, byteOffset).toString())
   }
 
   setValue(memAdd: MemoryAddress, value: Literal): void {

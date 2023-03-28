@@ -8,7 +8,6 @@ const putchar = [
   65
 ]
 
-// Not tested until repeated function calls are fixed
 const multiplePutchar = [
   `main() {
     putchar('H');
@@ -27,9 +26,32 @@ const multiplePutchar = [
   100
 ]
 
+const malloc = [
+  `
+  main() {
+    int *arr = malloc(10 * sizeof(int));
+    return arr[-1];
+  }
+  `,
+  40 // Read implementation of Memory::allocateHeap
+]
+
+const malloc2 = [
+  `
+  main() {
+    int *arr = malloc(3 * sizeof(int));
+    arr[2] = 100;
+    return arr[2];
+  }
+  `,
+  100
+]
+
 export const primitiveFunctionsTests = {
   putchar,
-  multiplePutchar
+  multiplePutchar,
+  malloc,
+  malloc2
 }
 
 runTests(primitiveFunctionsTests)
