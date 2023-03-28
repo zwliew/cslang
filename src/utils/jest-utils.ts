@@ -11,7 +11,7 @@ export function runTests(testCases: any) {
     // Only run tests if we are in a jest worker
     return
   }
-  
+
   for (const testName in testCases) {
     test(testName, () => {
       if (testCases[testName][1] === FAIL_RESULT) {

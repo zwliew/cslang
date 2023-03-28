@@ -233,6 +233,8 @@ export type Declarations =
   | ParameterDeclaration
   | Declarator
   | StraySemicolon
+  | DeclarationSpecifiers
+
 export type StraySemicolon = { type: 'StraySemicolon' }
 
 export type Declaration = ValueDeclaration | FunctionDeclaration
@@ -276,6 +278,11 @@ export interface Declarator extends BaseNode {
   identifier: string
   pointerDepth: number // Indicates how many pointers we need (i.e. char *c = 1, int **i = 2)
   arraySize?: number // Indicates the size of the array (i.e. int arr[5] = 5)
+}
+
+export interface DeclarationSpecifiers extends BaseNode {
+  type: 'DeclarationSpecifiers'
+  typeSpecifier: TypeSpecifier
 }
 
 export type PrimitiveTypeSpecifier = Exclude<

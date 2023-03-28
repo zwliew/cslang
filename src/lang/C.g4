@@ -156,15 +156,15 @@ expression: assignmentExpression (',' assignmentExpression)*;
 
 constantExpression: conditionalExpression;
 
-declaration: declarationSpecifiers initDeclaratorList ';';
+declaration: declarationSpecifiers initDeclaratorList? ';';
 // | staticAssertDeclaration;
 
 declarationSpecifiers: declarationSpecifier+;
 
 // declarationSpecifiers2: declarationSpecifier+;
 
-declarationSpecifier: typeSpecifier;
-// | storageClassSpecifier | typeQualifier | functionSpecifier | alignmentSpecifier;
+declarationSpecifier: typeSpecifier | storageClassSpecifier;
+// | typeQualifier | functionSpecifier | alignmentSpecifier;
 
 initDeclaratorList: initDeclarator (',' initDeclarator)*;
 
@@ -191,10 +191,10 @@ typeSpecifier: (
 		| '_Bool'
 		| '_Complex'
 		// | '__m128' | '__m128d' | '__m128i'
-	);
-// | '__extension__' '(' ('__m128' | '__m128d' | '__m128i') ')' | atomicTypeSpecifier |
-// structOrUnionSpecifier | enumSpecifier | typedefName | '__typeof__' '(' constantExpression ')' //
-// GCC extension
+	)
+	| structOrUnionSpecifier;
+// | typedefName; | '__extension__' '(' ('__m128' | '__m128d' | '__m128i') ')' | atomicTypeSpecifier
+// | | enumSpecifier | '__typeof__' '(' constantExpression ')' GCC extension
 
 structOrUnionSpecifier:
 	structOrUnion Identifier? '{' structDeclarationList '}'
@@ -404,7 +404,7 @@ externalDeclaration:
 	| ';'; // stray ;
 
 functionDefinition:
-	typeSpecifier* declarator declarationList? compoundStatement;
+	declarationSpecifiers? declarator declarationList? compoundStatement;
 
 declarationList: declaration+;
 

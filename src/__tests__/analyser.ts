@@ -131,7 +131,7 @@ main() {
   0
 ]
 
-const voidWithReturn = [
+const voidWithReturnValue = [
   `
 void vfn() {
   return 1;
@@ -142,6 +142,20 @@ main() {
 }
 `,
   ANALYSIS_ERROR
+]
+
+const voidWithNoReturnValue = [
+  `
+void vfn() {
+  1;
+  return;
+}
+main() {
+  vfn();
+  return 0;
+}
+`,
+  0
 ]
 
 export const analyserTests = {
@@ -155,6 +169,7 @@ export const analyserTests = {
   switchCaseSomeReturnWithFinalReturn,
   switchCaseAllReturn,
   voidNoReturn,
-  voidWithReturn
+  voidWithReturnValue,
+  voidWithNoReturnValue
 }
 runTests(analyserTests)
