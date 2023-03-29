@@ -1150,7 +1150,7 @@ export class CGenerator implements CVisitor<AstNode> {
       throw new NotImplementedError(`Attempting to use unknown type ${typeSpecifiers}`)
     }
 
-    let typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
+    const typeSpecifier = multiwordTypeToTypeSpecifier(typeSpecifiers)
     return {
       type: 'DeclarationSpecifiers',
       typeSpecifier
