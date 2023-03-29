@@ -4,7 +4,7 @@ import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 
-import { INFINITY, STRAY_SEMICOLON } from '../interpreter/constants'
+import { STRAY_SEMICOLON } from '../interpreter/constants'
 import { CLexer } from '../lang/CLexer'
 import {
   AdditiveExpressionContext,
@@ -51,7 +51,7 @@ import {
 import { CVisitor } from '../lang/CVisitor'
 import { isValidRawTypeSpecifier, multiwordTypeToTypeSpecifier, sizeOfType } from '../types'
 import Decimal from '../utils/decimal'
-import { IllegalArgumentError, NotImplementedError } from '../utils/errors'
+import { IllegalArgumentError, NotImplementedError, ParseError } from '../utils/errors'
 import {
   AssignmentOperator,
   AstNode,
@@ -595,17 +595,33 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitPrimaryExpression(ctx: PrimaryExpressionContext): Expression {
-    const constantValue = ctx.Constant()
-    if (constantValue) {
-      const constantString = constantValue.toString()
-      // Check if it's a character
-      if (
-        constantString.charAt(0) == `'` &&
-        constantString.charAt(constantString.length - 1) == `'`
-      ) {
+    const constantString = ctx.Constant()?.toString()
+
+    if (constantString) {
+      // Check if it's a supported character literal
+      if (constantString.charAt(constantString.length - 1) === `'`) {
+        if (constantString.charAt(0) !== `'`) {
+          // u8/u/U/L prefixed strings
+          throw new NotImplementedError('Prefixed character literals not supported')
+        }
+
         const charWithoutQuotes = constantString.substring(1, constantString.length - 1)
+        const encoding = charWithoutQuotes.charAt(1)
+        if (encoding === 'x') {
+          // Value of character literal is limited by size of char
+          const largeUnicodeInt = parseInt(charWithoutQuotes.substring(2), 16) % 64
+          return {
+            type: 'Literal',
+            typeSpecifier: 'char',
+            value: new Decimal(largeUnicodeInt)
+          }
+        }
+
+        const charCodeStr = charWithoutQuotes.replace(/\\u[\dA-F]{4}/gi, match => {
+          return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16))
+        })
         // Assert that there is only one character
-        if (!isNaN(charWithoutQuotes.charCodeAt(1))) {
+        if (charCodeStr.length > 1) {
           throw new NotImplementedError(
             'Attempting to create char literal of length greater than 1'
           )
@@ -613,51 +629,66 @@ export class CGenerator implements CVisitor<AstNode> {
         return {
           type: 'Literal',
           typeSpecifier: 'char',
-          value: new Decimal(charWithoutQuotes.charCodeAt(0))
+          value: new Decimal(charCodeStr.charCodeAt(0))
         }
       }
-      // Verify characters to be numeric, "e" or "."
-      const intOrFloatMatches = RegExp(`^[-+]?(?:[0-9]*[.])?[0-9]+(?:[eE][-+]?[0-9]+)?$`).exec(
-        constantString
-      )
-      if (intOrFloatMatches === null || intOrFloatMatches.length != 1) {
-        throw new NotImplementedError(`'${ctx.text}' is not a valid int or float numeral`)
-      }
-      // Can be integers or floats
-      if (
+
+      // Is either an integer or float literal
+      // Check for prefixes
+      let literalValue: Decimal
+      const isInt = !(
         constantString.includes('.') ||
         constantString.includes('e') ||
         constantString.includes('E')
-      ) {
-        const floatValue = parseFloat(constantString)
-        if (Math.abs(floatValue) === Infinity) {
-          return INFINITY
-        }
-        if (!isNaN(floatValue)) {
-          return {
-            type: 'Literal',
-            // Floating point literals (eg 1.23) have type double
-            typeSpecifier: 'double',
-            value: new Decimal(floatValue)
+      )
+      try {
+        if (constantString.length > 1 && constantString.charAt(0) === '0') {
+          const prefixEncoding = constantString.charAt(1)
+          switch (prefixEncoding) {
+            case 'x':
+            case 'X':
+              literalValue = new Decimal(parseInt(constantString.substring(2), 16))
+              break
+
+            case 'b':
+            case 'B':
+              literalValue = new Decimal(parseInt(constantString.substring(2), 2))
+              break
+
+            default:
+              // Octal
+              literalValue = new Decimal(parseInt(constantString.substring(1), 8))
+              break
           }
+        } else {
+          literalValue = new Decimal(constantString)
+        }
+      } catch (e) {
+        throw new ParseError(`'${ctx.text}' is not a valid integer or float literal`)
+      }
+
+      if (literalValue.isNaN()) {
+        throw new ParseError(`'${ctx.text}' is NaN`)
+      }
+
+      if (isInt) {
+        return {
+          type: 'Literal',
+          typeSpecifier: 'int',
+          value: literalValue
         }
       } else {
-        const intValue = parseInt(constantString)
-        if (!isNaN(intValue)) {
-          return {
-            type: 'Literal',
-            typeSpecifier: 'int',
-            value: new Decimal(intValue)
-          }
+        return {
+          type: 'Literal',
+          typeSpecifier: 'double', // Floating point literals (eg 1.23) have type double
+          value: literalValue
         }
       }
+    }
 
-      const stringLiteral = ctx.StringLiteral()
-      if (stringLiteral.length === 1) {
-        // Is a string literal
-        throw new NotImplementedError(ctx.text)
-      }
-
+    const stringLiteral = ctx.StringLiteral()
+    if (stringLiteral.length === 1) {
+      // Is a string literal
       throw new NotImplementedError(ctx.text)
     }
 
@@ -674,6 +705,7 @@ export class CGenerator implements CVisitor<AstNode> {
       }
     }
 
+    // Unknown literal
     throw new NotImplementedError(ctx.text)
   }
 

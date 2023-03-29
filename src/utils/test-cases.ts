@@ -1,3 +1,4 @@
+import { analyserTests } from '../__tests__/analyser'
 import { arrayTests } from '../__tests__/arrays'
 import { basicTests } from '../__tests__/basic'
 import { conditionalTests } from '../__tests__/conditionals'
@@ -11,6 +12,7 @@ import { typeTests } from '../__tests__/types'
 
 export default {
   ...arrayTests,
+  ...analyserTests,
   ...basicTests,
   ...conditionalTests,
   ...functionTests,

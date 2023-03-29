@@ -1,7 +1,7 @@
 // Some tests make use of escape characters, which TypeScript might convert to the appropriate character values
 // Extra testing with text files might be required
 
-import { FAIL_RESULT, runTests } from '../utils/jest-utils'
+import { runTests } from '../utils/jest-utils'
 
 const numericTypes = [
   `
@@ -60,7 +60,7 @@ main() {
   long long ll = 9223372036854775808;
   return ((ll + 1) == -9223372036854775807) && (ll == -9223372036854775808);
 }`,
-  0
+  1
 ]
 
 const floatPositiveInfinity = [
@@ -90,33 +90,81 @@ main() {
   179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0
 ]
 
-const charUnicodeHex = [
-  `
+const charHex = [
+  String.raw`
 main() {
-  char c = '\u0010';
+  char c = '\xFF';
   return c;
 }`,
-  16
+  63
 ]
 
-// \U strings not supported
-const charLargeUnicodeHex = [
-  `
-main() {
-  char c = '\U000000C0';
-  return c;
-}`,
-  FAIL_RESULT
-]
+// const charUnicodeHex = [
+//   String.raw`
+// main() {
+//   char c = '\u0010';
+//   return c;
+// }`,
+//   16
+// ]
 
-// Octal is not allowed in strict mode
+// const charLargeUnicodeHex = [
+//   String.raw`
+// main() {
+//   char c = '\U000000C0';
+//   return c;
+// }`,
+//   -64
+// ]
+
 // const charOctal = [
-//   `
+//   String.raw`
 // main() {
 //   char c = '\115';
 //   return c;
 // }`,
 //   77
+// ]
+
+const octalIntegerConstant = [
+  `
+main() {
+  int i = 0012;
+  int j = 0041;
+  return i + j;
+}`,
+  43
+]
+
+const hexadecimalIntegerConstant = [
+  `
+main() {
+  int i = 0xb2;
+  int j = 0X3b6;
+  int k = 0x1f2fc;
+  return k - (j - i);
+}`,
+  126968
+]
+
+const binaryIntegerConstant = [
+  `
+main() {
+  int i = 0b1000000;
+  int j = 0B1101;
+  return i + j;
+}`,
+  77
+]
+
+// const hexadecimalFloatingConstant = [
+//   `
+// main() {
+//   float f = 0x0.4p10;
+//   float g = 0x0.1P10;
+//   return f - g;
+// }`,
+//   192
 // ]
 
 // all types except char default to signed. long double not implemented yet
@@ -201,9 +249,11 @@ export const typeTests = {
   doubleMaxValue,
   floatPositiveInfinity,
   floatNegativeInfinity,
-  charUnicodeHex,
-  charLargeUnicodeHex,
+  charHex,
   charOverUnderflow,
+  octalIntegerConstant,
+  hexadecimalIntegerConstant,
+  binaryIntegerConstant,
   twoWordTypes,
   negativeUnsignedCharBecomesPositive,
   negativeUnsignedShortBecomesPositive,

@@ -20,6 +20,13 @@ export class SetVoidValueError extends Error {
   }
 }
 
+export class ParseError extends Error {
+  constructor(message?: string) {
+    super('Error in AST found during parsing. ' + message)
+    this.name = 'ParseError'
+  }
+}
+
 export class AnalysisError extends Error {
   constructor(message?: string) {
     super('Error in AST found during analysis. ' + message)
