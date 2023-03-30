@@ -10,7 +10,8 @@ main() {
     y += 8;
   }
   return x * y;
-}`,
+}
+`,
   830
 ]
 
@@ -24,8 +25,26 @@ main() {
       break;
   }
   return x;
-}`,
+}
+`,
   3
+]
+
+const whileLoopContinue = [
+  `
+main() {
+  int x = 0;
+  int i = 0;
+  while (i <= 5) {
+    i += 1;
+    if (i == 3)
+      continue;
+    x += i;
+  }
+  return x;
+}
+`,
+  18
 ]
 
 const doWhileLoop = [
@@ -43,6 +62,23 @@ main() {
   6
 ]
 
+const doWhileLoopBreak = [
+  `
+main() {
+  int x = 0;
+  int y = 0;
+  do {
+    x = x + 1;
+    if (x >= 0)
+      break;
+    y = 5;
+  } while (x < 0);
+  return x + y;
+}
+`,
+  1
+]
+
 const forLoop = [
   `
 main() {
@@ -54,6 +90,21 @@ main() {
 }
 `,
   6
+]
+
+const forLoopContinue = [
+  `
+main() {
+  int x = 0;
+  for (int i = 1; i <= 5; i += 1) {
+    if (i == 3)
+      continue;
+    x += i;
+  }
+  return x;
+}
+`,
+  12
 ]
 
 const forLoopBreak = [
@@ -71,6 +122,15 @@ main() {
   10
 ]
 
-export const loopTests = { whileLoop, whileLoopBreak, doWhileLoop, forLoop, forLoopBreak }
+export const loopTests = {
+  whileLoop,
+  whileLoopBreak,
+  whileLoopContinue,
+  doWhileLoop,
+  doWhileLoopBreak,
+  forLoop,
+  forLoopContinue,
+  forLoopBreak
+}
 
 runTests(loopTests)

@@ -1,7 +1,7 @@
 import Decimal from '../utils/decimal'
 
 import { Literal, StraySemicolon } from '../parser/ast-types'
-import { iBreak, iCase, iPop, iSwitchDefault } from './interpreter-types'
+import { iBreak, iCase, iContinueMark, iPop, iSwitchDefault } from './interpreter-types'
 
 export const DECIMAL_ZERO = new Decimal(0)
 export const DECIMAL_ONE = new Decimal(1)
@@ -41,3 +41,5 @@ export const CASE_INSTRUCTION: iCase = { type: 'case_i' }
 export const SWITCH_DEFAULT_INSTRUCTION: iSwitchDefault = { type: 'switch_default_i' }
 
 export const STRAY_SEMICOLON: StraySemicolon = { type: 'StraySemicolon' }
+
+export const CONTINUE_MARK_INSTRUCTION: iContinueMark = { type: 'continue_mark_i' }

@@ -128,6 +128,7 @@ export type Statement =
   | Switch
   | WhileStatement
   | Break
+  | Continue
   | DoWhileStatement
   | ForStatement
   | Return
@@ -213,6 +214,10 @@ export interface ForStatement extends BaseStatement {
 
 export interface Break extends BaseStatement {
   type: 'Break'
+}
+
+export interface Continue extends BaseStatement {
+  type: 'Continue'
 }
 
 export interface Return extends BaseStatement {

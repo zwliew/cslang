@@ -44,6 +44,7 @@ export type Instructions =
   | iWhileStatement
   | iForStatement
   | iLoopEnv
+  | iContinueMark
   | iRestoreEnvironment
   | iFunctionEnvironment
   | iPop
@@ -110,6 +111,10 @@ export interface iForStatement extends BaseInstruction {
 export interface iLoopEnv extends BaseInstruction {
   type: 'loop_env_i'
   environment: Environment
+}
+
+export interface iContinueMark extends BaseInstruction {
+  type: 'continue_mark_i'
 }
 
 export interface iSwitchEnv extends BaseInstruction {

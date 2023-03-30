@@ -16,6 +16,7 @@ import { Memory } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
   CASE_INSTRUCTION,
+  CONTINUE_MARK_INSTRUCTION,
   POP_INSTRUCTION,
   SWITCH_DEFAULT_INSTRUCTION,
   UNDEFINED_LITERAL
@@ -332,6 +333,13 @@ const microcode = (code: AgendaItems) => {
       A.push({ type: 'break_i' })
       break
 
+    case 'Continue':
+      while (A.length > 0 && pop(A).type !== 'continue_mark_i') {}
+      if (!A.length) {
+        throw new RuntimeError('Could not find a loop marker to continue to.')
+      }
+      break
+
     case 'UnaryExpression':
       if (code.operator === '-') {
         OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(-1) })
@@ -524,7 +532,7 @@ const microcode = (code: AgendaItems) => {
       {
         const pred_val = pop(OS)
         if (is_true(pred_val)) {
-          A.push(code, code.pred, code.body)
+          A.push(code, code.pred, CONTINUE_MARK_INSTRUCTION, code.body)
         }
       }
       break
@@ -537,7 +545,7 @@ const microcode = (code: AgendaItems) => {
           if (code.post) {
             A.push(POP_INSTRUCTION, code.post)
           }
-          A.push(code.body)
+          A.push(CONTINUE_MARK_INSTRUCTION, code.body)
         }
       }
       break
@@ -559,6 +567,13 @@ const microcode = (code: AgendaItems) => {
       while (A.length > 0 && A.at(-1)!.type !== 'switch_env_i' && A.at(-1)!.type !== 'loop_env_i') {
         pop(A)
       }
+      if (!A.length) {
+        throw new RuntimeError('Could not find a switch or loop to break out of.')
+      }
+      break
+
+    case 'continue_mark_i':
+      // Do nothing. This is just a marker for continue statements to know where to continue to.
       break
 
     case 'case_i':

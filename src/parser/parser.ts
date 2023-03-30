@@ -764,21 +764,19 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitJumpStatement(ctx: JumpStatementContext): Statement {
-    if (ctx.Break()) {
+    if (ctx.Continue()) {
+      return {
+        type: 'Continue'
+      }
+    } else if (ctx.Break()) {
       return {
         type: 'Break'
       }
     } else if (ctx.Return()) {
       const expression = ctx.expression()
-      if (expression) {
-        return {
-          type: 'Return',
-          expression: this.visitExpression(expression)
-        }
-      } else {
-        return {
-          type: 'Return'
-        }
+      return {
+        type: 'Return',
+        expression: expression ? this.visitExpression(expression) : undefined
       }
     } else {
       throw new NotImplementedError(ctx.text)
