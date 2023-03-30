@@ -289,16 +289,27 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'WhileStatement':
-      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred)
+      A.push(
+        { type: 'loop_env_i', environment: E },
+        { type: 'while_i', pred: code.pred, body: code.body },
+        code.pred
+      )
+      E = E.extend(M)
       break
 
     case 'DoWhileStatement':
-      A.push({ type: 'while_i', pred: code.pred, body: code.body }, code.pred, code.body)
+      A.push(
+        { type: 'loop_env_i', environment: E },
+        { type: 'while_i', pred: code.pred, body: code.body },
+        code.pred,
+        code.body
+      )
+      E = E.extend(M)
       break
 
     case 'ForStatement':
       A.push(
-        { type: 'env_i', environment: E },
+        { type: 'loop_env_i', environment: E },
         { type: 'for_i', pred: code.pred, body: code.body, post: code.post },
         code.pred
       )
@@ -496,6 +507,7 @@ const microcode = (code: AgendaItems) => {
     case 'env_i':
     case 'switch_env_i':
     case 'fn_env_i':
+    case 'loop_env_i':
       M.reinstateStackPointer(E.stackPointer)
       E = code.environment
       break
@@ -544,8 +556,8 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'break_i':
-      while (A.length > 0 && A.at(-1)!.type !== 'switch_env_i' && A.at(-1)!.type !== 'while_i') {
-        A.pop()
+      while (A.length > 0 && A.at(-1)!.type !== 'switch_env_i' && A.at(-1)!.type !== 'loop_env_i') {
+        pop(A)
       }
       break
 

@@ -43,6 +43,7 @@ export type Instructions =
   | iIf
   | iWhileStatement
   | iForStatement
+  | iLoopEnv
   | iRestoreEnvironment
   | iFunctionEnvironment
   | iPop
@@ -104,6 +105,11 @@ export interface iForStatement extends BaseInstruction {
   pred: Expression
   body: Statement
   post?: Expression
+}
+
+export interface iLoopEnv extends BaseInstruction {
+  type: 'loop_env_i'
+  environment: Environment
 }
 
 export interface iSwitchEnv extends BaseInstruction {

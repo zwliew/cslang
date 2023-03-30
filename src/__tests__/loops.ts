@@ -14,6 +14,20 @@ main() {
   830
 ]
 
+const whileLoopBreak = [
+  `
+main() {
+  int x = 0;
+  while (x < 5) {
+    x += 1;
+    if (x == 3)
+      break;
+  }
+  return x;
+}`,
+  3
+]
+
 const doWhileLoop = [
   `
 main() {
@@ -29,7 +43,6 @@ main() {
   6
 ]
 
-// TODO: fix these tests
 const forLoop = [
   `
 main() {
@@ -43,6 +56,21 @@ main() {
   6
 ]
 
-export const loopTests = { whileLoop, doWhileLoop, forLoop }
+const forLoopBreak = [
+  `
+main() {
+  int x = 0;
+  for (int i = 0; i < 10; i += 1) {
+    x += 2;
+    if (i == 4)
+      break;
+  }
+  return x;
+}
+`,
+  10
+]
+
+export const loopTests = { whileLoop, whileLoopBreak, doWhileLoop, forLoop, forLoopBreak }
 
 runTests(loopTests)

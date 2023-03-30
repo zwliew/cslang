@@ -145,9 +145,6 @@ export function multiply(left: Literal, right: Literal): Literal {
 
 export function divide(left: Literal, right: Literal): Literal {
   const typeSpecifier = promote(left.typeSpecifier, right.typeSpecifier)
-  console.log(
-    `promoted left ${left.typeSpecifier} and right ${right.typeSpecifier} to ${typeSpecifier}`
-  )
 
   if (rank(typeSpecifier) >= floatingPointRank) {
     return {
