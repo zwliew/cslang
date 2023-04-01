@@ -144,7 +144,6 @@ function handle_block(blk: Block): AgendaItems[] {
 }
 
 function handle_switch_block(blk: Block): AgendaItems[] {
-  // console.log(`handling switch block: ${blk.statements.map(stmt => JSON.stringify(stmt))}`)
   const stmts = blk.statements
   if (stmts.length === 0) {
     return [UNDEFINED_LITERAL]

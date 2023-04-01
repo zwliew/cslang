@@ -138,7 +138,6 @@ export class Memory {
   }
 
   setString(memAdd: MemoryAddress, value: StringLiteral): void {
-    console.log('setString called')
     const charSize = sizeOfType('char')
     const address = memAdd.location
     for (let i = 0; i < value.value.length; i++) {
