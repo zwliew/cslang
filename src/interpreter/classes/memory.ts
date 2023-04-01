@@ -1,8 +1,7 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
-import { NumericLiteral, PrimitiveTypeSpecifier, StringLiteral } from '../../parser/ast-types'
-import { sizeOfType } from '../../types'
+import { Literal, PrimitiveTypeSpecifier } from '../../parser/ast-types'
 import Decimal from '../../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
@@ -137,35 +136,7 @@ export class Memory {
     return new Decimal(getDataFunction.call(this.data, byteOffset).toString())
   }
 
-  setString(memAdd: MemoryAddress, value: StringLiteral): void {
-    const charSize = sizeOfType('char')
-    const address = memAdd.location
-    for (let i = 0; i < value.value.length; i++) {
-      this.setValue(
-        { type: 'MemoryAddress', typeSpecifier: 'char', location: charSize * i + address },
-        {
-          type: 'NumericLiteral',
-          typeSpecifier: 'char',
-          value: new Decimal(value.value.charCodeAt(i))
-        }
-      )
-    }
-    // Set the last value of the string to be \0
-    this.setValue(
-      {
-        type: 'MemoryAddress',
-        typeSpecifier: 'char',
-        location: charSize * value.value.length + address
-      },
-      {
-        type: 'NumericLiteral',
-        typeSpecifier: 'char',
-        value: new Decimal(0)
-      }
-    )
-  }
-
-  setValue(memAdd: MemoryAddress, value: NumericLiteral): void {
+  setValue(memAdd: MemoryAddress, value: Literal): void {
     const byteOffset = memAdd.location
 
     // This object/map is meant for primitive types (i.e. non-pointers).

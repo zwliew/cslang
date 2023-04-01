@@ -54,8 +54,7 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'StraySemicolon':
-    case 'NumericLiteral':
-    case 'StringLiteral':
+    case 'Literal':
     case 'Identifier':
     case 'Break':
     case 'UnaryExpression':
@@ -232,8 +231,7 @@ export const staticType = (
     case 'BinaryExpression':
       // No operations change the type of an expression
       return staticType(node.left, analysisState)
-    case 'NumericLiteral':
-    case 'StringLiteral':
+    case 'Literal':
       return node.typeSpecifier
     case 'FunctionApplication':
       return analysisState.functions[node.identifier].expectedReturnType

@@ -1,5 +1,6 @@
-import { NumericLiteral, StraySemicolon } from '../parser/ast-types'
 import Decimal from '../utils/decimal'
+
+import { Literal, StraySemicolon } from '../parser/ast-types'
 import { iBreak, iCase, iContinueMark, iPop, iSwitchDefault } from './interpreter-types'
 
 export const DECIMAL_ZERO = new Decimal(0)
@@ -9,26 +10,26 @@ export const POP_INSTRUCTION: iPop = {
   type: 'pop_i'
 }
 
-export const UNDEFINED_LITERAL: NumericLiteral = {
-  type: 'NumericLiteral',
+export const UNDEFINED_LITERAL: Literal = {
+  type: 'Literal',
   typeSpecifier: 'void',
   value: new Decimal(0)
 }
 
-export const ZERO: NumericLiteral = {
-  type: 'NumericLiteral',
+export const ZERO: Literal = {
+  type: 'Literal',
   typeSpecifier: 'int',
   value: new Decimal(0)
 }
 
-export const ONE: NumericLiteral = {
-  type: 'NumericLiteral',
+export const ONE: Literal = {
+  type: 'Literal',
   typeSpecifier: 'int',
   value: new Decimal(1)
 }
 
-export const INFINITY: NumericLiteral = {
-  type: 'NumericLiteral',
+export const INFINITY: Literal = {
+  type: 'Literal',
   typeSpecifier: 'float',
   value: new Decimal(Infinity)
 }
