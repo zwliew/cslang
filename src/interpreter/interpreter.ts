@@ -3,6 +3,7 @@ import {
   AstNode,
   BinaryOperator,
   Block,
+  Expression,
   Literal,
   PointerTypeSpecifier
 } from '../parser/ast-types'
@@ -364,11 +365,81 @@ const microcode = (code: AgendaItems) => {
       } else if (code.operator === '!') {
         OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) })
         A.push({ type: 'binop_i', operator: '==' }, code.operand)
+      } else if (
+        code.operator === 'pr++' ||
+        code.operator === 'pr--' ||
+        code.operator === 'po++' ||
+        code.operator === 'po--'
+      ) {
+        // Evaluate the operand to get a Literal onto the OS
+        // Does not support non identifier
+        if (code.operand.type !== 'Identifier') {
+          throw new NotImplementedError('Attempting to increment/decrement non identifier')
+        }
+        A.push(
+          { type: 'crement_i', operator: code.operator, identifier: code.operand.identifier },
+          code.operand
+        )
       } else {
         // TODO: implement '~' and '+' unary operator
         throw new NotImplementedError("Unary operator '" + code.operator + "' is not implemented")
       }
       break
+
+    case 'crement_i': {
+      // Decide whether to return the new value or old value
+      const value = OS.pop()
+      if (!value) {
+        throw new NotImplementedError('Attempting to increment/decrement nothing')
+      }
+      switch (code.operator) {
+        case 'pr++':
+          value.value = value.value.add(1)
+          A.push({
+            type: 'AssignmentExpression',
+            operator: '=',
+            assignee: { type: 'Identifier', identifier: code.identifier },
+            value: value
+          })
+          break
+
+        case 'pr--':
+          value.value = value.value.sub(1)
+          A.push({
+            type: 'AssignmentExpression',
+            operator: '=',
+            assignee: { type: 'Identifier', identifier: code.identifier },
+            value: value
+          })
+          break
+
+        case 'po++': {
+          const valueCopy: Literal = { ...value }
+          value.value = value.value.add(1)
+          A.push(valueCopy, POP_INSTRUCTION, {
+            type: 'AssignmentExpression',
+            operator: '=',
+            assignee: { type: 'Identifier', identifier: code.identifier },
+            value: value
+          })
+          break
+        }
+
+        case 'po--': {
+          const valueCopy: Literal = { ...value }
+          value.value = value.value.sub(1)
+          A.push(valueCopy, POP_INSTRUCTION, {
+            type: 'AssignmentExpression',
+            operator: '=',
+            assignee: { type: 'Identifier', identifier: code.identifier },
+            value: value
+          })
+          break
+        }
+      }
+
+      break
+    }
 
     case 'FunctionDeclaration':
       // Call main if a main is declared

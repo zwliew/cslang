@@ -60,6 +60,7 @@ export type Instructions =
   | iNot
   | iSizeof
   | iCast
+  | iCrement
 
 export interface iValueAssignment extends BaseInstruction {
   type: 'value_assmt_i'
@@ -171,4 +172,10 @@ export interface iSizeof extends BaseInstruction {
 export interface iCast extends BaseInstruction {
   type: 'cast_i'
   typeSpecifier: TypeSpecifier
+}
+
+export interface iCrement extends BaseInstruction {
+  type: 'crement_i'
+  identifier: string
+  operator: 'pr++' | 'pr--' | 'po++' | 'po--'
 }

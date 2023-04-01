@@ -42,9 +42,7 @@ import {
   SelectionStatementContext,
   ShiftExpressionContext,
   StatementContext,
-  StructOrUnionSpecifierContext,
   TypeNameContext,
-  TypeSpecifierContext,
   UnaryExpressionContext,
   UnaryOperatorContext
 } from '../lang/CParser'
@@ -483,11 +481,31 @@ export class CGenerator implements CVisitor<AstNode> {
   visitUnaryExpression(ctx: UnaryExpressionContext): Expression {
     const unaryOperator = ctx.unaryOperator()
     if (unaryOperator) {
-      // unaryOperator castExpression
       return {
         type: 'UnaryExpression',
         operator: this.unaryOperatorContextToString(unaryOperator),
         operand: this.visitCastExpression(ctx.castExpression()!)
+      }
+    }
+
+    const postfixExpression = ctx.postfixExpression()
+    const plusPlus = ctx.PlusPlus()
+    const minusMinus = ctx.MinusMinus()
+    if (plusPlus.length > 0 || minusMinus.length > 0) {
+      if (plusPlus.length + minusMinus.length > 1) {
+        throw new ParseError(`More than one ++/-- not allowed: ${ctx.text}`)
+      } else if (ctx.Sizeof().length > 0) {
+        throw new ParseError(`++/-- with sizeof not allowed: ${ctx.text}`)
+      } else if (!postfixExpression || !postfixExpression.primaryExpression()) {
+        throw new ParseError(`++/-- without operand: ${ctx.text}`)
+      } else if (!postfixExpression.primaryExpression()?.Identifier) {
+        throw new ParseError(`++/-- without valid identifier: ${ctx.text}`)
+      }
+
+      return {
+        type: 'UnaryExpression',
+        operator: plusPlus.length > 0 ? 'pr++' : 'pr--',
+        operand: this.visitPostfixExpression(postfixExpression)
       }
     }
 
@@ -515,13 +533,10 @@ export class CGenerator implements CVisitor<AstNode> {
       }
     }
 
-    const postfixExpression = ctx.postfixExpression()
     if (postfixExpression) {
       return this.visitPostfixExpression(postfixExpression)
     }
 
-    // Unary expression (++, -- prefix)
-    // TODO: implement parsing
     throw new NotImplementedError(ctx.text)
   }
 
@@ -547,7 +562,11 @@ export class CGenerator implements CVisitor<AstNode> {
   }
 
   visitPostfixExpression(ctx: PostfixExpressionContext): Expression {
+    // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
     const primaryExpression = ctx.primaryExpression()
+    // Explicitly type the function to allow all return types of visitPostfixExpression to be used as an argument
+    type expressionProducerType = (x: Expression) => Expression
+    let expressionProducer: expressionProducerType = x => x
     if (primaryExpression) {
       if (ctx.LeftParen().length > 0) {
         // Is function application
@@ -558,13 +577,30 @@ export class CGenerator implements CVisitor<AstNode> {
             functionArguments.push(this.visitAssignmentExpression(assignmentExpression))
           }
         }
-
-        return {
+        return expressionProducer({
           type: 'FunctionApplication',
           identifier: primaryExpression.text,
           arguments: functionArguments
+        })
+      }
+
+      // Check for po++ and po--. If they are present, change the function expressionProducer to delay the application of the operators
+      const plusPlus = ctx.PlusPlus().length
+      const minusMinus = ctx.MinusMinus().length
+      if (plusPlus > 0 || minusMinus > 0) {
+        // There should only be one increment/decrement operator
+        const numberOfCrementOperators = plusPlus + minusMinus
+        if (numberOfCrementOperators > 1) {
+          throw new ParseError(ctx.text)
         }
-      } else if (ctx.expression().length > 0) {
+        expressionProducer = x => ({
+          type: 'UnaryExpression',
+          operator: plusPlus > 0 ? 'po++' : 'po--',
+          operand: x
+        })
+      }
+
+      if (ctx.expression().length > 0) {
         // Array subscripting (6.5.2.1)
         const expression = ctx.expression()
         if (expression.length > 1) {
@@ -573,7 +609,7 @@ export class CGenerator implements CVisitor<AstNode> {
             'Array subscripting with more than 1 subscript is not supported yet'
           )
         }
-        return {
+        return expressionProducer({
           type: 'UnaryExpression',
           operator: '*',
           operand: {
@@ -582,16 +618,13 @@ export class CGenerator implements CVisitor<AstNode> {
             left: this.visitPrimaryExpression(primaryExpression),
             right: this.visitExpression(expression[0])
           }
-        }
+        })
       } else {
         // Flatten
-        return this.visitPrimaryExpression(primaryExpression)
+        return expressionProducer(this.visitPrimaryExpression(primaryExpression))
       }
-    } else {
-      // Postfix expression (++, -- suffix, [] for arrays, ., -> for structs)
-      // TODO: implement parsing
-      throw new NotImplementedError(ctx.text)
     }
+    throw new NotImplementedError(ctx.text)
   }
 
   visitPrimaryExpression(ctx: PrimaryExpressionContext): Expression {

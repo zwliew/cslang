@@ -1,4 +1,4 @@
-import { runTests } from '../utils/jest-utils'
+import { FAIL_RESULT, runTests } from '../utils/jest-utils'
 
 const notExpressionFalse = [
   `
@@ -347,6 +347,86 @@ const typeCasting3 = [
   4
 ]
 
+const incrementDecrement = [
+  `
+main() {
+  int x = 1;
+  x++;
+  ++x;
+  --x;
+  return x;
+}`,
+  2
+]
+
+const postIncrement = [
+  `
+main() {
+  int x = 1;
+  int y = x++;
+  return y;
+}`,
+  1
+]
+
+const postDecrement = [
+  `
+main() {
+  int x = 1;
+  int y = x--;
+  return y;
+}`,
+  1
+]
+
+const doublePostIncrement = [
+  `
+main() {
+  int x = 1;
+  x++++;
+  return x;
+}`,
+  FAIL_RESULT
+]
+
+const doublePreIncrement = [
+  `
+main() {
+  int x = 1;
+  ++++x;
+  return x;
+}`,
+  FAIL_RESULT
+]
+
+const doublePostDecrement = [
+  `
+main() {
+  int x = 1;
+  x----;
+  return x;
+}`,
+  FAIL_RESULT
+]
+
+const doublePreDecrement = [
+  `
+main() {
+  int x = 1;
+  ----x;
+  return x;
+}`,
+  FAIL_RESULT
+]
+
+const incrementSizeof = [
+  `
+main() {
+  return ++sizeof(int);
+}`,
+  FAIL_RESULT
+]
+
 export const operatorTests = {
   notExpressionFalse,
   notExpressionTrue,
@@ -385,7 +465,15 @@ export const operatorTests = {
   sizeOfArray,
   typeCasting,
   typeCasting2,
-  typeCasting3
+  typeCasting3,
+  incrementDecrement,
+  postIncrement,
+  postDecrement,
+  doublePostIncrement,
+  doublePreIncrement,
+  doublePostDecrement,
+  doublePreDecrement,
+  incrementSizeof
 }
 
 runTests(operatorTests)
