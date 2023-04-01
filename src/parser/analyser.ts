@@ -21,7 +21,8 @@ const defaultAnalysisState: AnalysisState = {
   functions: {
     malloc: { arity: 1, expectedReturnType: { ptrTo: 'int' }, returns: true, returnsAValue: true },
     free: { arity: 1, expectedReturnType: 'void', returns: false, returnsAValue: true },
-    putchar: { arity: 1, expectedReturnType: 'int', returns: true, returnsAValue: true }
+    putchar: { arity: 1, expectedReturnType: 'int', returns: true, returnsAValue: true },
+    getchar: { arity: 0, expectedReturnType: 'char', returns: true, returnsAValue: true }
   },
   variables: {},
   currentFunction: 'global'

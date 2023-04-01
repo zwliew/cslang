@@ -17,3 +17,5 @@ test-report.html
 src/lang
 !src/lang/C.g4
 !src/lang/originalC.g4
+
+cfiles/

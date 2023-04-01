@@ -28,6 +28,7 @@
     "gpu.js": "^2.10.4",
     "lodash": "^4.17.20",
     "node-getopt": "^0.3.2",
+    "prompt-sync": "^4.2.0",
     "source-map": "0.7.3",
     "xmlhttprequest-ts": "^1.0.1"
   },

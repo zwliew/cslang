@@ -4,6 +4,8 @@ import { Environment } from './environment'
 import { Memory } from './memory'
 import { UNDEFINED_LITERAL } from '../constants'
 
+const prompt = require('prompt-sync')()
+
 export class FunctionStack {
   functionStack: Array<[FunctionDefinition, Environment]>
   functionIndexes: Map<string, number>
@@ -15,6 +17,7 @@ export class FunctionStack {
     this.allocatePrimitiveFunction(putchar, 'putchar')
     this.allocatePrimitiveFunction(malloc, 'malloc')
     this.allocatePrimitiveFunction(free, 'free')
+    this.allocatePrimitiveFunction(getchar, 'getchar')
   }
 
   // Private function only for primitives
@@ -146,5 +149,45 @@ const free: FunctionDefinition = {
   },
   primitive: true,
   primitiveFunction: primitiveFree,
+  body: []
+}
+
+let stdinBuffer = ''
+let currentChar = 0
+const primitiveGetChar = (M: Memory): Literal => {
+  if (stdinBuffer === null) {
+    return {
+      type: 'Literal',
+      typeSpecifier: 'char',
+      value: new Decimal(-1)
+    }
+  }
+
+  if (currentChar >= stdinBuffer.length) {
+    // Get new input
+    stdinBuffer = prompt('', null)
+
+    // Need put back the end of line
+    if (stdinBuffer !== null) stdinBuffer += '\n'
+    currentChar = 0
+    return primitiveGetChar(M)
+  } else {
+    return {
+      type: 'Literal',
+      typeSpecifier: 'char',
+      value: new Decimal(stdinBuffer[currentChar++].charCodeAt(0))
+    }
+  }
+}
+
+const getchar: FunctionDefinition = {
+  type: 'FunctionDefinition',
+  returnType: 'char',
+  parameterList: {
+    type: 'ParameterList',
+    parameters: []
+  },
+  primitive: true,
+  primitiveFunction: primitiveGetChar,
   body: []
 }
