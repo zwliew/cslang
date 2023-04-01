@@ -27,8 +27,30 @@ main() {
   171
 ]
 
+const stringDeclaration = [
+  `
+main() {
+  char str[2];
+  str[0] = 'a';
+  return str[0];
+}
+  `,
+  97
+]
+
+const stringAssignment = [
+  `
+main() {
+  char hello[2] = "hi";
+  return hello[0];
+}`,
+  104
+]
+
 export const arrayTests = {
   arraySubscript,
-  arrayDeclaration
+  arrayDeclaration,
+  stringDeclaration,
+  stringAssignment
 }
 runTests(arrayTests)

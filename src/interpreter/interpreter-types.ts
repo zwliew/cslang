@@ -3,7 +3,7 @@ import {
   BinaryOperator,
   Block,
   Expression,
-  Literal,
+  NumericLiteral,
   Statement,
   TypeSpecifier
 } from '../parser/ast-types'
@@ -130,7 +130,7 @@ export interface iSwitch extends BaseInstruction {
 
 export interface iSwitchBranch extends BaseInstruction {
   type: 'switch_branch_i'
-  switch_value: Literal
+  switch_value: NumericLiteral
   case: AstNode
 }
 

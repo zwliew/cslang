@@ -513,7 +513,7 @@ export class CGenerator implements CVisitor<AstNode> {
     if (typeName) {
       // Finding size of a type. Immediately return a literal
       return {
-        type: 'Literal',
+        type: 'NumericLiteral',
         typeSpecifier: 'int',
         value: new Decimal(sizeOfType(this.getTypeName(typeName)))
       }
@@ -644,7 +644,7 @@ export class CGenerator implements CVisitor<AstNode> {
           // Value of character literal is limited by size of char
           const largeUnicodeInt = parseInt(charWithoutQuotes.substring(2), 16) % 64
           return {
-            type: 'Literal',
+            type: 'NumericLiteral',
             typeSpecifier: 'char',
             value: new Decimal(largeUnicodeInt)
           }
@@ -660,7 +660,7 @@ export class CGenerator implements CVisitor<AstNode> {
           )
         }
         return {
-          type: 'Literal',
+          type: 'NumericLiteral',
           typeSpecifier: 'char',
           value: new Decimal(charCodeStr.charCodeAt(0))
         }
@@ -706,13 +706,13 @@ export class CGenerator implements CVisitor<AstNode> {
 
       if (isInt) {
         return {
-          type: 'Literal',
+          type: 'NumericLiteral',
           typeSpecifier: 'int',
           value: literalValue
         }
       } else {
         return {
-          type: 'Literal',
+          type: 'NumericLiteral',
           typeSpecifier: 'double', // Floating point literals (eg 1.23) have type double
           value: literalValue
         }
@@ -721,8 +721,18 @@ export class CGenerator implements CVisitor<AstNode> {
 
     const stringLiteral = ctx.StringLiteral()
     if (stringLiteral.length === 1) {
-      // Is a string literal
-      throw new NotImplementedError(ctx.text)
+      const stringWithQuotes = stringLiteral[0].text
+      if (
+        stringWithQuotes.charAt(0) !== '"' ||
+        stringWithQuotes.charAt(stringWithQuotes.length - 1) !== '"'
+      ) {
+        throw new NotImplementedError(
+          `String literal without double quotes "" are not supported: ${ctx.text}`
+        )
+      }
+
+      const stringWithoutQuotes = stringWithQuotes.substring(1, stringWithQuotes.length - 1)
+      return { type: 'StringLiteral', typeSpecifier: { ptrTo: 'char' }, value: stringWithoutQuotes }
     }
 
     const expression = ctx.expression()
@@ -1151,7 +1161,7 @@ export class CGenerator implements CVisitor<AstNode> {
       const assignmentExpression = ctx.directDeclarator().assignmentExpression()
       if (assignmentExpression) {
         arraySize = this.visitAssignmentExpression(assignmentExpression)
-        if (arraySize.type !== 'Literal') {
+        if (arraySize.type !== 'NumericLiteral') {
           throw new IllegalArgumentError('Array size must be a literal')
         }
         arraySize = arraySize.value.toNumber()

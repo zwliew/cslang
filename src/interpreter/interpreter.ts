@@ -5,6 +5,7 @@ import {
   Block,
   Expression,
   Literal,
+  NumericLiteral,
   PointerTypeSpecifier
 } from '../parser/ast-types'
 import { isPointerType, sizeOfType } from '../types'
@@ -49,7 +50,11 @@ function error(val: any, message: string) {
 }
 
 function is_false(val: Literal): boolean {
-  return new Decimal(0).equals(val.value)
+  if (val.type === 'StringLiteral') {
+    return val.value !== ''
+  } else {
+    return new Decimal(0).equals(val.value)
+  }
 }
 
 function is_true(val: Literal): boolean {
@@ -122,7 +127,8 @@ const binop_microcode = {
   '>>': rightShift
 }
 
-const apply_binop = (op: BinaryOperator, v2: Literal, v1: Literal) => binop_microcode[op](v1, v2)
+const apply_binop = (op: BinaryOperator, v2: NumericLiteral, v1: NumericLiteral) =>
+  binop_microcode[op](v1, v2)
 
 function handle_block(blk: Block): AgendaItems[] {
   const stmts = blk.statements
@@ -145,7 +151,7 @@ function handle_switch_block(blk: Block): AgendaItems[] {
   }
 
   const result: AgendaItems[] = []
-  const switch_value = pop(OS)
+  const switch_value = pop(OS) as NumericLiteral // switch value cannot be a string
   for (let i = stmts.length - 1; i > -1; i--) {
     const stmt = stmts[i]
     if (stmt.type === 'SwitchCaseBranch') {
@@ -218,8 +224,44 @@ const microcode = (code: AgendaItems) => {
       A.push(...code.declarations.slice().reverse())
       break
 
-    case 'Literal':
+    case 'NumericLiteral':
       OS.push(code)
+      break
+
+    case 'StringLiteral':
+      // Convert to a char pointer
+      const charSize = sizeOfType('char')
+      const address = M.allocateStack(charSize * (code.value.length + 1))
+      // Allocate each value individually
+      for (let i = 0; i < code.value.length; i++) {
+        M.setValue(
+          { type: 'MemoryAddress', typeSpecifier: 'char', location: charSize * i + address },
+          {
+            type: 'NumericLiteral',
+            typeSpecifier: 'char',
+            value: new Decimal(code.value.charCodeAt(i))
+          }
+        )
+      }
+      // Set the last value of the string to be \0
+      M.setValue(
+        {
+          type: 'MemoryAddress',
+          typeSpecifier: 'char',
+          location: charSize * code.value.length + address
+        },
+        {
+          type: 'NumericLiteral',
+          typeSpecifier: 'char',
+          value: new Decimal(0)
+        }
+      )
+
+      OS.push({
+        type: 'NumericLiteral',
+        typeSpecifier: { ptrTo: 'char' },
+        value: new Decimal(address)
+      })
       break
 
     case 'AssignmentExpression':
@@ -245,12 +287,22 @@ const microcode = (code: AgendaItems) => {
 
       if (code.value) {
         // There is a value for this declaration
-        A.push(
-          POP_INSTRUCTION,
-          { type: 'value_assmt_i' },
-          { type: 'Identifier', identifier: code.identifier },
-          code.value
-        )
+        if (code.value.type === 'StringLiteral') {
+          // Copy the values to the current array
+          A.push(
+            POP_INSTRUCTION,
+            { type: 'value_assmt_i' },
+            { type: 'Identifier', identifier: code.identifier }
+          )
+          OS.push(code.value)
+        } else {
+          A.push(
+            POP_INSTRUCTION,
+            { type: 'value_assmt_i' },
+            { type: 'Identifier', identifier: code.identifier },
+            code.value
+          )
+        }
       }
       break
 
@@ -277,7 +329,7 @@ const microcode = (code: AgendaItems) => {
       if (addr.type === 'MemoryAddress') {
         // Push the literal value onto the stash
         OS.push({
-          type: 'Literal',
+          type: 'NumericLiteral',
           typeSpecifier: addr.typeSpecifier,
           value: M.getValue(addr),
           address: addr
@@ -343,7 +395,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'UnaryExpression':
       if (code.operator === '-') {
-        OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(-1) })
+        OS.push({ type: 'NumericLiteral', typeSpecifier: 'int', value: new Decimal(-1) })
         A.push({ type: 'binop_i', operator: '*' }, code.operand)
       } else if (code.operator === '&') {
         // Address-of operator
@@ -353,7 +405,7 @@ const microcode = (code: AgendaItems) => {
         }
         const addr = E.get(code.operand.identifier) as MemoryAddress
         OS.push({
-          type: 'Literal',
+          type: 'NumericLiteral',
           typeSpecifier: { ptrTo: addr.typeSpecifier },
           value: new Decimal(addr.location)
         })
@@ -363,7 +415,7 @@ const microcode = (code: AgendaItems) => {
       } else if (code.operator === 'sizeof') {
         A.push({ type: 'sizeof_i' }, code.operand)
       } else if (code.operator === '!') {
-        OS.push({ type: 'Literal', typeSpecifier: 'int', value: new Decimal(0) })
+        OS.push({ type: 'NumericLiteral', typeSpecifier: 'int', value: new Decimal(0) })
         A.push({ type: 'binop_i', operator: '==' }, code.operand)
       } else if (
         code.operator === 'pr++' ||
@@ -391,6 +443,8 @@ const microcode = (code: AgendaItems) => {
       const value = OS.pop()
       if (!value) {
         throw new NotImplementedError('Attempting to increment/decrement nothing')
+      } else if (value.type === 'StringLiteral') {
+        throw new NotImplementedError('Attempting to increment/decrement a string')
       }
       switch (code.operator) {
         case 'pr++':
@@ -414,7 +468,7 @@ const microcode = (code: AgendaItems) => {
           break
 
         case 'po++': {
-          const valueCopy: Literal = { ...value }
+          const valueCopy: NumericLiteral = { ...value }
           value.value = value.value.add(1)
           A.push(valueCopy, POP_INSTRUCTION, {
             type: 'AssignmentExpression',
@@ -426,7 +480,7 @@ const microcode = (code: AgendaItems) => {
         }
 
         case 'po--': {
-          const valueCopy: Literal = { ...value }
+          const valueCopy: NumericLiteral = { ...value }
           value.value = value.value.sub(1)
           A.push(valueCopy, POP_INSTRUCTION, {
             type: 'AssignmentExpression',
@@ -437,7 +491,6 @@ const microcode = (code: AgendaItems) => {
           break
         }
       }
-
       break
     }
 
@@ -563,7 +616,11 @@ const microcode = (code: AgendaItems) => {
       }
       // Set the topmost literal value into memory
       const value = OS.at(-1)!
-      M.setValue(lit.address, value)
+      if (value.type === 'NumericLiteral') {
+        M.setValue(lit.address, value)
+      } else {
+        M.setString(lit.address, value)
+      }
       break
     }
 
@@ -571,6 +628,9 @@ const microcode = (code: AgendaItems) => {
       {
         const v2 = pop(OS)
         const v1 = pop(OS)
+        if (v1.type === 'StringLiteral' || v2.type === 'StringLiteral') {
+          throw new NotImplementedError('Attempting to apply binary operator to strings')
+        }
         OS.push(apply_binop(code.operator, v2, v1))
       }
       break
@@ -674,7 +734,7 @@ const microcode = (code: AgendaItems) => {
     case 'dereference_i':
       {
         const ptr = pop(OS)
-        if (isPointerType(ptr.typeSpecifier)) {
+        if (isPointerType(ptr.typeSpecifier) && ptr.type === 'NumericLiteral') {
           // This is a pointer type.
           const memAddress: MemoryAddress = {
             type: 'MemoryAddress',
@@ -683,7 +743,7 @@ const microcode = (code: AgendaItems) => {
           }
 
           OS.push({
-            type: 'Literal',
+            type: 'NumericLiteral',
             typeSpecifier: (ptr.typeSpecifier as PointerTypeSpecifier).ptrTo,
             value: M.getValue(memAddress),
             address: memAddress
@@ -698,21 +758,32 @@ const microcode = (code: AgendaItems) => {
       const typeSpecifier = OS.pop()!.typeSpecifier
 
       OS.push({
-        type: 'Literal',
+        type: 'NumericLiteral',
         typeSpecifier: 'int',
         value: new Decimal(sizeOfType(typeSpecifier))
       })
       break
     }
 
-    case 'cast_i':
-      OS.push({
-        type: 'Literal',
-        typeSpecifier: code.typeSpecifier,
-        // TODO: Need to ensure values are bounded
-        value: OS.pop()!.value
-      })
+    case 'cast_i': {
+      const literal = OS.pop()!
+      if (literal.type === 'NumericLiteral') {
+        OS.push({
+          type: literal.type,
+          typeSpecifier: code.typeSpecifier,
+          // TODO: Need to ensure values are bounded
+          value: literal.value
+        })
+      } else {
+        OS.push({
+          type: literal.type,
+          typeSpecifier: code.typeSpecifier,
+          // TODO: Need to ensure values are bounded
+          value: literal.value
+        })
+      }
       break
+    }
 
     default:
       error(code, 'Unknown command: ')
@@ -732,9 +803,11 @@ export const execute = (program: AstNode) => {
   FS = new FunctionStack()
   M = new Memory(1e4) // Use 10KB of memory
   let i = 0
+  let previous_instruction = 'Start'
   while (i < STEP_LIMIT) {
     if (DEBUG_PRINT_STEPS) {
-      console.log('Step', i)
+      console.log('Step', i, ':', previous_instruction)
+      previous_instruction = A.at(-1)?.type ?? 'End'
       console.log(A)
       console.log(OS)
       console.log(E)

@@ -1,6 +1,6 @@
 import {
   ArrayTypeSpecifier,
-  Literal,
+  NumericLiteral,
   PointerTypeSpecifier,
   TypeSpecifier
 } from '../parser/ast-types'
@@ -20,14 +20,14 @@ function promote(left: TypeSpecifier, right: TypeSpecifier): TypeSpecifier {
  * Operations
  ************/
 
-function addPtr(left: Literal, right: Literal): Literal {
+function addPtr(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   if (!isPrimitiveType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
   }
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: left.typeSpecifier,
     value: left.value.add(
       right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
@@ -35,7 +35,7 @@ function addPtr(left: Literal, right: Literal): Literal {
   }
 }
 
-function addArray(left: Literal, right: Literal): Literal {
+function addArray(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   if (!isPrimitiveType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
@@ -47,7 +47,7 @@ function addArray(left: Literal, right: Literal): Literal {
     )
   }
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: { ptrTo: (left.typeSpecifier as ArrayTypeSpecifier).arrOf }, // convert to a pointer
     value: right.value
       .mul(sizeOfType((left.typeSpecifier as ArrayTypeSpecifier).arrOf))
@@ -55,7 +55,7 @@ function addArray(left: Literal, right: Literal): Literal {
   }
 }
 
-export function add(left: Literal, right: Literal): Literal {
+export function add(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   // Handle pointer arithmetic on both raw pointers and arrays.
   if (isPointerType(left.typeSpecifier)) {
     return addPtr(left, right)
@@ -72,20 +72,20 @@ export function add(left: Literal, right: Literal): Literal {
 
   // Smaller integral types will be promoted, so we can literally just add the values
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: left.value.add(right.value)
   }
 }
 
-function subtractPtr(left: Literal, right: Literal): Literal {
+function subtractPtr(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   if (isPointerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
   }
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: left.typeSpecifier,
     value: left.value.sub(
       right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
@@ -93,7 +93,7 @@ function subtractPtr(left: Literal, right: Literal): Literal {
   }
 }
 
-function subtractArray(left: Literal, right: Literal): Literal {
+function subtractArray(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   if (!isPrimitiveType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '-' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
@@ -105,7 +105,7 @@ function subtractArray(left: Literal, right: Literal): Literal {
     )
   }
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: { ptrTo: (left.typeSpecifier as ArrayTypeSpecifier).arrOf }, // convert to a pointer
     value: right.value
       .mul(-sizeOfType((left.typeSpecifier as ArrayTypeSpecifier).arrOf))
@@ -113,7 +113,7 @@ function subtractArray(left: Literal, right: Literal): Literal {
   }
 }
 
-export function subtract(left: Literal, right: Literal): Literal {
+export function subtract(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   // Handle pointer arithmetic on both raw pointers and arrays.
   if (isPointerType(left.typeSpecifier)) {
     return subtractPtr(left, right)
@@ -129,39 +129,39 @@ export function subtract(left: Literal, right: Literal): Literal {
   }
 
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: left.value.sub(right.value)
   }
 }
 
-export function multiply(left: Literal, right: Literal): Literal {
+export function multiply(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: left.value.mul(right.value)
   }
 }
 
-export function divide(left: Literal, right: Literal): Literal {
+export function divide(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   const typeSpecifier = promote(left.typeSpecifier, right.typeSpecifier)
 
   if (rank(typeSpecifier) >= floatingPointRank) {
     return {
-      type: 'Literal',
+      type: 'NumericLiteral',
       typeSpecifier: typeSpecifier,
       value: left.value.div(right.value)
     }
   } else {
     return {
-      type: 'Literal',
+      type: 'NumericLiteral',
       typeSpecifier: typeSpecifier,
       value: left.value.div(right.value).floor()
     }
   }
 }
 
-export function mod(left: Literal, right: Literal): Literal {
+export function mod(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   const typeSpecifier = promote(left.typeSpecifier, right.typeSpecifier)
 
   if (rank(typeSpecifier) >= floatingPointRank) {
@@ -170,104 +170,104 @@ export function mod(left: Literal, right: Literal): Literal {
     )
   } else {
     return {
-      type: 'Literal',
+      type: 'NumericLiteral',
       typeSpecifier: typeSpecifier,
       value: left.value.mod(right.value)
     }
   }
 }
 
-export function equals(left: Literal, right: Literal): Literal {
+export function equals(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: left.value.equals(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function notEquals(left: Literal, right: Literal): Literal {
+export function notEquals(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: !left.value.equals(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function lessThan(left: Literal, right: Literal): Literal {
+export function lessThan(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: left.value.lessThan(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function greaterThan(left: Literal, right: Literal): Literal {
+export function greaterThan(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: left.value.greaterThan(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function greaterThanOrEqual(left: Literal, right: Literal): Literal {
+export function greaterThanOrEqual(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: left.value.greaterThanOrEqualTo(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function lessThanOrEqual(left: Literal, right: Literal): Literal {
+export function lessThanOrEqual(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: '_Bool',
     value: left.value.lessThanOrEqualTo(right.value) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function logicalAnd(left: Literal, right: Literal): Literal {
+export function logicalAnd(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: 'int',
     value: !left.value.equals(0) && !right.value.equals(0) ? DECIMAL_ONE : DECIMAL_ZERO
   }
 }
 
-export function bitwiseOr(left: Literal, right: Literal): Literal {
+export function bitwiseOr(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: new Decimal(Number(left.value) | Number(right.value))
   }
 }
 
-export function bitwiseAnd(left: Literal, right: Literal): Literal {
+export function bitwiseAnd(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: new Decimal(Number(left.value) & Number(right.value))
   }
 }
 
-export function bitwiseXor(left: Literal, right: Literal): Literal {
+export function bitwiseXor(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: new Decimal(Number(left.value) ^ Number(right.value))
   }
 }
 
-export function leftShift(left: Literal, right: Literal): Literal {
+export function leftShift(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: new Decimal(Number(left.value) << Number(right.value))
   }
 }
 
-export function rightShift(left: Literal, right: Literal): Literal {
+export function rightShift(left: NumericLiteral, right: NumericLiteral): NumericLiteral {
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: promote(left.typeSpecifier, right.typeSpecifier),
     value: new Decimal(Number(left.value) >> Number(right.value))
   }

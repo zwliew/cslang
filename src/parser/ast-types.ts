@@ -58,8 +58,16 @@ export interface FunctionApplication extends BaseExpression {
   arguments: Array<Expression>
 }
 
-export interface Literal extends BaseExpression {
-  type: 'Literal'
+export type Literal = NumericLiteral | StringLiteral
+export interface StringLiteral extends BaseExpression {
+  type: 'StringLiteral'
+  typeSpecifier: TypeSpecifier
+  value: String
+  address?: MemoryAddress
+}
+
+export interface NumericLiteral extends BaseExpression {
+  type: 'NumericLiteral'
   typeSpecifier: TypeSpecifier
   value: DecimalType
   address?: MemoryAddress

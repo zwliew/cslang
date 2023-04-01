@@ -1,8 +1,8 @@
-import { FunctionDefinition, Literal } from '../../parser/ast-types'
+import { FunctionDefinition, NumericLiteral } from '../../parser/ast-types'
 import Decimal from '../../utils/decimal'
+import { UNDEFINED_LITERAL } from '../constants'
 import { Environment } from './environment'
 import { Memory } from './memory'
-import { UNDEFINED_LITERAL } from '../constants'
 
 export class FunctionStack {
   functionStack: Array<[FunctionDefinition, Environment]>
@@ -51,20 +51,11 @@ export class FunctionStack {
       return this.functionStack[this.functionIndexes[identifier]]
     }
   }
-
-  debugPrint() {
-    console.log(`FunctionStack {
-  functionStack: [ ${this.functionStack.map(
-    functionAndEnv => `${JSON.stringify(functionAndEnv[0])}, ${functionAndEnv[1]}`
-  )} ],
-  functionIndexes: ${this.functionIndexes}
-}`)
-  }
 }
 
 export const primitiveFunctions = []
 
-const primitivePutchar = (M: Memory, ch: Literal): Literal => {
+const primitivePutchar = (M: Memory, ch: NumericLiteral): NumericLiteral => {
   const value = ch.value.toNumber()
 
   // Convert to ascii and print
@@ -72,7 +63,7 @@ const primitivePutchar = (M: Memory, ch: Literal): Literal => {
 
   // Return the input type casted to an int
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: 'int',
     value: ch.value
   }
@@ -96,13 +87,13 @@ const putchar: FunctionDefinition = {
   body: []
 }
 
-const primitiveMalloc = (M: Memory, size: Literal): Literal => {
+const primitiveMalloc = (M: Memory, size: NumericLiteral): NumericLiteral => {
   const length = size.value.toNumber()
 
   const addr = M.allocateHeap(length)
 
   return {
-    type: 'Literal',
+    type: 'NumericLiteral',
     typeSpecifier: { ptrTo: 'void' },
     value: addr === -1 ? new Decimal(0) : new Decimal(addr)
   }
@@ -126,7 +117,7 @@ const malloc: FunctionDefinition = {
   body: []
 }
 
-const primitiveFree = (M: Memory, ptr: Literal): Literal => {
+const primitiveFree = (M: Memory, ptr: NumericLiteral): NumericLiteral => {
   // Do nothing for now
   return UNDEFINED_LITERAL
 }
