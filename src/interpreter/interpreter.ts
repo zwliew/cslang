@@ -51,7 +51,7 @@ function error(val: any, message: string) {
 
 function is_false(val: Literal): boolean {
   if (val.type === 'StringLiteral') {
-    return val.value !== ''
+    throw new NotImplementedError('Using string literal as boolean not supported')
   } else {
     return new Decimal(0).equals(val.value)
   }
@@ -774,12 +774,7 @@ const microcode = (code: AgendaItems) => {
           value: literal.value
         })
       } else {
-        OS.push({
-          type: literal.type,
-          typeSpecifier: code.typeSpecifier,
-          // TODO: Need to ensure values are bounded
-          value: literal.value
-        })
+        throw new NotImplementedError('Casting strings to other types not supported')
       }
       break
     }
