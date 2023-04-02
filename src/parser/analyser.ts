@@ -2,7 +2,7 @@ import { DEBUG_PRINT_ANALYSIS } from '../utils/debug'
 import { AnalysisError } from '../utils/errors'
 import { AstNode, Expression, Statement, TypeSpecifier } from './ast-types'
 
-interface AnalysisState {
+interface GlobalState {
   functions: {
     [functionName: string]: {
       arity: number
@@ -17,7 +17,9 @@ interface AnalysisState {
   currentFunction: string
 }
 
-const defaultAnalysisState: AnalysisState = {
+interface LocalState {}
+
+const defaultGlobalState: GlobalState = {
   functions: {
     malloc: { arity: 1, expectedReturnType: { ptrTo: 'int' }, returns: true, returnsAValue: true },
     free: { arity: 1, expectedReturnType: 'void', returns: false, returnsAValue: true },
@@ -27,30 +29,36 @@ const defaultAnalysisState: AnalysisState = {
   variables: {},
   currentFunction: 'global'
 }
-export const createAnalysisState = () => JSON.parse(JSON.stringify(defaultAnalysisState))
+export const createGlobalState = () => JSON.parse(JSON.stringify(defaultGlobalState))
+
+export function analyseProgram(program: AstNode): AstNode {
+  const globalState = createGlobalState()
+  analyseNode(program, globalState)
+  return program
+}
 
 // Traverses a given AST and builds information about it in analysisState
-export const traverse = (node: AstNode, analysisState: AnalysisState) => {
+export function analyseNode(node: AstNode, globalState: GlobalState): LocalState {
   if (DEBUG_PRINT_ANALYSIS) {
     console.log(`At node ${node.type}. Analysis state:`)
-    console.dir(analysisState, { depth: null })
+    console.dir(globalState, { depth: null })
     console.log('\n')
   }
 
   // Short circuit analysis if a return statement has been reached
   // TODO: we should still analyse the rest of the AST even when a return statement has been reached.
   if (
-    analysisState.currentFunction &&
-    analysisState.currentFunction in analysisState.functions &&
-    analysisState.functions[analysisState.currentFunction].returns
+    globalState.currentFunction &&
+    globalState.currentFunction in globalState.functions &&
+    globalState.functions[globalState.currentFunction].returns
   ) {
-    return
+    return {}
   }
 
   switch (node.type) {
     case 'CompilationUnit':
       for (const declaration of node.declarations) {
-        traverse(declaration, analysisState)
+        analyseNode(declaration, globalState)
       }
       break
 
@@ -62,50 +70,50 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'AssignmentExpression':
-      traverse(node.value, analysisState)
+      analyseNode(node.value, globalState)
       break
 
     case 'BinaryExpression':
-      traverse(node.left, analysisState)
-      traverse(node.right, analysisState)
+      analyseNode(node.left, globalState)
+      analyseNode(node.right, globalState)
       break
 
     case 'Block':
       for (const statement of node.statements) {
-        traverse(statement, analysisState)
+        analyseNode(statement, globalState)
       }
       break
 
     case 'ValueDeclaration':
-      analysisState.variables[node.identifier] = node.typeSpecifier
+      globalState.variables[node.identifier] = node.typeSpecifier
       if (node.value) {
-        traverse(node.value, analysisState)
+        analyseNode(node.value, globalState)
       }
       break
 
     case 'ExpressionStatement':
-      traverse(node.expression, analysisState)
+      analyseNode(node.expression, globalState)
       break
 
     case 'If':
-      traverse(node.predicate, analysisState)
-      const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
-      traverse(node.consequent, analysisState)
+      analyseNode(node.predicate, globalState)
+      const alternativeAnalysisState = JSON.parse(JSON.stringify(globalState)) // structuredClone is not available in Jest
+      analyseNode(node.consequent, globalState)
       if (node.alternative) {
-        traverse(node.alternative, alternativeAnalysisState)
-        analysisState.functions[analysisState.currentFunction].returns =
-          analysisState.functions[analysisState.currentFunction].returns &&
+        analyseNode(node.alternative, alternativeAnalysisState)
+        globalState.functions[globalState.currentFunction].returns =
+          globalState.functions[globalState.currentFunction].returns &&
           alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
-        analysisState.functions[analysisState.currentFunction].returnsAValue =
-          analysisState.functions[analysisState.currentFunction].returnsAValue &&
+        globalState.functions[globalState.currentFunction].returnsAValue =
+          globalState.functions[globalState.currentFunction].returnsAValue &&
           alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returnsAValue
       }
       break
 
     case 'WhileStatement':
     case 'DoWhileStatement':
-      traverse(node.pred, analysisState)
-      traverse(node.body, analysisState)
+      analyseNode(node.pred, globalState)
+      analyseNode(node.body, globalState)
       break
 
     case 'Switch':
@@ -131,8 +139,8 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       }
 
       const blocksReturn = blocks.map(block => {
-        const alternativeAnalysisState = JSON.parse(JSON.stringify(analysisState)) // structuredClone is not available in Jest
-        traverse({ type: 'Block', statements: block }, alternativeAnalysisState)
+        const alternativeAnalysisState = JSON.parse(JSON.stringify(globalState)) // structuredClone is not available in Jest
+        analyseNode({ type: 'Block', statements: block }, alternativeAnalysisState)
         return {
           returns:
             alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns,
@@ -142,10 +150,10 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
         }
       })
       if (blocksReturn.length > 0) {
-        analysisState.functions[analysisState.currentFunction].returns = blocksReturn.every(
+        globalState.functions[globalState.currentFunction].returns = blocksReturn.every(
           ret => ret.returns
         )
-        analysisState.functions[analysisState.currentFunction].returnsAValue = blocksReturn.every(
+        globalState.functions[globalState.currentFunction].returnsAValue = blocksReturn.every(
           ret => ret.returnsAValue
         )
       }
@@ -156,41 +164,41 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'FunctionDeclaration':
-      analysisState.functions[node.identifier] = {
+      globalState.functions[node.identifier] = {
         arity: node.functionDefinition.parameterList?.parameters.length ?? 0,
         expectedReturnType: node.functionDefinition.returnType,
         returns: false,
         returnsAValue: false
       }
-      const originalVariables = analysisState.variables
-      const originalScope = analysisState.currentFunction
-      analysisState.currentFunction = node.identifier
+      const originalVariables = globalState.variables
+      const originalScope = globalState.currentFunction
+      globalState.currentFunction = node.identifier
       for (const statement of node.functionDefinition.body) {
-        traverse(statement, analysisState)
+        analyseNode(statement, globalState)
       }
       if (
-        analysisState.functions[node.identifier].expectedReturnType !== 'void' &&
-        !analysisState.functions[node.identifier].returnsAValue
+        globalState.functions[node.identifier].expectedReturnType !== 'void' &&
+        !globalState.functions[node.identifier].returnsAValue
       ) {
         // TODO: add an implicit return
         throw new AnalysisError(`Function ${node.identifier} does not return any value`)
       } else if (
-        analysisState.functions[node.identifier].expectedReturnType === 'void' &&
-        analysisState.functions[node.identifier].returnsAValue
+        globalState.functions[node.identifier].expectedReturnType === 'void' &&
+        globalState.functions[node.identifier].returnsAValue
       ) {
         throw new AnalysisError(
           `Function ${node.identifier} with void return type attempts to return a value`
         )
       }
-      analysisState.currentFunction = originalScope
-      analysisState.variables = originalVariables
+      globalState.currentFunction = originalScope
+      globalState.variables = originalVariables
       break
 
     case 'FunctionApplication':
-      if (!(node.identifier in analysisState.functions)) {
+      if (!(node.identifier in globalState.functions)) {
         throw new AnalysisError(`Calling function ${node.identifier} before it is declared`)
       }
-      const parameterCount = analysisState.functions[node.identifier].arity
+      const parameterCount = globalState.functions[node.identifier].arity
       const argumentCount = node.arguments.length
       if (parameterCount !== argumentCount) {
         throw new AnalysisError(
@@ -200,9 +208,9 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
       break
 
     case 'Return':
-      analysisState.functions[analysisState.currentFunction].returns = true
+      globalState.functions[globalState.currentFunction].returns = true
       if (node.expression) {
-        analysisState.functions[analysisState.currentFunction].returnsAValue = true
+        globalState.functions[globalState.currentFunction].returnsAValue = true
       }
       // TODO: compare types
       // Currently, all types can be coerced to each other, so we don't do anything here
@@ -214,11 +222,13 @@ export const traverse = (node: AstNode, analysisState: AnalysisState) => {
     default:
       break
   }
+
+  return {}
 }
 
 export const staticType = (
   node: Expression | undefined,
-  analysisState: AnalysisState
+  analysisState: GlobalState
 ): TypeSpecifier => {
   if (!node) {
     return 'void'

@@ -4,7 +4,7 @@ import util from 'node:util'
 
 import { CLexer } from '../lang/CLexer'
 import { CParser } from '../lang/CParser'
-import { createAnalysisState, traverse } from '../parser/analyser'
+import { analyseNode, analyseProgram, createGlobalState } from '../parser/analyser'
 import { CGenerator } from '../parser/parser'
 import { cslangRunner } from '../runner/runner'
 import testCases from './test-cases'
@@ -71,8 +71,8 @@ export function analyserTest() {
   const generator = new CGenerator()
   // Extract the body from the program
   const ast = tree.accept(generator)
-  const analysisState = createAnalysisState()
-  traverse(ast, analysisState)
+  const analysisState = createGlobalState()
+  analyseNode(ast, analysisState)
   console.log(`Final analysis state:`)
   console.dir(analysisState)
   return ast
