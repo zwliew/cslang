@@ -158,6 +158,17 @@ main() {
   0
 ]
 
+const voidVariableDeclaration = [
+  `
+main() {
+  void v;
+  return 0;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+
 export const analyserTests = {
   wrongNumberOfArguments,
   ifNoReturn,
@@ -170,6 +181,7 @@ export const analyserTests = {
   switchCaseAllReturn,
   voidNoReturn,
   voidWithReturnValue,
-  voidWithNoReturnValue
+  voidWithNoReturnValue,
+  voidVariableDeclaration
 }
 runTests(analyserTests)

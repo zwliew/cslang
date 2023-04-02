@@ -89,6 +89,9 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       if (node.value) {
         analyseNode(node.value, globalState)
       }
+      if (node.typeSpecifier === 'void') {
+        throw new AnalysisError(`variable or field ${node.identifier} declared void`)
+      }
       break
 
     case 'ExpressionStatement':
