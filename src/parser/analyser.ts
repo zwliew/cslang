@@ -126,10 +126,75 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       return { typeSpecifier: operand.typeSpecifier }
     }
 
-    case 'AssignmentExpression':
-      analyseNode(node.value, globalState)
+    case 'AssignmentExpression': {
+      const value = analyseNode(node.value, globalState)
       const assignee = analyseNode(node.assignee, globalState)
+      if (!value.typeSpecifier || !assignee.typeSpecifier) {
+        throw new AnalysisError(
+          `Undefined type for ${JSON.stringify(node.value)} or ${JSON.stringify(
+            node.assignee
+          )} of assignment expression`
+        )
+      }
+
+      switch (node.operator) {
+        case '=':
+          if (
+            !(isArithmeticType(value.typeSpecifier) && isArithmeticType(assignee.typeSpecifier)) &&
+            !isCompatiblePointerType(value.typeSpecifier, assignee.typeSpecifier) &&
+            !(isPointerType(assignee.typeSpecifier) && value.value === ZERO_DECIMAL) &&
+            !(assignee.typeSpecifier === '_Bool' && isPointerType(value.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `Assigning to '${assignee.typeSpecifier}' from incompatible type '${value.typeSpecifier}`
+            )
+          }
+          break
+
+        case '+=':
+        case '-=':
+          if (
+            !(isPointerType(assignee.typeSpecifier) && isIntegerType(value.typeSpecifier)) &&
+            !(isArithmeticType(assignee.typeSpecifier) && isArithmeticType(value.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                assignee.typeSpecifier
+              )}' and '${JSON.stringify(value.typeSpecifier)}')`
+            )
+          }
+          break
+
+        case '*=':
+        case '/=':
+          if (
+            !(isArithmeticType(assignee.typeSpecifier) && isArithmeticType(value.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                assignee.typeSpecifier
+              )}' and '${JSON.stringify(value.typeSpecifier)}')`
+            )
+          }
+          break
+
+        case '%=':
+        case '&=':
+        case '|=':
+        case '^=':
+        case '<<=':
+        case '>>=':
+          if (!(isIntegerType(assignee.typeSpecifier) && isIntegerType(value.typeSpecifier))) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                assignee.typeSpecifier
+              )}' and '${JSON.stringify(value.typeSpecifier)}')`
+            )
+          }
+          break
+      }
       return { typeSpecifier: assignee.typeSpecifier }
+    }
 
     case 'BinaryExpression': {
       const lhs = analyseNode(node.left, globalState)
@@ -174,6 +239,33 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
           }
           return { typeSpecifier: lhs.typeSpecifier }
 
+        // TODO: remove duplicated code for assignment and binary expressions
+        case '*':
+        case '/':
+          if (!(isArithmeticType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier))) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          break
+
+        case '%':
+        case '&':
+        case '|':
+        case '^':
+        case '<<':
+        case '>>':
+          if (!(isIntegerType(lhs.typeSpecifier) && isIntegerType(rhs.typeSpecifier))) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          return { typeSpecifier: 'int' }
+
         case '==':
         case '!=':
           if (
@@ -188,10 +280,37 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
           }
           return { typeSpecifier: 'int' }
 
+        case '||':
+        case '&&':
+          if (!(isScalarType(lhs.typeSpecifier) && isScalarType(rhs.typeSpecifier))) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          return { typeSpecifier: 'int' }
+
+        case '<':
+        case '>':
+        case '<=':
+        case '>=':
+          if (
+            !isCompatiblePointerType(lhs.typeSpecifier, rhs.typeSpecifier) &&
+            !(isArithmeticType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `Invalid operands to binary expression ${node.operator} ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          return { typeSpecifier: 'int' }
+
         default:
-          break
+          throw new NotImplementedError(`Binary operator ${JSON.stringify(node)} not implemented`)
       }
-      // TODO: properly type check other binary expressions (i.e. '/', '*', '%')
+
       return { typeSpecifier: lhs.typeSpecifier }
     }
 
@@ -394,6 +513,7 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
           )}' where arithmetic or pointer type is required`
         )
       }
+      return { typeSpecifier: consequent.typeSpecifier }
     }
 
     default:

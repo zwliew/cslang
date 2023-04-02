@@ -219,6 +219,28 @@ main() {
   ANALYSIS_ERROR
 ]
 
+const assignmentWithInvalidType = [
+  `
+main() {
+  int i;
+  &i = 3;
+  return i;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+const shiftWithInvalidType = [
+  `
+main() {
+  float f;
+  f <<= 3;
+  return f;
+}
+`,
+  ANALYSIS_ERROR
+]
+
 export const analyserTests = {
   wrongNumberOfArguments,
   ifNoReturn,
@@ -237,6 +259,8 @@ export const analyserTests = {
   subtractionWithIncompatibleTypes,
   useUndefinedIdentifier,
   equalityWithIncompatibleTypes,
-  derefWithIncompatibleTypes
+  derefWithIncompatibleTypes,
+  assignmentWithInvalidType,
+  shiftWithInvalidType
 }
 runTests(analyserTests)
