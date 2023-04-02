@@ -134,7 +134,6 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
     case 'BinaryExpression': {
       const lhs = analyseNode(node.left, globalState)
       const rhs = analyseNode(node.right, globalState)
-      // TODO: enforce that both types are defined
       if (!lhs.typeSpecifier || !rhs.typeSpecifier) {
         throw new NotImplementedError(`Undefined types for ${node.left.type} or ${node.right.type}`)
       }
@@ -192,6 +191,7 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
         default:
           break
       }
+      // TODO: properly type check other binary expressions (i.e. '/', '*', '%')
       return { typeSpecifier: lhs.typeSpecifier }
     }
 
