@@ -1,6 +1,23 @@
+import { ZERO_DECIMAL } from '../interpreter/constants'
+import {
+  isArithmeticType,
+  isArrayType,
+  isCompatiblePointerType,
+  isIntegerType,
+  isPointerType,
+  isScalarType,
+  isVoidType
+} from '../types'
 import { DEBUG_PRINT_ANALYSIS } from '../utils/debug'
-import { AnalysisError } from '../utils/errors'
-import { AstNode, Expression, Statement, TypeSpecifier } from './ast-types'
+import { DecimalType } from '../utils/decimal'
+import { AnalysisError, NotImplementedError } from '../utils/errors'
+import {
+  ArrayTypeSpecifier,
+  AstNode,
+  PointerTypeSpecifier,
+  Statement,
+  TypeSpecifier
+} from './ast-types'
 
 interface GlobalState {
   functions: {
@@ -17,7 +34,10 @@ interface GlobalState {
   currentFunction: string
 }
 
-interface LocalState {}
+interface LocalState {
+  typeSpecifier?: TypeSpecifier
+  value?: DecimalType
+}
 
 const defaultGlobalState: GlobalState = {
   functions: {
@@ -62,21 +82,118 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       }
       break
 
-    case 'StraySemicolon':
     case 'Literal':
+      return { typeSpecifier: node.typeSpecifier, value: node.value }
+
     case 'Identifier':
+      if (!(node.identifier in globalState.variables)) {
+        throw new AnalysisError(`Use of undeclared identifier '${node.identifier}'`)
+      }
+      return { typeSpecifier: globalState.variables[node.identifier] }
+
+    case 'StraySemicolon':
     case 'Break':
-    case 'UnaryExpression':
       break
+
+    case 'UnaryExpression': {
+      const operand = analyseNode(node.operand, globalState)
+      if (!operand.typeSpecifier) {
+        throw new AnalysisError('Undefined type for operand of unary expression')
+      }
+      switch (node.operator) {
+        case '-':
+        case '+':
+          if (!isArithmeticType(operand.typeSpecifier)) {
+            throw new AnalysisError(
+              `invalid argument type ${operand.typeSpecifier} to unary expression`
+            )
+          }
+          // TODO: the type should be the promoted type of the operand
+          return { typeSpecifier: operand.typeSpecifier }
+
+        case '*':
+          if (!isPointerType(operand.typeSpecifier)) {
+            throw new AnalysisError(
+              `indirection requires pointer operand ('${operand.typeSpecifier}' invalid)`
+            )
+          }
+          return { typeSpecifier: (operand.typeSpecifier as PointerTypeSpecifier).ptrTo }
+
+        case '&':
+          // TODO: ensure that only lvalues can be taken
+          return { typeSpecifier: { ptrTo: operand.typeSpecifier } }
+      }
+      return { typeSpecifier: operand.typeSpecifier }
+    }
 
     case 'AssignmentExpression':
       analyseNode(node.value, globalState)
-      break
+      const assignee = analyseNode(node.assignee, globalState)
+      return { typeSpecifier: assignee.typeSpecifier }
 
-    case 'BinaryExpression':
-      analyseNode(node.left, globalState)
-      analyseNode(node.right, globalState)
-      break
+    case 'BinaryExpression': {
+      const lhs = analyseNode(node.left, globalState)
+      const rhs = analyseNode(node.right, globalState)
+      // TODO: enforce that both types are defined
+      if (!lhs.typeSpecifier || !rhs.typeSpecifier) {
+        throw new NotImplementedError(`Undefined types for ${node.left.type} or ${node.right.type}`)
+      }
+      switch (node.operator) {
+        case '+':
+          if (
+            !(isArithmeticType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier)) &&
+            !(isArithmeticType(lhs.typeSpecifier) && isPointerType(rhs.typeSpecifier)) &&
+            !(isPointerType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier)) &&
+            !(isArrayType(lhs.typeSpecifier) && isIntegerType(rhs.typeSpecifier)) &&
+            !(isArrayType(rhs.typeSpecifier) && isIntegerType(lhs.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `invalid operands to binary expression '+' ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          let typeSpecifier = lhs.typeSpecifier
+          if (isArrayType(lhs.typeSpecifier)) {
+            typeSpecifier = { ptrTo: (lhs.typeSpecifier as ArrayTypeSpecifier).arrOf }
+          } else if (isArrayType(rhs.typeSpecifier)) {
+            typeSpecifier = { ptrTo: (rhs.typeSpecifier as ArrayTypeSpecifier).arrOf }
+          }
+          return { typeSpecifier }
+
+        case '-':
+          if (
+            !(isArithmeticType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier)) &&
+            !isCompatiblePointerType(lhs.typeSpecifier, rhs.typeSpecifier) &&
+            !(isPointerType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier))
+          ) {
+            throw new AnalysisError(
+              `invalid operands to binary expression '-' ('${JSON.stringify(
+                lhs.typeSpecifier
+              )}' and '${JSON.stringify(rhs.typeSpecifier)}')`
+            )
+          }
+          return { typeSpecifier: lhs.typeSpecifier }
+
+        case '==':
+        case '!=':
+          if (
+            !(isArithmeticType(lhs.typeSpecifier) && isArithmeticType(rhs.typeSpecifier)) &&
+            !isCompatiblePointerType(lhs.typeSpecifier, rhs.typeSpecifier) &&
+            !(isPointerType(lhs.typeSpecifier) && rhs.value === ZERO_DECIMAL) &&
+            !(isPointerType(rhs.typeSpecifier) && rhs.value === ZERO_DECIMAL)
+          ) {
+            throw new AnalysisError(
+              `comparison between ('${lhs.typeSpecifier}' and '${rhs.typeSpecifier}')`
+            )
+          }
+          return { typeSpecifier: 'int' }
+
+        default:
+          break
+      }
+      return { typeSpecifier: lhs.typeSpecifier }
+    }
 
     case 'Block':
       for (const statement of node.statements) {
@@ -90,9 +207,9 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
         analyseNode(node.value, globalState)
       }
       if (node.typeSpecifier === 'void') {
-        throw new AnalysisError(`variable or field ${node.identifier} declared void`)
+        throw new AnalysisError(`variable ${node.identifier} has incomplete type 'void'`)
       }
-      break
+      return { typeSpecifier: node.typeSpecifier }
 
     case 'ExpressionStatement':
       analyseNode(node.expression, globalState)
@@ -167,37 +284,46 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       break
 
     case 'FunctionDeclaration':
-      globalState.functions[node.identifier] = {
-        arity: node.functionDefinition.parameterList?.parameters.length ?? 0,
-        expectedReturnType: node.functionDefinition.returnType,
-        returns: false,
-        returnsAValue: false
+      {
+        globalState.functions[node.identifier] = {
+          arity: node.functionDefinition.parameterList?.parameters.length ?? 0,
+          expectedReturnType: node.functionDefinition.returnType,
+          returns: false,
+          returnsAValue: false
+        }
+
+        // Create a new current function state
+        const originalVariables = globalState.variables
+        const originalScope = globalState.currentFunction
+        globalState.currentFunction = node.identifier
+        globalState.variables = { ...originalVariables }
+        for (const parameter of node.functionDefinition.parameterList?.parameters ?? []) {
+          globalState.variables[parameter.identifier] = parameter.typeSpecifier
+        }
+
+        for (const statement of node.functionDefinition.body) {
+          analyseNode(statement, globalState)
+        }
+        if (
+          globalState.functions[node.identifier].expectedReturnType !== 'void' &&
+          !globalState.functions[node.identifier].returnsAValue
+        ) {
+          // TODO: add an implicit return
+          throw new AnalysisError(`Function ${node.identifier} does not return any value`)
+        } else if (
+          globalState.functions[node.identifier].expectedReturnType === 'void' &&
+          globalState.functions[node.identifier].returnsAValue
+        ) {
+          throw new AnalysisError(
+            `Function ${node.identifier} with void return type attempts to return a value`
+          )
+        }
+        globalState.currentFunction = originalScope
+        globalState.variables = originalVariables
       }
-      const originalVariables = globalState.variables
-      const originalScope = globalState.currentFunction
-      globalState.currentFunction = node.identifier
-      for (const statement of node.functionDefinition.body) {
-        analyseNode(statement, globalState)
-      }
-      if (
-        globalState.functions[node.identifier].expectedReturnType !== 'void' &&
-        !globalState.functions[node.identifier].returnsAValue
-      ) {
-        // TODO: add an implicit return
-        throw new AnalysisError(`Function ${node.identifier} does not return any value`)
-      } else if (
-        globalState.functions[node.identifier].expectedReturnType === 'void' &&
-        globalState.functions[node.identifier].returnsAValue
-      ) {
-        throw new AnalysisError(
-          `Function ${node.identifier} with void return type attempts to return a value`
-        )
-      }
-      globalState.currentFunction = originalScope
-      globalState.variables = originalVariables
       break
 
-    case 'FunctionApplication':
+    case 'FunctionApplication': {
       if (!(node.identifier in globalState.functions)) {
         throw new AnalysisError(`Calling function ${node.identifier} before it is declared`)
       }
@@ -208,13 +334,15 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
           `Function ${node.identifier} expected ${parameterCount} arguments but got ${argumentCount} arguments instead`
         )
       }
-      break
+      return { typeSpecifier: globalState.functions[node.identifier].expectedReturnType }
+    }
 
     case 'Return':
-      globalState.functions[globalState.currentFunction].returns = true
       if (node.expression) {
+        analyseNode(node.expression, globalState)
         globalState.functions[globalState.currentFunction].returnsAValue = true
       }
+      globalState.functions[globalState.currentFunction].returns = true
       // TODO: compare types
       // Currently, all types can be coerced to each other, so we don't do anything here
       // const expectedReturnType =
@@ -222,39 +350,55 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       // const returnType = staticType(node.expression, analysisState)
       break
 
+    case 'CastExpression': {
+      const operand = analyseNode(node.operand, globalState)
+      if (!operand.typeSpecifier) {
+        throw new AnalysisError('Cannot cast an expression with unknown type')
+      }
+      if (!isScalarType(operand.typeSpecifier) && !isArrayType(operand.typeSpecifier)) {
+        throw new AnalysisError(
+          `Operand of type ${JSON.stringify(
+            operand.typeSpecifier
+          )} where arithmetic or pointer type is required`
+        )
+      }
+      return { typeSpecifier: node.typeSpecifier }
+    }
+
+    case 'ConditionalExpression': {
+      const predicate = analyseNode(node.predicate, globalState)
+      const consequent = analyseNode(node.consequent, globalState)
+      const alternative = analyseNode(node.alternative, globalState)
+      if (!predicate.typeSpecifier || !consequent.typeSpecifier || !alternative.typeSpecifier) {
+        throw new AnalysisError('Cannot perform conditional expression on unknown types')
+      }
+      if (!isScalarType(predicate.typeSpecifier)) {
+        throw new AnalysisError(
+          `Used type '${JSON.stringify(
+            predicate.typeSpecifier
+          )}' where arithmetic or pointer type is required`
+        )
+      }
+      if (
+        !(
+          isArithmeticType(consequent.typeSpecifier) && isArithmeticType(alternative.typeSpecifier)
+        ) &&
+        !(isVoidType(consequent.typeSpecifier) && isVoidType(alternative.typeSpecifier)) &&
+        !isCompatiblePointerType(consequent.typeSpecifier, alternative.typeSpecifier) &&
+        !(isPointerType(consequent.typeSpecifier) && alternative.value === ZERO_DECIMAL) &&
+        !(isPointerType(alternative.typeSpecifier) && consequent.value === ZERO_DECIMAL)
+      ) {
+        throw new AnalysisError(
+          `Used type '${JSON.stringify(
+            consequent.typeSpecifier
+          )}' where arithmetic or pointer type is required`
+        )
+      }
+    }
+
     default:
       break
   }
 
   return {}
-}
-
-export const staticType = (
-  node: Expression | undefined,
-  analysisState: GlobalState
-): TypeSpecifier => {
-  if (!node) {
-    return 'void'
-  }
-  switch (node.type) {
-    case 'AssignmentExpression':
-      return staticType(node.assignee, analysisState)
-    case 'UnaryExpression':
-      // No operations change the type of an expression
-      return staticType(node.operand, analysisState)
-    case 'BinaryExpression':
-      // No operations change the type of an expression
-      return staticType(node.left, analysisState)
-    case 'Literal':
-      return node.typeSpecifier
-    case 'FunctionApplication':
-      return analysisState.functions[node.identifier].expectedReturnType
-    case 'Identifier':
-      return analysisState.variables[node.identifier]
-    case 'ConditionalExpression':
-      const consequentType = staticType(node.consequent, analysisState)
-      return consequentType
-    case 'CastExpression':
-      return node.typeSpecifier
-  }
 }

@@ -1,6 +1,7 @@
 import { WORD_SIZE } from './interpreter/classes/memory'
 import {
   ArrayTypeSpecifier,
+  PointerTypeSpecifier,
   PrimitiveTypeSpecifier,
   RawTypeSpecifier,
   TypeSpecifier
@@ -153,7 +154,7 @@ export function multiwordTypeToTypeSpecifier(multiwordType: RawTypeSpecifier): T
 }
 
 export function isPrimitiveType(typeSpecifier: TypeSpecifier): boolean {
-  return typeof typeSpecifier === 'string'
+  return !isPointerType(typeSpecifier) && !isArrayType(typeSpecifier)
 }
 
 export function isPointerType(typeSpecifier: TypeSpecifier): boolean {
@@ -162,4 +163,36 @@ export function isPointerType(typeSpecifier: TypeSpecifier): boolean {
 
 export function isArrayType(typeSpecifier: TypeSpecifier): boolean {
   return typeof typeSpecifier === 'object' && 'arrOf' in typeSpecifier
+}
+
+export function isVoidType(typeSpecifier: TypeSpecifier): boolean {
+  return typeSpecifier === 'void'
+}
+
+export function isArithmeticType(typeSpecifier: TypeSpecifier): boolean {
+  return isPrimitiveType(typeSpecifier) && !isVoidType(typeSpecifier)
+}
+
+export function isFloatingPointType(typeSpecifier: TypeSpecifier): boolean {
+  return typeSpecifier === 'float' || typeSpecifier === 'double' || typeSpecifier === 'long double'
+}
+
+export function isIntegerType(typeSpecifier: TypeSpecifier): boolean {
+  return isArithmeticType(typeSpecifier) && !isFloatingPointType(typeSpecifier)
+}
+export function isScalarType(typeSpecifier: TypeSpecifier): boolean {
+  return isArithmeticType(typeSpecifier) || isPointerType(typeSpecifier)
+}
+
+export function isAggregateType(typeSpecifier: TypeSpecifier): boolean {
+  // TODO: add structure types
+  return isArrayType(typeSpecifier)
+}
+
+export function isCompatiblePointerType(fst: TypeSpecifier, snd: TypeSpecifier): boolean {
+  return (
+    isPointerType(fst) &&
+    isPointerType(snd) &&
+    (fst as PointerTypeSpecifier).ptrTo === (snd as PointerTypeSpecifier).ptrTo
+  )
 }

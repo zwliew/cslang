@@ -16,10 +16,11 @@ export const UNDEFINED_LITERAL: Literal = {
   value: new Decimal(0)
 }
 
+export const ZERO_DECIMAL = new Decimal(0)
 export const ZERO: Literal = {
   type: 'Literal',
   typeSpecifier: 'int',
-  value: new Decimal(0)
+  value: ZERO_DECIMAL
 }
 
 export const ONE: Literal = {

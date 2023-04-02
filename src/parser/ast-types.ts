@@ -162,7 +162,7 @@ export interface ConditionalExpression extends BaseStatement {
   type: 'ConditionalExpression'
   predicate: Expression
   consequent: Expression
-  alternative?: Expression
+  alternative: Expression
 }
 
 export interface Switch extends BaseStatement {
@@ -302,8 +302,13 @@ export interface DeclarationSpecifiers extends BaseNode {
 }
 
 export type PrimitiveTypeSpecifier = Exclude<
-  Exclude<TypeSpecifier, PointerTypeSpecifier>,
-  ArrayTypeSpecifier
+  TypeSpecifier,
+  PointerTypeSpecifier | ArrayTypeSpecifier
+>
+export type ArithmeticTypeSpecifier = Exclude<PrimitiveTypeSpecifier, 'void'>
+export type IntegerTypeSpecifier = Exclude<
+  ArithmeticTypeSpecifier,
+  'float' | 'double' | 'long double'
 >
 export type PointerTypeSpecifier = { ptrTo: TypeSpecifier }
 export type ArrayTypeSpecifier = { arrOf: TypeSpecifier; size: number }

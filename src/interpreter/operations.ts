@@ -4,7 +4,16 @@ import {
   PointerTypeSpecifier,
   TypeSpecifier
 } from '../parser/ast-types'
-import { hierarchy, isArrayType, isPointerType, isPrimitiveType, rank, sizeOfType } from '../types'
+import {
+  hierarchy,
+  isArithmeticType,
+  isArrayType,
+  isIntegerType,
+  isPointerType,
+  isPrimitiveType,
+  rank,
+  sizeOfType
+} from '../types'
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError } from '../utils/errors'
 import { DECIMAL_ONE, DECIMAL_ZERO } from './constants'
@@ -21,7 +30,7 @@ function promote(left: TypeSpecifier, right: TypeSpecifier): TypeSpecifier {
  ************/
 
 function addPtr(left: Literal, right: Literal): Literal {
-  if (!isPrimitiveType(right.typeSpecifier)) {
+  if (!isIntegerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
@@ -36,7 +45,7 @@ function addPtr(left: Literal, right: Literal): Literal {
 }
 
 function addArray(left: Literal, right: Literal): Literal {
-  if (!isPrimitiveType(right.typeSpecifier)) {
+  if (!isIntegerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '+' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
@@ -79,7 +88,7 @@ export function add(left: Literal, right: Literal): Literal {
 }
 
 function subtractPtr(left: Literal, right: Literal): Literal {
-  if (isPointerType(right.typeSpecifier)) {
+  if (isIntegerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
@@ -94,7 +103,7 @@ function subtractPtr(left: Literal, right: Literal): Literal {
 }
 
 function subtractArray(left: Literal, right: Literal): Literal {
-  if (!isPrimitiveType(right.typeSpecifier)) {
+  if (!isIntegerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for '-' operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )

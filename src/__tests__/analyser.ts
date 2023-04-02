@@ -168,6 +168,56 @@ main() {
   ANALYSIS_ERROR
 ]
 
+const additionWithIncompatibleTypes = [
+  `
+main() {
+  int *pi;
+  char *pc;
+  return pi + pc;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+const subtractionWithIncompatibleTypes = [
+  `
+main() {
+  int *pi;
+  return 1 - pi;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+const useUndefinedIdentifier = [
+  `
+main() {
+  return x;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+const equalityWithIncompatibleTypes = [
+  `
+main() {
+  char *pc;
+  int i;
+  return pc == i;
+}
+`,
+  ANALYSIS_ERROR
+]
+
+const derefWithIncompatibleTypes = [
+  `
+main() {
+  int i;
+  return *i;
+}
+`,
+  ANALYSIS_ERROR
+]
 
 export const analyserTests = {
   wrongNumberOfArguments,
@@ -182,6 +232,11 @@ export const analyserTests = {
   voidNoReturn,
   voidWithReturnValue,
   voidWithNoReturnValue,
-  voidVariableDeclaration
+  voidVariableDeclaration,
+  additionWithIncompatibleTypes,
+  subtractionWithIncompatibleTypes,
+  useUndefinedIdentifier,
+  equalityWithIncompatibleTypes,
+  derefWithIncompatibleTypes
 }
 runTests(analyserTests)
