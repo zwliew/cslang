@@ -722,7 +722,12 @@ export class CGenerator implements CVisitor<AstNode> {
     const stringLiteral = ctx.StringLiteral()
     if (stringLiteral.length === 1) {
       // Is a string literal
-      throw new NotImplementedError(ctx.text)
+      const stringWithQuotes = stringLiteral[0].text
+      const actualString = stringWithQuotes.substring(1, stringWithQuotes.length - 1)
+      return {
+        type: 'StringLiteral',
+        string: actualString
+      }
     }
 
     const expression = ctx.expression()

@@ -26,6 +26,7 @@ export type Expression =
   | Identifier
   | FunctionApplication
   | Literal
+  | StringLiteral
   | UnaryExpression
   | CastExpression
 //  | LogicalExpression
@@ -63,6 +64,11 @@ export interface Literal extends BaseExpression {
   typeSpecifier: TypeSpecifier
   value: DecimalType
   address?: MemoryAddress
+}
+
+export interface StringLiteral extends BaseExpression {
+  type: 'StringLiteral'
+  string: string
 }
 
 export interface UnaryExpression extends BaseExpression {
