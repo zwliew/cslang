@@ -51,9 +51,9 @@ const malloc2 = [
 const printStackBasic = [
   String.raw`
 void foo(int *x) {
-  char y = 1;
+  char y = 31;
   {
-    char y = 4;
+    char y = 'a';
     char *py = &y;
     char **ppy = &py;
     char ac[15] = "Hello World!\n";
@@ -61,6 +61,9 @@ void foo(int *x) {
     int ai[15];
     char ac2[15] = "Hello World!\n";
     char *pac2 = "Hello World!\n";
+    float f = 3.14;
+    _Bool b = 0;
+    int i = 91;
     printstack();
   }
 }

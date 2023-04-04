@@ -210,7 +210,7 @@ const getchar: FunctionDefinition = {
 const primitivePrintStack = ({ E, M }: PrimitiveFunctionParams): Literal => {
   // TODO: look into how arrays are being stored in the environment.
   // They seem to be treated as primitives (i.e. int[] becomes int)
-  console.log('=== Stack ===')
+  console.log('============= Stack =============')
   const frames = []
   let curEnv = E
   while (curEnv.parent !== undefined) {
@@ -231,13 +231,20 @@ const primitivePrintStack = ({ E, M }: PrimitiveFunctionParams): Literal => {
 
     console.log(`${curIndent}${frame.name}:`)
     // TODO: don't hardcode the column values. Rather, base it on the longest string in that column.
-    const header = 'Name'.padEnd(10) + 'Value'.padEnd(10) + 'Addr'.padEnd(10) + 'Type'
+    const header = 'Name'.padEnd(12) + 'Value'.padEnd(12) + 'Addr'.padEnd(12) + 'Type'
     console.log(`${curIndent}  ` + header)
     console.log(`${curIndent}  ` + '-'.repeat(header.length + 5))
 
     for (const [identifier, addr] of frame.frame) {
       const memAddr = addr as MemoryAddress
-      const val = M.getValue(memAddr)
+      let val: Decimal | string = M.getValue(memAddr)
+      if (memAddr.typeSpecifier === 'char') {
+        if (val.toNumber() < 32 || val.toNumber() > 126) {
+          val = val.toHexadecimal()
+        } else {
+          val = String.fromCharCode(val.toNumber())
+        }
+      }
 
       let typeSpecifier = memAddr.typeSpecifier
       const typeStrBuilder = []
@@ -255,9 +262,9 @@ const primitivePrintStack = ({ E, M }: PrimitiveFunctionParams): Literal => {
 
       console.log(
         `${curIndent}  ` +
-          `${identifier}`.padEnd(10) +
-          `${val}`.padEnd(10) +
-          `[${memAddr.location}]`.padEnd(10) +
+          `${identifier}`.padEnd(12) +
+          val.toString().substring(0, 9).padEnd(12) +
+          `[0x${memAddr.location.toString(16)}]`.padEnd(12) +
           `(${type})`
       )
     }
