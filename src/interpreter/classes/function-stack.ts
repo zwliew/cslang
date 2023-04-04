@@ -6,6 +6,12 @@ import { UNDEFINED_LITERAL } from '../constants'
 
 const prompt = require('prompt-sync')()
 
+export type PrimitiveFunctionParams = {
+  E: Environment
+  M: Memory
+  args: Literal[]
+}
+
 export class FunctionStack {
   functionStack: Array<[FunctionDefinition, Environment]>
   functionIndexes: Map<string, number>
@@ -67,7 +73,7 @@ export class FunctionStack {
 
 export const primitiveFunctions = []
 
-const primitivePutchar = (M: Memory, ch: Literal): Literal => {
+const primitivePutchar = ({ args: [ch] }: PrimitiveFunctionParams): Literal => {
   const value = ch.value.toNumber()
 
   // Convert to ascii and print
@@ -99,7 +105,7 @@ const putchar: FunctionDefinition = {
   body: []
 }
 
-const primitiveMalloc = (M: Memory, size: Literal): Literal => {
+const primitiveMalloc = ({ M, args: [size] }: PrimitiveFunctionParams): Literal => {
   const length = size.value.toNumber()
 
   const addr = M.allocateHeap(length)
@@ -129,7 +135,7 @@ const malloc: FunctionDefinition = {
   body: []
 }
 
-const primitiveFree = (M: Memory, ptr: Literal): Literal => {
+const primitiveFree = (_: PrimitiveFunctionParams): Literal => {
   // Do nothing for now
   return UNDEFINED_LITERAL
 }
@@ -154,7 +160,8 @@ const free: FunctionDefinition = {
 
 let stdinBuffer = ''
 let currentChar = 0
-const primitiveGetChar = (M: Memory): Literal => {
+const primitiveGetChar = (params: PrimitiveFunctionParams): Literal => {
+  const { M, E } = params
   if (stdinBuffer === null) {
     return {
       type: 'Literal',
@@ -170,7 +177,7 @@ const primitiveGetChar = (M: Memory): Literal => {
     // Need put back the end of line
     if (stdinBuffer !== null) stdinBuffer += '\n'
     currentChar = 0
-    return primitiveGetChar(M)
+    return primitiveGetChar(params)
   } else {
     return {
       type: 'Literal',

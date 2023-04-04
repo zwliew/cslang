@@ -1,3 +1,4 @@
+import { PrimitiveFunctionParams } from '../interpreter/classes/function-stack'
 import { Memory } from '../interpreter/classes/memory'
 import { MemoryAddress } from '../interpreter/interpreter-types'
 import type { DecimalType } from '../utils/decimal'
@@ -279,7 +280,7 @@ export interface FunctionDefinition extends BaseNode {
   parameterList?: ParameterList
   body: Array<Statement>
   primitive: boolean
-  primitiveFunction?: (m: Memory, ...varargs: Literal[]) => Literal
+  primitiveFunction?: (params: PrimitiveFunctionParams) => Literal
 }
 
 export interface ParameterList extends BaseNode {

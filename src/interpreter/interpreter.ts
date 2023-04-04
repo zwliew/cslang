@@ -557,7 +557,7 @@ const microcode = (code: AgendaItems) => {
 
       // Primitive functions can be called directly in the interpreter
       if (functionAndEnv[0].primitive) {
-        OS.push(functionAndEnv[0].primitiveFunction!(M, ...functionArguments))
+        OS.push(functionAndEnv[0].primitiveFunction!({ E, M, args: functionArguments }))
         break
       }
 
