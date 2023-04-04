@@ -240,7 +240,7 @@ const microcode = (code: AgendaItems) => {
     case 'Block':
       A.push({ type: 'env_i', environment: E })
       A.push(...handle_block(code))
-      E = E.extend(M)
+      E = E.extend({ memory: M })
       break
 
     case 'ValueDeclaration':
@@ -321,7 +321,7 @@ const microcode = (code: AgendaItems) => {
         { type: 'while_i', pred: code.pred, body: code.body },
         code.pred
       )
-      E = E.extend(M)
+      E = E.extend({ memory: M })
       break
 
     case 'DoWhileStatement':
@@ -331,7 +331,7 @@ const microcode = (code: AgendaItems) => {
         code.pred,
         code.body
       )
-      E = E.extend(M)
+      E = E.extend({ memory: M })
       break
 
     case 'ForStatement':
@@ -343,13 +343,13 @@ const microcode = (code: AgendaItems) => {
       if (code.init) {
         A.push(code.init)
       }
-      E = E.extend(M)
+      E = E.extend({ memory: M })
       break
 
     case 'Switch':
       A.push({ type: 'switch_env_i', environment: E })
       A.push({ type: 'switch_i', block: code.block }, code.expression)
-      E = E.extend(M)
+      E = E.extend({ memory: M })
       break
 
     case 'SwitchCaseDefault':
@@ -517,7 +517,7 @@ const microcode = (code: AgendaItems) => {
 
         declarations.push({ name: parameters[i].name, typeSpecifier: parameters[i].typeSpecifier })
       }
-      A.push({ type: 'param_decl_i', declarations })
+      A.push({ type: 'param_decl_i', declarations, fnName: code.identifier })
 
       for (let i = code.arguments.length - 1; i >= 0; --i) {
         A.push(code.arguments[i])
@@ -525,7 +525,7 @@ const microcode = (code: AgendaItems) => {
       break
     }
 
-    case 'Return':
+    case 'Return': {
       // TODO: typechecking
       while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
         A.pop()
@@ -535,9 +535,10 @@ const microcode = (code: AgendaItems) => {
       if (code.expression) {
         // Only push the return value if the function is not void.
         // If it is void, we would have already pushed a dummy value in 'FunctionApplication'
-        A.push({ type: 'cast_i', typeSpecifier: typeSpecifier }, code.expression)
+        A.push({ type: 'cast_i', typeSpecifier }, code.expression)
       }
       break
+    }
 
     case 'CastExpression':
       A.push({ type: 'cast_i', typeSpecifier: code.typeSpecifier }, code.operand)
@@ -547,7 +548,7 @@ const microcode = (code: AgendaItems) => {
      * Instructions
      *****************/
 
-    case 'app_i':
+    case 'app_i': {
       const functionAndEnv = FS.getFunctionAndEnv(code.identifier)
       const functionArguments: Literal[] = []
       for (let i = 0; i < code.arity; i++) {
@@ -557,16 +558,22 @@ const microcode = (code: AgendaItems) => {
 
       // Primitive functions can be called directly in the interpreter
       if (functionAndEnv[0].primitive) {
-        OS.push(functionAndEnv[0].primitiveFunction!({ E, M, args: functionArguments }))
+        const ret = functionAndEnv[0].primitiveFunction!({ E, M, args: functionArguments })
+        if (ret.typeSpecifier !== 'void') {
+          // Only push the return value for non-void functions, as we have already
+          // pushed a dummy value for void functions in FunctionApplication
+          A.push(ret)
+        }
         break
       }
 
       A.push(...functionAndEnv[0].body.slice().reverse())
       break
+    }
 
     case 'param_decl_i':
       // Extend the environment with a frame mapping from parameter to argument value
-      E = E.extend(M)
+      E = E.extend({ memory: M, name: code.fnName })
       for (const { name, typeSpecifier } of code.declarations) {
         const address: MemoryAddress = {
           type: 'MemoryAddress',
@@ -753,7 +760,7 @@ const STEP_LIMIT = 10000000 // 1e7
 export const execute = (program: AstNode) => {
   A = [program]
   OS = []
-  E = new Environment()
+  E = new Environment({ name: 'global' })
   FS = new FunctionStack()
   M = new Memory(1e4) // Use 10KB of memory
   let i = 0

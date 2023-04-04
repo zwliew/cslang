@@ -41,9 +41,10 @@ interface LocalState {
 const defaultGlobalState: GlobalState = {
   functions: {
     malloc: { arity: 1, expectedReturnType: { ptrTo: 'int' }, returns: true, returnsAValue: true },
-    free: { arity: 1, expectedReturnType: 'void', returns: false, returnsAValue: true },
+    free: { arity: 1, expectedReturnType: 'void', returns: false, returnsAValue: false },
     putchar: { arity: 1, expectedReturnType: 'int', returns: true, returnsAValue: true },
-    getchar: { arity: 0, expectedReturnType: 'char', returns: true, returnsAValue: true }
+    getchar: { arity: 0, expectedReturnType: 'char', returns: true, returnsAValue: true },
+    printstack: { arity: 0, expectedReturnType: 'void', returns: true, returnsAValue: false }
   },
   variables: {},
   currentFunction: 'global'

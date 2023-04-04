@@ -47,11 +47,38 @@ const malloc2 = [
   100
 ]
 
+// TODO: make jest swallow the output of printstack
+const printStackBasic = [
+  String.raw`
+void foo(int *x) {
+  char y = 1;
+  {
+    char y = 4;
+    char *py = &y;
+    char **ppy = &py;
+    char ac[15] = "Hello World!\n";
+    char *pac = "Hello World!\n";
+    int ai[15];
+    char ac2[15] = "Hello World!\n";
+    char *pac2 = "Hello World!\n";
+    printstack();
+  }
+}
+main() {
+  int x = 3;
+  foo(&x);
+  return x;
+}
+`,
+  3
+]
+
 export const primitiveFunctionsTests = {
   putchar,
   multiplePutchar,
   malloc,
-  malloc2
+  malloc2,
+  printStackBasic
 }
 
 runTests(primitiveFunctionsTests)

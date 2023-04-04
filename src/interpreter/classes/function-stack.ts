@@ -1,8 +1,15 @@
-import { FunctionDefinition, Literal } from '../../parser/ast-types'
+import {
+  ArrayTypeSpecifier,
+  FunctionDefinition,
+  Literal,
+  PointerTypeSpecifier
+} from '../../parser/ast-types'
 import Decimal from '../../utils/decimal'
 import { Environment } from './environment'
 import { Memory } from './memory'
 import { UNDEFINED_LITERAL } from '../constants'
+import { MemoryAddress } from '../interpreter-types'
+import { isArrayType, isPointerType, isPrimitiveType } from '../../types'
 
 const prompt = require('prompt-sync')()
 
@@ -24,6 +31,7 @@ export class FunctionStack {
     this.allocatePrimitiveFunction(malloc, 'malloc')
     this.allocatePrimitiveFunction(free, 'free')
     this.allocatePrimitiveFunction(getchar, 'getchar')
+    this.allocatePrimitiveFunction(printstack, 'printstack')
   }
 
   // Private function only for primitives
@@ -31,7 +39,7 @@ export class FunctionStack {
     const functionIndex = this.functionStack.length
     this.functionIndexes[fnName] = functionIndex
     // We can just allocate a new Environment - the environment is irrelevant here
-    this.functionStack.push([fn, new Environment()])
+    this.functionStack.push([fn, new Environment({ name: fnName })])
   }
 
   // Does not actually allocate space on the stack yet
@@ -196,5 +204,76 @@ const getchar: FunctionDefinition = {
   },
   primitive: true,
   primitiveFunction: primitiveGetChar,
+  body: []
+}
+
+const primitivePrintStack = ({ E, M }: PrimitiveFunctionParams): Literal => {
+  // TODO: look into how arrays are being stored in the environment.
+  // They seem to be treated as primitives (i.e. int[] becomes int)
+  console.log('=== Stack ===')
+  const frames = []
+  let curEnv = E
+  while (curEnv.parent !== undefined) {
+    if (curEnv.frame.size > 0) {
+      frames.push({ frame: curEnv.frame, name: curEnv.name })
+    }
+    curEnv = curEnv.parent
+  }
+
+  let curIndent = ''
+  for (let i = frames.length - 1; i >= 0; --i) {
+    const frame = frames[i]
+    if (frame.name === '_unnamed_') {
+      curIndent += '  '
+    } else {
+      curIndent = ''
+    }
+
+    console.log(`${curIndent}${frame.name}:`)
+    // TODO: don't hardcode the column values. Rather, base it on the longest string in that column.
+    const header = 'Name'.padEnd(10) + 'Value'.padEnd(10) + 'Addr'.padEnd(10) + 'Type'
+    console.log(`${curIndent}  ` + header)
+    console.log(`${curIndent}  ` + '-'.repeat(header.length + 5))
+
+    for (const [identifier, addr] of frame.frame) {
+      const memAddr = addr as MemoryAddress
+      const val = M.getValue(memAddr)
+
+      let typeSpecifier = memAddr.typeSpecifier
+      const typeStrBuilder = []
+      while (!isPrimitiveType(typeSpecifier)) {
+        if (isPointerType(typeSpecifier)) {
+          typeStrBuilder.push('*')
+          typeSpecifier = (typeSpecifier as PointerTypeSpecifier).ptrTo
+        } else if (isArrayType(typeSpecifier)) {
+          typeStrBuilder.push('[]')
+          typeSpecifier = (typeSpecifier as ArrayTypeSpecifier).arrOf
+        }
+      }
+      typeStrBuilder.push(typeSpecifier)
+      const type = typeStrBuilder.reverse().join('')
+
+      console.log(
+        `${curIndent}  ` +
+          `${identifier}`.padEnd(10) +
+          `${val}`.padEnd(10) +
+          `[${memAddr.location}]`.padEnd(10) +
+          `(${type})`
+      )
+    }
+    console.log()
+  }
+  return UNDEFINED_LITERAL
+}
+
+const printstack: FunctionDefinition = {
+  type: 'FunctionDefinition',
+  returnType: 'void',
+  parameterList: {
+    type: 'ParameterList',
+    parameters: []
+  },
+  primitive: true,
+  primitiveFunction: primitivePrintStack,
   body: []
 }

@@ -1,8 +1,14 @@
 import { RedeclarationError, UndeclaredIdentifierError } from '../errors'
-import { Address, FunctionStackAddress, MemoryAddress } from '../interpreter-types'
+import { Address } from '../interpreter-types'
 import { DEFAULT_STACK_POINTER_START, Memory } from './memory'
 
 type Frame = Map<string, Address>
+
+type EnvironmentParams = {
+  stackPointer?: number
+  values?: Frame
+  name?: string
+}
 
 export class Environment {
   // The environment is a linked list of frames
@@ -14,11 +20,16 @@ export class Environment {
   // portions of the memory
   stackPointer: number
 
+  // A human-readable name for the current environment.
+  // This is useful for printing out the environment.
+  name: string
+
   // Constructor for creating a new global frame
-  constructor(stackPointer?: number, values?: Frame) {
+  constructor({ stackPointer, values, name }: EnvironmentParams) {
     this.parent = undefined
     this.frame = values ?? new Map()
     this.stackPointer = stackPointer ?? DEFAULT_STACK_POINTER_START
+    this.name = name ?? '_unnamed_'
   }
 
   // Get the value of the name in the current environment
@@ -50,8 +61,8 @@ export class Environment {
     throw new UndeclaredIdentifierError(identifier)
   }
 
-  extend(memory: Memory, values?: Frame): Environment {
-    const temp = new Environment(memory.stackIndex, values)
+  extend({ memory, values, name }: { memory: Memory; values?: Frame; name?: string }): Environment {
+    const temp = new Environment({ stackPointer: memory.stackIndex, values, name })
     temp.parent = this
     return temp
   }
@@ -68,7 +79,7 @@ export class Environment {
   }
 
   copy(): Environment {
-    return new Environment(this.stackPointer, new Map(this.frame))
+    return new Environment({ stackPointer: this.stackPointer, values: new Map(this.frame) })
   }
 
   isGlobal(): boolean {

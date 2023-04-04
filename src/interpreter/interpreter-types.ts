@@ -155,6 +155,7 @@ export interface iFunctionApplication extends BaseInstruction {
 export interface iFunctionParamDeclaration extends BaseInstruction {
   type: 'param_decl_i'
   declarations: { name: string; typeSpecifier: TypeSpecifier }[]
+  fnName: string
 }
 
 export interface iDereference extends BaseInstruction {
