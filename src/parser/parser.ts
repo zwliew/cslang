@@ -1162,6 +1162,8 @@ export class CGenerator implements CVisitor<AstNode> {
           throw new IllegalArgumentError('Array size must be a literal')
         }
         arraySize = arraySize.value.toNumber()
+      } else {
+        throw new NotImplementedError("Array declarations without sizes aren't supported yet")
       }
     }
 
