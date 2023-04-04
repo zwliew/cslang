@@ -8,6 +8,7 @@ import { loopTests } from '../__tests__/loops'
 import { operatorTests } from '../__tests__/operators'
 import { pointerTests } from '../__tests__/pointers'
 import { primitiveFunctionsTests } from '../__tests__/primitiveFunctions'
+import { stringTests } from '../__tests__/strings'
 import { typeTests } from '../__tests__/types'
 
 export default {
@@ -21,5 +22,6 @@ export default {
   ...operatorTests,
   ...pointerTests,
   ...primitiveFunctionsTests,
-  ...typeTests
+  ...typeTests,
+  ...stringTests
 }

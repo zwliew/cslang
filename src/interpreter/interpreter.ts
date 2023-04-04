@@ -1,11 +1,14 @@
 import {
+  ArrayTypeSpecifier,
   AssignmentExpression,
   AstNode,
   BinaryOperator,
   Block,
   Expression,
   Literal,
-  PointerTypeSpecifier
+  PointerTypeSpecifier,
+  StringLiteral,
+  ValueDeclaration
 } from '../parser/ast-types'
 import { isPointerType, sizeOfType } from '../types'
 import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../utils/debug'
@@ -222,6 +225,10 @@ const microcode = (code: AgendaItems) => {
       OS.push(code)
       break
 
+    case 'StringLiteral':
+      OS.push(M.stringLiteralToLiteral(code))
+      break
+
     case 'AssignmentExpression':
       A.push(...handleAssignmentOperator(code))
       break
@@ -237,20 +244,38 @@ const microcode = (code: AgendaItems) => {
       break
 
     case 'ValueDeclaration':
+      const location = M.allocateStack(sizeOfType(code.typeSpecifier))
       E.declare(code.identifier, {
         type: 'MemoryAddress',
         typeSpecifier: code.typeSpecifier,
-        location: M.allocateStack(sizeOfType(code.typeSpecifier))
+        location: location
       })
 
       if (code.value) {
-        // There is a value for this declaration
-        A.push(
-          POP_INSTRUCTION,
-          { type: 'value_assmt_i' },
-          { type: 'Identifier', identifier: code.identifier },
-          code.value
-        )
+        // There is a value for this declaration. Handle the assignment
+
+        // We need to check if the type of the assignee is a char[].
+        // We are doing some TypeScript hackery to check that its an array
+        const assigneeType = code.typeSpecifier as ArrayTypeSpecifier
+
+        if (assigneeType.arrOf === 'char' && code.value.type === 'StringLiteral') {
+          // We are assigning a string literal to a char array.
+
+          // Assert that the size of the array is big enough
+          if (assigneeType.size <= code.value.string.length) {
+            throw new RuntimeError(
+              `Trying to assign a string ${code.value.string} to an array of size ${assigneeType.size}`
+            )
+          }
+          M.assignStringLiteralToArray(code.value.string, location)
+        } else {
+          A.push(
+            POP_INSTRUCTION,
+            { type: 'value_assmt_i' },
+            { type: 'Identifier', identifier: code.identifier },
+            code.value
+          )
+        }
       }
       break
 

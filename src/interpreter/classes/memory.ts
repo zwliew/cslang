@@ -1,7 +1,7 @@
 // Available API:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
-import { Literal, PrimitiveTypeSpecifier } from '../../parser/ast-types'
+import { Literal, PrimitiveTypeSpecifier, StringLiteral } from '../../parser/ast-types'
 import Decimal from '../../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
@@ -20,20 +20,37 @@ function align(bytes: number) {
   return Math.ceil(bytes / WORD_SIZE) * WORD_SIZE
 }
 
-// Inheritence doesn't feel like the best way to go about this
-// But it reduces the need to create lots of redundant methods just to access the DataView
+/**
+ * This class encapsulates the abstraction of a stack and heap.
+ *
+ * The stack grows towards the heap, and the heap grows towards the stack. The text
+ * portion of the memory (for string interning) is situated right after the heap.
+ */
 export class Memory {
+  capacity: number
+
   stackIndex: number // The first available position on the stack index
-  heapIndex: number // Index of the last allocated position on the heap
+  heapIndex: number // Index of the last __allocated__ position on the heap
+  textIndex: number // Index of the first available position in the text segment
 
   data: DataView
 
-  constructor(size_bytes?: number) {
-    const buffer = new ArrayBuffer(size_bytes ?? 1e7) // Default 10 MB of storage
+  stringLocation: Map<string, number>
+
+  constructor(sizeBytes?: number, stringPoolSize?: number) {
+    const sizeOfStackHeap = sizeBytes ?? 1e7
+    this.capacity = sizeOfStackHeap + (stringPoolSize ?? 1e4)
+
+    const buffer = new ArrayBuffer(this.capacity)
     this.data = new DataView(buffer)
 
     this.stackIndex = DEFAULT_STACK_POINTER_START
-    this.heapIndex = this.data.byteLength // Heap grows backwards
+    this.heapIndex = sizeOfStackHeap // Heap grows backwards, towards the stack
+
+    // The text segment begins immediately after the heap, so it starts at index sizeOfStackHeap
+    this.textIndex = sizeOfStackHeap
+
+    this.stringLocation = new Map()
   }
 
   /**
@@ -177,6 +194,47 @@ export class Memory {
       setDataFunction = this.data.setUint32
     }
     return setDataFunction.call(this.data, byteOffset, value.value)
+  }
+
+  /**
+   * Implementation for string interning.
+   *
+   * If the StringLiteral is not interned yet, then intern
+   * @param str
+   */
+  stringLiteralToLiteral(str: StringLiteral): Literal {
+    const actualString = str.string
+    let location = this.stringLocation.get(actualString)
+    if (location === undefined) {
+      location = this.textIndex
+
+      // String has not been interned before. Insert into first available
+      // spot in the Text segment of the memory
+      for (let i = 0; i < actualString.length; i++) {
+        this.data.setUint8(this.textIndex++, actualString.charCodeAt(i))
+      }
+
+      // Set NULL terminator
+      this.data.setUint8(this.textIndex++, 0)
+
+      // Save location of string in Map
+      this.stringLocation.set(actualString, location)
+    }
+
+    // String has been interned before! Return a pointer to the appropriate location.
+
+    return {
+      type: 'Literal',
+      typeSpecifier: { ptrTo: 'char' },
+      value: new Decimal(location)
+    }
+  }
+
+  // Used for direct assignment of String Literals to char arrays
+  assignStringLiteralToArray(string: string, location: number): void {
+    for (let i = 0; i < string.length; i++) {
+      this.data.setUint8(location + i, string.charCodeAt(i))
+    }
   }
 
   viewMemory(): void {

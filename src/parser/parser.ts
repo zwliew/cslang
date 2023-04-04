@@ -70,6 +70,7 @@ import {
   UnaryOperator,
   ValueDeclaration
 } from './ast-types'
+import { evaluateEscapeSequences } from './helper'
 
 export class CGenerator implements CVisitor<AstNode> {
   visit(tree: ParseTree): AstNode {
@@ -724,9 +725,10 @@ export class CGenerator implements CVisitor<AstNode> {
       // Is a string literal
       const stringWithQuotes = stringLiteral[0].text
       const actualString = stringWithQuotes.substring(1, stringWithQuotes.length - 1)
+
       return {
         type: 'StringLiteral',
-        string: actualString
+        string: evaluateEscapeSequences(actualString)
       }
     }
 

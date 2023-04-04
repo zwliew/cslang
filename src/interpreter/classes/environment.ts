@@ -10,7 +10,8 @@ export class Environment {
   parent: Environment | undefined
 
   // Initial position of the stack pointer of the memory
-  // So that we can reinstate the stack pointer and reuse portions of the memory
+  // So that we can reinstate the stack pointer and reuse
+  // portions of the memory
   stackPointer: number
 
   // Constructor for creating a new global frame

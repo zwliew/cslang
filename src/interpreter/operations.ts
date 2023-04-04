@@ -88,7 +88,7 @@ export function add(left: Literal, right: Literal): Literal {
 }
 
 function subtractPtr(left: Literal, right: Literal): Literal {
-  if (isIntegerType(right.typeSpecifier)) {
+  if (!isIntegerType(right.typeSpecifier)) {
     throw new InvalidOperation(
       `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
     )
