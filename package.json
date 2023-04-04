@@ -58,7 +58,7 @@
     "prepublishOnly": "tsc",
     "prepare": "husky install",
     "publish_sicp_package": "./scripts/publish_sicp_package.sh",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
     "parser-test": "node ./dist/utils/parser-test.js",
