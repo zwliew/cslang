@@ -478,7 +478,7 @@ const microcode = (code: AgendaItems) => {
       })
 
       // make a copy of the new environment and set the function definition
-      FS.allocateFunction(code.functionDefinition, code.identifier, E.copy())
+      FS.allocateFunction(code.functionDefinition, code.identifier, E)
       break
 
     case 'FunctionApplication': {
