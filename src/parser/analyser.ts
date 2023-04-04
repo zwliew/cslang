@@ -18,7 +18,6 @@ import {
   Statement,
   TypeSpecifier
 } from './ast-types'
-
 interface GlobalState {
   functions: {
     [functionName: string]: {
@@ -49,7 +48,8 @@ const defaultGlobalState: GlobalState = {
   variables: {},
   currentFunction: 'global'
 }
-export const createGlobalState = () => JSON.parse(JSON.stringify(defaultGlobalState))
+export const createGlobalState = () => makeCopyOf(defaultGlobalState)
+const makeCopyOf = (state: GlobalState) => JSON.parse(JSON.stringify(state))
 
 export function analyseProgram(program: AstNode): AstNode {
   const globalState = createGlobalState()
@@ -199,6 +199,7 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
     case 'BinaryExpression': {
       const lhs = analyseNode(node.left, globalState)
       const rhs = analyseNode(node.right, globalState)
+      // enforce that both types are defined
       if (!lhs.typeSpecifier || !rhs.typeSpecifier) {
         throw new NotImplementedError(`Undefined types for ${node.left.type} or ${node.right.type}`)
       }
@@ -336,10 +337,11 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
 
     case 'If':
       analyseNode(node.predicate, globalState)
-      const alternativeAnalysisState = JSON.parse(JSON.stringify(globalState)) // structuredClone is not available in Jest
+      const alternativeAnalysisState = makeCopyOf(globalState)
       analyseNode(node.consequent, globalState)
       if (node.alternative) {
         analyseNode(node.alternative, alternativeAnalysisState)
+        // Fork in analysis, both paths must return a value in order for the function to be considered to have returned a value
         globalState.functions[globalState.currentFunction].returns =
           globalState.functions[globalState.currentFunction].returns &&
           alternativeAnalysisState.functions[alternativeAnalysisState.currentFunction].returns
@@ -378,7 +380,7 @@ export function analyseNode(node: AstNode, globalState: GlobalState): LocalState
       }
 
       const blocksReturn = blocks.map(block => {
-        const alternativeAnalysisState = JSON.parse(JSON.stringify(globalState)) // structuredClone is not available in Jest
+        const alternativeAnalysisState = makeCopyOf(globalState) // structuredClone is not available in Jest
         analyseNode({ type: 'Block', statements: block }, alternativeAnalysisState)
         return {
           returns:
