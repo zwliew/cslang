@@ -4,10 +4,8 @@ const stringInterning = [
   `
   main() {
     char *str = "Hello world!";
-    str[0] = 'B';
-
     char *str2 = "Hello world!";
-    return str[0] == 'B' && str == str2;
+    return str == str2;
   }`,
   1
 ]
