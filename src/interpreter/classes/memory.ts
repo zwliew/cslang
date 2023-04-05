@@ -2,6 +2,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView#instance_methods
 
 import { Literal, PrimitiveTypeSpecifier, StringLiteral } from '../../parser/ast-types'
+import { isArrayType, isPrimitiveType } from '../../types'
 import Decimal from '../../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
@@ -139,11 +140,10 @@ export class Memory {
     }
 
     let getDataFunction = undefined
-    if (typeof memAdd.typeSpecifier === 'string') {
-      // This is a primitive type.
-      getDataFunction = typeToGetDataFunction[memAdd.typeSpecifier]
-    } else if (memAdd.typeSpecifier.hasOwnProperty('arrOf')) {
-      // This is an array type. It should act like a pointer - The value is the
+    if (isPrimitiveType(memAdd.typeSpecifier)) {
+      getDataFunction = typeToGetDataFunction[memAdd.typeSpecifier as PrimitiveTypeSpecifier]
+    } else if (isArrayType(memAdd.typeSpecifier)) {
+      // It should act like a pointer - The value is the
       // location of the first element of the array.
       return new Decimal(memAdd.location)
     } else {
@@ -186,9 +186,8 @@ export class Memory {
     }
 
     let setDataFunction = undefined
-    if (typeof memAdd.typeSpecifier === 'string') {
-      // This is a primitive type.
-      setDataFunction = typeToSetDataFunction[memAdd.typeSpecifier]
+    if (isPrimitiveType(memAdd.typeSpecifier)) {
+      setDataFunction = typeToSetDataFunction[memAdd.typeSpecifier as PrimitiveTypeSpecifier]
     } else {
       // This is a pointer.
       setDataFunction = this.data.setUint32
