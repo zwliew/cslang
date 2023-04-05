@@ -8,6 +8,7 @@ import {
   hierarchy,
   isArithmeticType,
   isArrayType,
+  isCompatiblePointerType,
   isIntegerType,
   isPointerType,
   isPrimitiveType,
@@ -88,16 +89,23 @@ export function add(left: Literal, right: Literal): Literal {
 }
 
 function subtractPtr(left: Literal, right: Literal): Literal {
-  if (!isIntegerType(right.typeSpecifier)) {
+  if (
+    !isIntegerType(right.typeSpecifier) &&
+    !isCompatiblePointerType(left.typeSpecifier, right.typeSpecifier)
+  ) {
     throw new InvalidOperation(
-      `Invalid operands for + operator: ${left.typeSpecifier}, ${right.typeSpecifier}`
+      `Invalid operands for + operator: ${JSON.stringify(left.typeSpecifier)}, ${JSON.stringify(
+        right.typeSpecifier
+      )}`
     )
   }
   return {
     type: 'Literal',
     typeSpecifier: left.typeSpecifier,
     value: left.value.sub(
-      right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
+      isIntegerType(right.typeSpecifier)
+        ? right.value.mul(sizeOfType((left.typeSpecifier as PointerTypeSpecifier).ptrTo))
+        : right.value
     )
   }
 }

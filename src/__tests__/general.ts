@@ -107,12 +107,29 @@ main() {
   9
 ]
 
+const strlen = [
+  `
+int strlen(char *start) {
+  char *end = start;
+  while (*end)
+    ++end;
+  return end - start;
+}
+main() {
+  char *s = "Hello, world!";
+  return strlen(s);
+}
+`,
+  13
+]
+
 export const generalTests = {
   fibonacci,
   primalityTest,
   binaryExponentiation,
   swap,
-  extendedEuclideanAlgorithm
+  extendedEuclideanAlgorithm,
+  strlen
 }
 
 runTests(generalTests)
