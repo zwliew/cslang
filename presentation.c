@@ -1,3 +1,4 @@
+// Reads a string from stdin to a buffer
 void getString(char* buffer) {
   int x = 0;
   char ch;
@@ -11,6 +12,7 @@ void getString(char* buffer) {
   return;
 }
 
+// Converts a string to an int
 int atoi(char* p) {
   int k = 0;
   while (*p) {
@@ -20,18 +22,21 @@ int atoi(char* p) {
   return k;
 }
 
+// Reads an int from stdin
 int getInt() {
   char arr[11];
   getString(arr);
   return atoi(arr);
 }
 
+// Returns the n-th fibonacci number
 int fib(int n) {
   if (n < 2)
     return n;
   return fib(n - 1) + fib(n - 2);
 }
 
+// Converts an int to a string
 char* itoa(int n, char* buffer) {
   char* p = buffer;
   if (n < 0) {
@@ -57,6 +62,7 @@ char* itoa(int n, char* buffer) {
   return buffer;
 }
 
+// Prints a string to stdout
 void print(char* str) {
   // Prints a null terminated string
   while (*str) {
@@ -65,6 +71,7 @@ void print(char* str) {
   }
 }
 
+// Prints an int to stdout
 void printInt(int n) {
   char arr[11];
   itoa(n, arr);
