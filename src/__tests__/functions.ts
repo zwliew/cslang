@@ -55,9 +55,13 @@ int main() {
 
 const globalDeclaration = [
   `
-int x = 7;
-main() {
+int y = 7;
+int other() {
   return x;
+}
+int x = 1;
+main() {
+  other();
 }`,
   7
 ]
