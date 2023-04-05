@@ -74,6 +74,21 @@ main() {
   1
 ]
 
+const fenv = [
+  `
+other() {
+  int x;
+  x += 3;
+  return x;
+}
+main() {
+  int x = 1;
+  other();
+  return x;
+}`,
+  1
+]
+
 export const functionTests = {
   redeclareArguments,
   returnInterruptsFlow,
@@ -81,7 +96,8 @@ export const functionTests = {
   fnDeclaration,
   fnApplication,
   globalDeclaration,
-  implicitReturnTypeCast
+  implicitReturnTypeCast,
+  fenv
 }
 
 runTests(functionTests)

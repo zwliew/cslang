@@ -492,6 +492,7 @@ const microcode = (code: AgendaItems) => {
 
       // Save the current environment
       A.push({ type: 'fn_env_i', environment: E, functionReturnType: functionAndEnv[0].returnType })
+
       const parameterList = functionDefinition.parameterList
       const parameters =
         parameterList?.parameters.map(parameterDeclaration => ({
@@ -517,7 +518,12 @@ const microcode = (code: AgendaItems) => {
 
         declarations.push({ name: parameters[i].name, typeSpecifier: parameters[i].typeSpecifier })
       }
-      A.push({ type: 'param_decl_i', declarations, fnName: code.identifier })
+      A.push({
+        type: 'param_decl_i',
+        declarations,
+        fnName: code.identifier,
+        env: functionAndEnv[1]
+      })
 
       for (let i = code.arguments.length - 1; i >= 0; --i) {
         A.push(code.arguments[i])
@@ -573,7 +579,7 @@ const microcode = (code: AgendaItems) => {
 
     case 'param_decl_i':
       // Extend the environment with a frame mapping from parameter to argument value
-      E = E.extend({ memory: M, name: code.fnName })
+      E = code.env.extend({ memory: M, name: code.fnName })
       for (const { name, typeSpecifier } of code.declarations) {
         const address: MemoryAddress = {
           type: 'MemoryAddress',

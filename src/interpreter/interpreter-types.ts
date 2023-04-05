@@ -156,6 +156,7 @@ export interface iFunctionParamDeclaration extends BaseInstruction {
   type: 'param_decl_i'
   declarations: { name: string; typeSpecifier: TypeSpecifier }[]
   fnName: string
+  env: Environment
 }
 
 export interface iDereference extends BaseInstruction {
