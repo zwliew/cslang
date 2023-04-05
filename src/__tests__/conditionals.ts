@@ -75,7 +75,7 @@ main() {
   1
 ]
 
-const switchCaseFallthrough = [
+const sc = [
   `
 main() {
   int x = 0;
@@ -106,7 +106,7 @@ export const conditionalTests = {
   switchCase,
   switchCaseSimple,
   ternaryOperator,
-  switchCaseFallthrough
+  sc
 }
 
 runTests(conditionalTests)
