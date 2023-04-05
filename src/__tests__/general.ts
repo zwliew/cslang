@@ -21,6 +21,20 @@ main() {
   144
 ]
 
+const fibonacciRecursive = [
+  `
+int fib(int n) {
+  if (n < 2) 
+    return n;
+  return fib(n - 1) + fib(n - 2);
+}
+main() {
+  char n = 12;
+  return fib(n);
+}`,
+  144
+]
+
 const primalityTest = [
   `
 _Bool isPrime(int n) {
@@ -125,6 +139,7 @@ main() {
 
 export const generalTests = {
   fibonacci,
+  fibonacciRecursive,
   primalityTest,
   binaryExponentiation,
   swap,
