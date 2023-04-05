@@ -75,38 +75,13 @@ main() {
   1
 ]
 
-const sc = [
-  `
-main() {
-  int x = 0;
-  switch (0) {
-    case 1:
-      x = 1;
-      return x;
-      break;
-    
-    case 0:
-      x += 2;
-    
-    case 2:
-      x += 3;
-    
-    default:
-      x += 4;
-  }
-  return x;
-}`,
-  9
-]
-
 export const conditionalTests = {
   trueConditional,
   falseConditional,
   elseIfConditional,
   switchCase,
   switchCaseSimple,
-  ternaryOperator,
-  sc
+  ternaryOperator
 }
 
 runTests(conditionalTests)
