@@ -55,9 +55,13 @@ int main() {
 
 const globalDeclaration = [
   `
-int x = 7;
-int main() {
+int y = 7;
+int other() {
   return x;
+}
+int x = 1;
+main() {
+  other();
 }`,
   7
 ]
@@ -74,7 +78,7 @@ main() {
   1
 ]
 
-const fenv = [
+const functionHasCorrectEnvironment = [
   `
 other() {
   int x;
@@ -97,7 +101,7 @@ export const functionTests = {
   fnApplication,
   globalDeclaration,
   implicitReturnTypeCast,
-  fenv
+  fenv: functionHasCorrectEnvironment
 }
 
 runTests(functionTests)
