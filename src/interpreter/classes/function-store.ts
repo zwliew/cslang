@@ -19,7 +19,7 @@ export type PrimitiveFunctionParams = {
   args: Literal[]
 }
 
-export class FunctionStack {
+export class FunctionStore {
   functionStack: Array<[FunctionDefinition, Environment]>
   functionIndexes: Map<string, number>
 

@@ -1,4 +1,4 @@
-import { PrimitiveFunctionParams } from '../interpreter/classes/function-stack'
+import { PrimitiveFunctionParams } from '../interpreter/classes/function-store'
 import { Memory } from '../interpreter/classes/memory'
 import { MemoryAddress } from '../interpreter/interpreter-types'
 import type { DecimalType } from '../utils/decimal'

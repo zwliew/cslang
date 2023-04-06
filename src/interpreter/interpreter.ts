@@ -15,7 +15,7 @@ import { DEBUG_PRINT_FINAL_OS, DEBUG_PRINT_MEMORY, DEBUG_PRINT_STEPS } from '../
 import Decimal from '../utils/decimal'
 import { IllegalArgumentError, NotImplementedError, RuntimeError } from '../utils/errors'
 import { Environment } from './classes/environment'
-import { FunctionStack } from './classes/function-stack'
+import { FunctionStore } from './classes/function-store'
 import { Memory } from './classes/memory'
 import {
   BREAK_INSTRUCTION,
@@ -103,7 +103,7 @@ let E: Environment
 
 let M: Memory
 
-let FS: FunctionStack
+let FS: FunctionStore
 
 const binop_microcode = {
   '+': add,
@@ -767,7 +767,7 @@ export const execute = (program: AstNode) => {
   A = [program]
   OS = []
   E = new Environment({ name: 'global' })
-  FS = new FunctionStack()
+  FS = new FunctionStore()
   M = new Memory(1e4) // Use 10KB of memory
   let i = 0
   while (i < STEP_LIMIT) {
