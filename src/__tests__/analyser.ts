@@ -42,7 +42,7 @@ main() {
 
 const ifAlternativeReturn = [
   `
-main() {
+noreturn() {
   if (0) {
 
   } else if (0) {

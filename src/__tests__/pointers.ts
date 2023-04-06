@@ -53,8 +53,8 @@ main() {
 
 const pointerParamInFunction = [
   `
-void set(int *x) {
-  *x = 1337;
+void set(int *y) {
+  *y = 1337;
 }
 main() {
   int x = -31173;
