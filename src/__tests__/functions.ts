@@ -89,6 +89,20 @@ main() {
   1
 ]
 
+const functionHasCorrectEnvironment2 = [
+  `
+int x = 10;
+int foo() {
+  return x;
+}
+int main() {
+  int x = 20;
+  return foo();
+}
+`,
+  10
+]
+
 export const functionTests = {
   redeclareArguments,
   returnInterruptsFlow,
@@ -97,7 +111,8 @@ export const functionTests = {
   fnApplication,
   globalDeclaration,
   implicitReturnTypeCast,
-  fenv: functionHasCorrectEnvironment
+  functionHasCorrectEnvironment,
+  functionHasCorrectEnvironment2
 }
 
 runTests(functionTests)

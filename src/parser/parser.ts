@@ -1106,7 +1106,7 @@ export class CGenerator implements CVisitor<AstNode> {
     const declarator = ctx.declarator()
     if (!declarator) {
       throw new NotImplementedError(
-        "Parameter declarations without declarators aren't supported yet."
+        `Parameter declarations without declarators aren't supported yet. (in ${ctx})`
       )
     }
 
