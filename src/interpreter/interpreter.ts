@@ -67,6 +67,7 @@ function is_true(val: Literal): boolean {
 // A: agenda: stack of commands
 // OS: operand stack: stack of values
 // E: environment: list of frames
+// callStack: stack of environments of functions that are currently executing 
 
 // The agenda A is a stack of commands that still need
 // to be executed by the interpreter. The agenda follows
@@ -88,6 +89,11 @@ let A: Array<AgendaItems> = []
 // Execution initializes operand stack S as an empty array.
 
 let OS: Array<Literal>
+
+// Stack of environments of functions that are currently executing,
+// excluding the current environment `E`. That is, the true call stack
+// comprises `callStack` with `E` appended to it.
+let callStack: Environment[]
 
 // Pop while enforcing that the array is non-empty.
 function pop<T>(arr: Array<T>): T {
@@ -478,7 +484,7 @@ const microcode = (code: AgendaItems) => {
       })
 
       // make a copy of the new environment and set the function definition
-      FS.allocateFunction(code.functionDefinition, code.identifier, E)
+      FS.allocateFunction(code.functionDefinition, code.identifier, E.copy())
       break
 
     case 'FunctionApplication': {
@@ -533,15 +539,18 @@ const microcode = (code: AgendaItems) => {
 
     case 'Return': {
       // TODO: typechecking
-      while (A.length > 0 && A.at(-1)!.type !== 'fn_env_i') {
+      let topInstrn = A.at(-1)
+      while (A.length > 0 && topInstrn?.type !== 'fn_env_i') {
         A.pop()
+        topInstrn = A.at(-1)
       }
-      // TODO: Assert that the top element is a `fn_env_i`.
-      const typeSpecifier = (A.at(-1) as iFunctionEnvironment).functionReturnType
+      if (topInstrn === undefined || topInstrn.type !== 'fn_env_i') {
+        throw new RuntimeError('Return statement outside of function')
+      }
       if (code.expression) {
         // Only push the return value if the function is not void.
         // If it is void, we would have already pushed a dummy value in 'FunctionApplication'
-        A.push({ type: 'cast_i', typeSpecifier }, code.expression)
+        A.push({ type: 'cast_i', typeSpecifier: topInstrn.functionReturnType }, code.expression)
       }
       break
     }
@@ -564,7 +573,12 @@ const microcode = (code: AgendaItems) => {
 
       // Primitive functions can be called directly in the interpreter
       if (functionAndEnv[0].primitive) {
-        const ret = functionAndEnv[0].primitiveFunction!({ E, M, args: functionArguments })
+        const ret = functionAndEnv[0].primitiveFunction!({
+          callStack,
+          E,
+          M,
+          args: functionArguments
+        })
         if (ret.typeSpecifier !== 'void') {
           // Only push the return value for non-void functions, as we have already
           // pushed a dummy value for void functions in FunctionApplication
@@ -578,6 +592,9 @@ const microcode = (code: AgendaItems) => {
     }
 
     case 'param_decl_i':
+      // Push the previus function environment onto the call stack first.
+      callStack.push(E)
+
       // Extend the environment with a frame mapping from parameter to argument value
       E = code.env.extend({ memory: M, name: code.fnName })
       for (const { name, typeSpecifier } of code.declarations) {
@@ -621,9 +638,11 @@ const microcode = (code: AgendaItems) => {
       }
       break
 
+    case 'fn_env_i':
+      // Pop the previous function environment off the call stack and *fall through*
+      pop(callStack)
     case 'env_i':
     case 'switch_env_i':
-    case 'fn_env_i':
     case 'loop_env_i':
       M.reinstateStackPointer(E.stackPointer)
       E = code.environment
@@ -766,9 +785,11 @@ const STEP_LIMIT = 10000000 // 1e7
 export const execute = (program: AstNode) => {
   A = [program]
   OS = []
-  E = new Environment({ name: 'global' })
+  E = new Environment({ name: '*Global*' })
   FS = new FunctionStore()
   M = new Memory(1e4) // Use 10KB of memory
+  callStack = []
+
   let i = 0
   while (i < STEP_LIMIT) {
     if (DEBUG_PRINT_STEPS) {

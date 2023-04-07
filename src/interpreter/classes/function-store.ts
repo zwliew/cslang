@@ -16,6 +16,7 @@ const prompt = require('prompt-sync')()
 export type PrimitiveFunctionParams = {
   E: Environment
   M: Memory
+  callStack: Environment[]
   args: Literal[]
 }
 
@@ -39,7 +40,7 @@ export class FunctionStore {
     const functionIndex = this.functionStack.length
     this.functionIndexes[fnName] = functionIndex
     // We can just allocate a new Environment - the environment is irrelevant here
-    this.functionStack.push([fn, new Environment({ name: fnName })])
+    this.functionStack.push([fn, new Environment()])
   }
 
   // Does not actually allocate space on the stack yet
@@ -47,14 +48,10 @@ export class FunctionStore {
     return this.functionStack.length
   }
 
-  allocateFunction(
-    fn: FunctionDefinition,
-    fnName: string,
-    currentEnvironment: Environment
-  ): number {
+  allocateFunction(fn: FunctionDefinition, fnName: string, newEnvironment: Environment): number {
     const functionIndex = this.functionStack.length
     this.functionIndexes[fnName] = functionIndex
-    this.functionStack.push([fn, currentEnvironment.copy()])
+    this.functionStack.push([fn, newEnvironment])
     return functionIndex
   }
 
@@ -207,69 +204,79 @@ const getchar: FunctionDefinition = {
   body: []
 }
 
-const primitivePrintStack = ({ E, M }: PrimitiveFunctionParams): Literal => {
+const primitivePrintStack = ({ E, M, callStack }: PrimitiveFunctionParams): Literal => {
   // TODO: look into how arrays are being stored in the environment.
   // They seem to be treated as primitives (i.e. int[] becomes int)
   console.log('============= Stack =============')
-  const frames = []
-  let curEnv = E
-  while (curEnv.parent !== undefined) {
-    if (curEnv.frame.size > 0) {
-      frames.push({ frame: curEnv.frame, name: curEnv.name })
+  const seenEnvNames = new Set()
+  for (const env of callStack) {
+    const frames = []
+    let curEnv: Environment | undefined = env
+    while (curEnv !== undefined) {
+      if (!seenEnvNames.has(curEnv.name) && curEnv.frame.size > 0) {
+        frames.push({ frame: curEnv.frame, name: curEnv.name })
+      }
+      seenEnvNames.add(curEnv.name)
+      curEnv = curEnv.parent
     }
-    curEnv = curEnv.parent
-  }
+    frames.reverse()
 
-  let curIndent = ''
-  for (let i = frames.length - 1; i >= 0; --i) {
-    const frame = frames[i]
-    if (frame.name === '_unnamed_') {
-      curIndent += '  '
-    } else {
-      curIndent = ''
-    }
-
-    console.log(`${curIndent}${frame.name}:`)
-    // TODO: don't hardcode the column values. Rather, base it on the longest string in that column.
-    const header = 'Name'.padEnd(12) + 'Value'.padEnd(12) + 'Addr'.padEnd(12) + 'Type'
-    console.log(`${curIndent}  ` + header)
-    console.log(`${curIndent}  ` + '-'.repeat(header.length + 5))
-
-    for (const [identifier, addr] of frame.frame) {
-      const memAddr = addr as MemoryAddress
-      let val: Decimal | string = M.getValue(memAddr)
-      if (memAddr.typeSpecifier === 'char') {
-        if (val.toNumber() < 32 || val.toNumber() > 126) {
-          val = val.toHexadecimal()
-        } else {
-          val = String.fromCharCode(val.toNumber())
-        }
+    let curIndent = ''
+    for (const frame of frames) {
+      if (frame.name === undefined) {
+        curIndent += '  '
+      } else {
+        curIndent = ''
       }
 
-      let typeSpecifier = memAddr.typeSpecifier
-      const typeStrBuilder = []
-      while (!isPrimitiveType(typeSpecifier)) {
-        if (isPointerType(typeSpecifier)) {
-          typeStrBuilder.push('*')
-          typeSpecifier = (typeSpecifier as PointerTypeSpecifier).ptrTo
-        } else if (isArrayType(typeSpecifier)) {
-          typeStrBuilder.push('[]')
-          typeSpecifier = (typeSpecifier as ArrayTypeSpecifier).arrOf
-        }
-      }
-      typeStrBuilder.push(typeSpecifier)
-      const type = typeStrBuilder.reverse().join('')
+      console.log(`${curIndent}${frame.name ?? '*Unnamed block*'}:`)
+      // TODO: don't hardcode the column values. Rather, base it on the longest string in that column.
+      const header = 'Name'.padEnd(12) + 'Value'.padEnd(12) + 'Addr'.padEnd(12) + 'Type'
+      console.log(`${curIndent}  ` + header)
+      console.log(`${curIndent}  ` + '-'.repeat(header.length + 5))
 
-      console.log(
-        `${curIndent}  ` +
-          `${identifier}`.padEnd(12) +
-          val.toString().substring(0, 9).padEnd(12) +
-          `[0x${memAddr.location.toString(16)}]`.padEnd(12) +
-          `(${type})`
-      )
+      for (const [identifier, addr] of frame.frame) {
+        if (addr.type === 'FunctionStackAddress') {
+          // Don't print functions
+          continue
+        }
+
+        const memAddr = addr as MemoryAddress
+        let val: Decimal | string = M.getValue(memAddr)
+        if (memAddr.typeSpecifier === 'char') {
+          if (val.toNumber() < 32 || val.toNumber() > 126) {
+            val = val.toHexadecimal()
+          } else {
+            val = String.fromCharCode(val.toNumber())
+          }
+        }
+
+        let typeSpecifier = memAddr.typeSpecifier
+        const typeStrBuilder = []
+        while (!isPrimitiveType(typeSpecifier)) {
+          if (isPointerType(typeSpecifier)) {
+            typeStrBuilder.push('*')
+            typeSpecifier = (typeSpecifier as PointerTypeSpecifier).ptrTo
+          } else if (isArrayType(typeSpecifier)) {
+            typeStrBuilder.push('[]')
+            typeSpecifier = (typeSpecifier as ArrayTypeSpecifier).arrOf
+          }
+        }
+        typeStrBuilder.push(typeSpecifier)
+        const type = typeStrBuilder.reverse().join('')
+
+        console.log(
+          `${curIndent}  ` +
+            `${identifier}`.padEnd(12) +
+            val.toString().substring(0, 9).padEnd(12) +
+            `[0x${memAddr.location.toString(16)}]`.padEnd(12) +
+            `(${type})`
+        )
+      }
+      console.log()
     }
-    console.log()
   }
+
   return UNDEFINED_LITERAL
 }
 

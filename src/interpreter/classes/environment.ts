@@ -22,14 +22,14 @@ export class Environment {
 
   // A human-readable name for the current environment.
   // This is useful for printing out the environment.
-  name: string
+  name?: string
 
   // Constructor for creating a new global frame
-  constructor({ stackPointer, values, name }: EnvironmentParams) {
+  constructor({ stackPointer, values, name }: EnvironmentParams = {}) {
     this.parent = undefined
     this.frame = values ?? new Map()
     this.stackPointer = stackPointer ?? DEFAULT_STACK_POINTER_START
-    this.name = name ?? '_unnamed_'
+    this.name = name
   }
 
   // Get the value of the name in the current environment
@@ -79,7 +79,11 @@ export class Environment {
   }
 
   copy(): Environment {
-    return new Environment({ stackPointer: this.stackPointer, values: new Map(this.frame) })
+    return new Environment({
+      stackPointer: this.stackPointer,
+      values: new Map(this.frame),
+      name: this.name
+    })
   }
 
   isGlobal(): boolean {

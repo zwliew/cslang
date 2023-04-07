@@ -50,6 +50,7 @@ const malloc2 = [
 // TODO: make jest swallow the output of printstack
 const printStackBasic = [
   String.raw`
+int gi = 9;
 void foo(int *x) {
   char y = 31;
   {
@@ -66,8 +67,12 @@ void foo(int *x) {
     int i = 91;
     printstack();
   }
+  void *vp = malloc(gi);
+  printstack();
 }
+float gf = 3;
 main() {
+  gf = 4;
   int x = 3;
   foo(&x);
   return x;
