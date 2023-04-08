@@ -265,8 +265,12 @@ export class Memory {
    * Buddy allocation is used here. Essentially,
    * https://en.wikipedia.org/wiki/Buddy_memory_allocation
    *
-   * this.buddyAllocationBlocks is an array of "linked list" of blocks,
-   * where buddyAllocationBlocks[i] contain blocks of size 2 ** i.
+   * In a buddy allocator, we maintain an array of linked lists of free
+   * blocks of a certain size. So all the blocks in this.buddyAllocationBlocks[i]
+   * has size 2 ** i.
+   *
+   * A typical implementation would use a linked list as it is a simple data structure,
+   * but we are using JavaScript's Set as we have access to it here.
    *
    * The minimal allocable block size is 4 bytes (due to our `align` function),
    * while the maximal allocable block size is the size of the heap.
