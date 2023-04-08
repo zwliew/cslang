@@ -77,7 +77,7 @@ export class Memory {
   }
 
   reinstateStackPointer(index: number): void {
-    if (index < 8) {
+    if (index < DEFAULT_STACK_POINTER_START) {
       throw new IllegalArgumentError()
     }
     this.stackIndex = index
