@@ -29,22 +29,83 @@ const multiplePutchar = [
 const malloc = [
   `
   main() {
-    int *arr = malloc(10 * sizeof(int));
-    return arr[-1];
-  }
-  `,
-  40 // Read implementation of Memory::allocateHeap
-]
-
-const malloc2 = [
-  `
-  main() {
     int *arr = malloc(3 * sizeof(int));
     arr[2] = 100;
     return arr[2];
   }
   `,
   100
+]
+
+const mallocReuseAddress = [
+  `
+  int main() {
+    double *x = malloc(sizeof(double));
+    double *y = malloc(sizeof(double));
+
+    free(x);
+
+    double *z = malloc(sizeof(double));
+    return x == z && x != (double *) 0;
+  }
+  `,
+  1
+]
+
+const mallocMergeAddress = [
+  `
+  int main() {
+    double *x = malloc(sizeof(double));
+    double *y = malloc(sizeof(double));
+
+    free(y);
+
+    // This should reuse y's address
+    int *z = malloc(sizeof(int));
+
+    free(z);
+
+    // Since z is deallocated, it should have merged back
+    double *u = malloc(sizeof(double));
+
+    return y == (double *) z && y == u && y != (double *) 0;
+  },
+  `,
+  1
+]
+
+const mallocOnlyMergeBuddies = [
+  `
+  int main() {
+    int *x = malloc(sizeof(int));
+    int *y = malloc(sizeof(int));
+    int *z = malloc(sizeof(int));
+    int *u = malloc(sizeof(int));
+
+    free(x);
+    free(z);
+
+    double *p = malloc(sizeof(double));
+
+    return (double *) x != p;
+  }
+  `,
+  1
+]
+
+const mallocUnevenSize = [
+  `
+  int main() {
+    char *arr1 = malloc(60 * sizeof(char));
+    char *arr2 = malloc(30 * sizeof(char));
+
+    free(arr2);
+    char *arr3 = malloc(60 * sizeof(char));
+    
+    return arr2 == arr3;
+  }
+  `,
+  1
 ]
 
 // TODO: make jest swallow the output of printstack
@@ -85,7 +146,10 @@ export const primitiveFunctionsTests = {
   putchar,
   multiplePutchar,
   malloc,
-  malloc2,
+  mallocReuseAddress,
+  mallocMergeAddress,
+  mallocOnlyMergeBuddies,
+  mallocUnevenSize,
   printStackBasic
 }
 

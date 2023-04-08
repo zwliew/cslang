@@ -67,7 +67,7 @@ function is_true(val: Literal): boolean {
 // A: agenda: stack of commands
 // OS: operand stack: stack of values
 // E: environment: list of frames
-// callStack: stack of environments of functions that are currently executing 
+// callStack: stack of environments of functions that are currently executing
 
 // The agenda A is a stack of commands that still need
 // to be executed by the interpreter. The agenda follows
@@ -787,7 +787,11 @@ export const execute = (program: AstNode) => {
   OS = []
   E = new Environment({ name: '*Global*' })
   FS = new FunctionStore()
-  M = new Memory(1e4) // Use 10KB of memory
+
+  // Use 1 KB for the stack
+  // 8 KB for the heap
+  // 1 KB for the text segment
+  M = new Memory(2 ** 10, 2 ** 13, 2 ** 10)
   callStack = []
 
   let i = 0

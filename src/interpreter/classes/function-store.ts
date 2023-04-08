@@ -140,8 +140,8 @@ const malloc: FunctionDefinition = {
   body: []
 }
 
-const primitiveFree = (_: PrimitiveFunctionParams): Literal => {
-  // Do nothing for now
+const primitiveFree = ({ M, args: [ptr] }: PrimitiveFunctionParams): Literal => {
+  M.heapFree(ptr.value.toNumber())
   return UNDEFINED_LITERAL
 }
 

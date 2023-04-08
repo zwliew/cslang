@@ -4,7 +4,12 @@
 import { Literal, PrimitiveTypeSpecifier, StringLiteral } from '../../parser/ast-types'
 import { isArrayType, isPrimitiveType } from '../../types'
 import Decimal from '../../utils/decimal'
-import { IllegalArgumentError, NotImplementedError, SetVoidValueError } from '../../utils/errors'
+import {
+  IllegalArgumentError,
+  NotImplementedError,
+  RuntimeError,
+  SetVoidValueError
+} from '../../utils/errors'
 import { HeapOverflow, StackOverflow } from '../errors'
 import { MemoryAddress } from '../interpreter-types'
 
@@ -22,92 +27,105 @@ function align(bytes: number) {
 }
 
 /**
+ * Check if a number is a power of two.
+ *
+ * @param n The number to check.
+ * @returns A boolean representing whether n is a power of two.
+ */
+function isPowerOfTwo(n: number): boolean {
+  // Source: https://stackoverflow.com/questions/30924280
+  return n != 0 && !(n & (n - 1))
+}
+
+function roundUpToPowerOfTwo(n: number): number {
+  return 2 ** Math.ceil(Math.log2(n))
+}
+
+/**
  * This class encapsulates the abstraction of a stack and heap.
  *
- * The stack grows towards the heap, and the heap grows towards the stack. The text
- * portion of the memory (for string interning) is situated right after the heap.
+ * The stack, heap and text segments are placed as so:
+ *
+ * +----------+
+ * |  Stack   |
+ * +----------+
+ * |          |
+ * |          |
+ * |   Heap   |
+ * |          |
+ * |          |
+ * +----------+
+ * |   Text   |
+ * +----------+
+ *
+ * In this memory abstraction, the size of each segment has a limit, which
+ * is passed into the constructor.
+ *
+ * The stack pointer grows towards the heap, while the heap uses a buddy
+ * allocator to manage the heap memory.
  */
 export class Memory {
-  capacity: number
-
-  stackIndex: number // The first available position on the stack index
-  heapIndex: number // Index of the last __allocated__ position on the heap
-  textIndex: number // Index of the first available position in the text segment
+  stackSize: number
+  heapSize: number
+  textSize: number
+  startOfText: number
 
   data: DataView
 
+  stackIndex: number // The first available position on the stack index
+  textIndex: number // Index of the first available position in the text segment
+
   stringLocation: Map<string, number>
 
-  constructor(sizeBytes?: number, stringPoolSize?: number) {
-    const sizeOfStackHeap = sizeBytes ?? 1e7
-    this.capacity = sizeOfStackHeap + (stringPoolSize ?? 1e4)
+  // Heap allocation fields - See `allocateHeap` method for more information
+  buddyAllocationBlocks: Array<Set<number>>
+  blockIndexMap: Map<number, number>
 
-    const buffer = new ArrayBuffer(this.capacity)
+  /**
+   * Initialize the memory abstraction for the interpreter.
+   *
+   * The sizes provided have to be a power of two.
+   *
+   * @param stackSize The size of the stack.
+   * @param heapSize The size of the heap.
+   * @param textSize The size of the text segment.
+   */
+  constructor(stackSize: number, heapSize: number, textSize: number) {
+    if (stackSize <= 0 || heapSize <= 0 || textSize <= 0) {
+      throw new IllegalArgumentError('The size of the memory segments must be positive!')
+    }
+
+    if (!isPowerOfTwo(stackSize) || !isPowerOfTwo(heapSize) || !isPowerOfTwo(textSize)) {
+      throw new IllegalArgumentError('The sizes of the memory segments have to be a power of two!')
+    }
+
+    this.stackSize = stackSize
+    this.heapSize = heapSize
+    this.textSize = textSize
+    this.startOfText = stackSize + heapSize
+
+    const totalCapacity = stackSize + heapSize + textSize
+
+    const buffer = new ArrayBuffer(totalCapacity)
     this.data = new DataView(buffer)
 
     this.stackIndex = DEFAULT_STACK_POINTER_START
-    this.heapIndex = sizeOfStackHeap // Heap grows backwards, towards the stack
 
-    // The text segment begins immediately after the heap, so it starts at index sizeOfStackHeap
-    this.textIndex = sizeOfStackHeap
-
+    // The text segment begins immediately after the heap
+    this.textIndex = this.startOfText
     this.stringLocation = new Map()
-  }
 
-  /**
-   * Allocates a number of bytes on the stack.
-   *
-   * @param bytes The number of bytes to allocate
-   * @returns The address to the bytes allocated
-   */
-  allocateStack(bytes: number): number {
-    if (bytes <= 0) {
-      throw new IllegalArgumentError('Provided argument should be positive.')
-    }
-    const allocatedMemoryAddress = this.stackIndex
-
-    // We want our variables to be word aligned
-    this.stackIndex += align(bytes)
-
-    if (this.stackIndex >= this.heapIndex) {
-      throw new StackOverflow()
+    // Initialize the buddy allocator
+    const sizeOfAllocationArray = 32 - Math.clz32(heapSize) // Equivalent to log2(heapSize) + 1, as the size is a power of 2
+    this.buddyAllocationBlocks = []
+    for (let i = 0; i < sizeOfAllocationArray; i++) {
+      this.buddyAllocationBlocks[i] = new Set()
     }
 
-    return allocatedMemoryAddress
-  }
-
-  reinstateStackPointer(index: number): void {
-    if (index < DEFAULT_STACK_POINTER_START) {
-      throw new IllegalArgumentError()
-    }
-    this.stackIndex = index
-  }
-
-  /**
-   * Allocates a specified number of bytes on the heap.
-   *
-   * One additional word before the returned pointer will be used to keep
-   * track of the size of the allocated region of memory.
-   *
-   * @param bytes The number of bytes to allocate.
-   * @returns The address to the bytes allocated, -1 if there is not enough space
-   */
-  allocateHeap(bytes: number): number {
-    if (bytes <= 0) {
-      throw new IllegalArgumentError('Provided argument should be positive.')
-    }
-
-    const totalSize = align(bytes) + WORD_SIZE
-
-    if (this.stackIndex >= this.heapIndex - totalSize) {
-      // There isn't enough space.
-      return -1
-    }
-
-    this.heapIndex -= totalSize
-    this.data.setUint32(this.heapIndex, bytes)
-
-    return this.heapIndex + WORD_SIZE
+    // Since the heap is right after the stack, the index
+    // of the start of the heap is the size of the stack
+    this.buddyAllocationBlocks.at(-1)!.add(stackSize)
+    this.blockIndexMap = new Map()
   }
 
   getValue(memAdd: MemoryAddress): Decimal {
@@ -194,6 +212,164 @@ export class Memory {
     }
     return setDataFunction.call(this.data, byteOffset, value.value)
   }
+
+  /***************
+   *    STACK
+   ***************/
+
+  /**
+   * Allocates a number of bytes on the stack.
+   *
+   * @param bytes The number of bytes to allocate
+   * @returns The address to the bytes allocated
+   */
+  allocateStack(bytes: number): number {
+    if (bytes <= 0) {
+      throw new IllegalArgumentError('Provided argument should be positive.')
+    }
+    const allocatedMemoryAddress = this.stackIndex
+
+    // We want our variables to be word aligned
+    this.stackIndex += align(bytes)
+
+    if (this.stackIndex >= this.stackSize) {
+      throw new StackOverflow()
+    }
+
+    return allocatedMemoryAddress
+  }
+
+  /**
+   * Used upon exit from an environment.
+   *
+   * The stack pointer will be reinstantiated to before
+   * the environment was created, so that the allocated space
+   * can be reused.
+   *
+   * @param index The original position of the stack pointer.
+   */
+  reinstateStackPointer(index: number): void {
+    if (index < DEFAULT_STACK_POINTER_START) {
+      throw new IllegalArgumentError()
+    }
+    this.stackIndex = index
+  }
+
+  /*************
+   *    HEAP
+   *************/
+
+  /**
+   * Allocates a specified number of bytes on the heap.
+   *
+   * Buddy allocation is used here. Essentially,
+   * https://en.wikipedia.org/wiki/Buddy_memory_allocation
+   *
+   * this.buddyAllocationBlocks is an array of "linked list" of blocks,
+   * where buddyAllocationBlocks[i] contain blocks of size 2 ** i.
+   *
+   * The minimal allocable block size is 4 bytes (due to our `align` function),
+   * while the maximal allocable block size is the size of the heap.
+   *
+   * The index of the allocated block is stored in the `blockIndexMap` map, where
+   * 2 ** index is the size of the block. In other words, the block would
+   * be stored in buddyAllocationBlocks[index].
+   *
+   * @param bytes The number of bytes to allocate.
+   * @returns The address to the bytes allocated, -1 if there is not enough space
+   */
+  allocateHeap(bytes: number): number {
+    if (bytes <= 0) {
+      throw new IllegalArgumentError('Provided argument should be positive.')
+    }
+
+    const totalSize = align(roundUpToPowerOfTwo(bytes))
+
+    let i = Math.log2(totalSize)
+
+    // Check if there is a block of the approrpriate size available
+    if (this.buddyAllocationBlocks[i].size == 0) {
+      // No available free blocks of the current size. Request for more
+      const ableToGetMoreBlocks = this.requestSplitBlocks(i + 1)
+      if (!ableToGetMoreBlocks) {
+        // Not enough heap space
+        return -1
+      }
+    }
+
+    // At this point, we will have some free blocks available
+    const addr = this.buddyAllocationBlocks[i].values().next().value
+    this.blockIndexMap.set(addr, i)
+    this.buddyAllocationBlocks[i].delete(addr)
+
+    return addr
+  }
+
+  /**
+   * Private helper method to get more free blocks for
+   * this.buddyAllocationBlock[idx - 1].
+   *
+   * For example, if A[i] doesn't have any blocks, it should call
+   * requestSplitBlocks(i + 1) to split blocks from A[i + 1].
+   *
+   * @param idx Index of the allaocation array
+   * @returns A boolean indicating whether the split was successful
+   */
+  requestSplitBlocks(idx: number): boolean {
+    if (idx >= this.buddyAllocationBlocks.length) {
+      // No more blocks to split.
+      return false
+    }
+
+    if (this.buddyAllocationBlocks[idx].size == 0) {
+      // Not enough free blocks of the current size. Request upwards.
+      if (!this.requestSplitBlocks(idx + 1)) {
+        // Above request couldn't provide more blocks either. Stop
+        return false
+      }
+    }
+
+    // There are free blocks! Split it and place them in the lower index.
+    const addr = this.buddyAllocationBlocks[idx].values().next().value
+    this.buddyAllocationBlocks[idx].delete(addr)
+
+    this.buddyAllocationBlocks[idx - 1].add(addr)
+    this.buddyAllocationBlocks[idx - 1].add(this.buddyOfMemory(addr, idx - 1))
+    return true
+  }
+
+  /**
+   * Deallocate the memory.
+   *
+   * @param addr The memory address to be allocated.
+   */
+  heapFree(addr: number): void {
+    let blockIndex = this.blockIndexMap.get(addr)
+    if (blockIndex === undefined) {
+      throw new RuntimeError('Free is utilized on a non-allocated memory address.')
+    }
+
+    let buddyAddr = this.buddyOfMemory(addr, blockIndex)
+
+    // While the buddy exists in the current level, merge the blocks and insert into next level
+    while (this.buddyAllocationBlocks[blockIndex].has(buddyAddr)) {
+      this.buddyAllocationBlocks[blockIndex].delete(buddyAddr)
+      blockIndex++
+      buddyAddr = this.buddyOfMemory(addr, blockIndex)
+    }
+
+    this.buddyAllocationBlocks[blockIndex].add(addr)
+    this.blockIndexMap.delete(addr)
+  }
+
+  buddyOfMemory(addr: number, idx: number): number {
+    const normalizedAddress = addr - this.stackSize
+    return (normalizedAddress ^ (1 << idx)) + this.stackSize
+  }
+
+  /***************
+   *     TEXT
+   ***************/
 
   /**
    * Implementation for string interning.
