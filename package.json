@@ -2,12 +2,12 @@
   "name": "cslang",
   "version": "1.0.10",
   "license": "Apache-2.0",
-  "description": "Calc language as a start point for CS4215's project",
+  "description": "Explicit-control evaluator for a subset of C",
   "keywords": [
     "JavaScript",
     "interpreter",
     "compiler",
-    "Source"
+    "C"
   ],
   "author": {
     "name": "Source Academy",
@@ -43,21 +43,11 @@
   "scripts": {
     "antlr4ts": "antlr4ts -visitor ./src/lang/C.g4 -o .",
     "antlr4tsz": "antlr4ts -visitor ./src/lang/C.g4 -o ./src/lang/",
-    "autocomplete": "node ./scripts/updateAutocompleteDocs.js",
-    "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn tsc --build --force",
-    "build_sicp_package": "./scripts/build_sicp_package.sh",
-    "ci": "yarn jsdoc && yarn autocomplete && yarn format:ci && yarn eslint",
-    "compile": "yarn tsc",
     "dev": "yarn swc ./src -d dist --copy-files --watch",
-    "docs": "yarn jsdoc && yarn autocomplete",
     "eslint": "eslint --ext \".ts,.tsx\" src",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:ci": "prettier --list-different \"src/**/*.{ts,tsx}\"",
-    "jsdoc": "./scripts/jsdoc.sh",
-    "prepublishOnly": "tsc",
-    "prepare": "husky install",
-    "publish_sicp_package": "./scripts/publish_sicp_package.sh",
     "test": "jest --runInBand",
     "test-coverage": "jest --coverage",
     "start": "node ./dist/repl/repl.js -e --variant=c",
@@ -68,12 +58,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yangdinglou/calc-slang.git"
+    "url": "git+https://github.com/zwliew/cslang.git"
   },
   "bugs": {
-    "url": "https://github.com/yangdinglou/calc-slang/issues"
+    "url": "https://github.com/zwliew/cslang/issues"
   },
-  "homepage": "https://github.com/yangdinglou/calc-slang",
+  "homepage": "https://github.com/zwliew/cslang",
   "devDependencies": {
     "@swc/cli": "^0.1.62",
     "@swc/core": "^1.3.35",
