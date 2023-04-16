@@ -2,6 +2,18 @@
 
 An interpreter for a subset of C. Based off the interpreter for the Calculator language modified from js-slang.
 
+# Table of Contents
+
+- [Setting Up](#setting-up)
+- [Usage](#usage)
+  - [Running the Interpreter with a Program String](#running-the-interpreter-with-a-program-string)
+  - [Running the Interpreter with a Program File](#running-the-interpreter-with-a-program-file)
+  - [Running the Interpreter with a Test Case](#running-the-interpreter-with-a-test-case)
+- [Testing](#testing)
+- [Development Workflow](#development-workflow)
+  - [Local development](#local-development)
+  - [Git workflow](#git-workflow)
+
 # Setting Up
 1. Install [Node.js](https://nodejs.org/).
 2. Install the [Yarn](https://yarnpkg.com/) package manager.
@@ -87,7 +99,7 @@ $ yarn test --silent
 
 # Development workflow
 
-## Local development
+## Local Development
 The typical dev workflow is:
 1. Run `yarn dev` to start the watcher that auto-compiles any changes.
 2. Code your changes in `src/` and add test cases in `src/__tests__/`.
@@ -100,7 +112,7 @@ The typical dev workflow is:
 4. Repeat steps 2 and 3.
 
 
-## Git workflow
+## Git Workflow
 
 There are two main ways that we used to merge our changes into main:
 
