@@ -2,221 +2,123 @@
 
 An interpreter for a subset of C. Based off the interpreter for the Calculator language modified from js-slang.
 
-## Possible Issues (and manual solutions)
-
-* If you failed to execute the `jsdoc.sh` in your bash
-  * Delete the first line of jsdoc.sh (for Windows PowerShell) before executing `yarn jsdoc`.
-  * Please modify the line break type if `‘bash\r’: No such file or directory`
-* `node` should be replaced by `node.exe` if you are using WSL with node.js installed on your Windows.
-* In case you meet the same error as [this](https://github.com/jiangmiao/node-getopt/issues/20) when using *node-getopt*, modify the `package.json` of node-getopt as [this PR](https://github.com/jiangmiao/node-getopt/pull/21/commits/05e498731c14b648fa332ca78d3a301c5e4be440) shows.
-
-# Table of Contents
-
-- [Requirements](#requirements)
-- [Usage](#usage)
-- [Documentation](#documentation)
-- [Requirements](#requirements-1)
-- [Testing](#testing)
-- [Error messages](#error-messages)
-- [Using your xx-slang in your local Source Academy](#using-your-xx-slang-in-your-local-source-academy)
-- [Talks and Presentations](#talks-and-presentations)
-- [License](#license)
-
-# Requirements
-
-- node: known working version: v16.14.0
+# Setting Up
+1. Install [Node.js](https://nodejs.org/).
+2. Install the [Yarn](https://yarnpkg.com/) package manager.
+3. Install the project dependencies by running `yarn` in the project root directory:
 
 # Usage
+The interpreter can be run by passing in a program string, a path to a program, or a name of an existing test case in the `/src/__tests__` directory.
 
-The usual dev workflow is:
-1. Run `yarn dev` to start the watcher that auto-compiles any changes.
-2. Code your changes in `src/` and add test cases in `src/tests/`.
-3. Run `yarn runner-test "test program name here"` or `yarn parser-test "test program name here"` to test your changes.
-4. Repeat steps 2 and 3.
-
-**Everything below might be outdated**
-
-To build,
-
-```{.}
-$ git clone https://github.com/yangdinglou/calc-slang
-$ cd calc-slang
-$ yarn
+First, ensure that you build the project by running `yarn build` in the project root directory.
+```bash
 $ yarn build
 ```
 
-To add \"calc-slang\" to your PATH, build it as per the above instructions, then
-run
-
-```{.}
-$ cd dist
-$ npm link
+## Running the Interpreter with a Program String
+Run the interpreter with a program string by passing `s` or `string` followed by the program string:
+```bash
+$ yarn start s <program-string-here>
 ```
 
-If you do not wish to add \"calc-slang\" to your PATH, replace \"calc-slang\" with
-\"node dist/repl/repl.js\" in the following examples.
-
-To try out _Source_ in a REPL, run
-
-```{.}
-$ calc-slang -c [chapter] # default: 1
+### Example
+For example, running the following command should result in a program that exits with a return code of `3`.
+```bash
+$ yarn start string 'main() { int x = 1; int y = 2; return x + y; }'
 ```
 
-You can set additional options:
-
-```{.}
-Usage: calc-slang [PROGRAM_STRING] [OPTION]
-  -h, --help            display this help
-  -e, --eval            don't show REPL, only display output of evaluation
+Indeed, the program outputs the following:
+```bash
+The program exited with return code 3.
 ```
 
-Currently, valid CHAPTER/VARIANT combinations are:
-
-- `--chapter=1 --variant=calc`
-
-Hint: In `bash` you can take the `PROGRAM_STRING` out of a file as follows:
-
-```{.}
-$ calc-slang -n -e "$(< my_source_program.js)"
+## Running the Interpreter with a Program File
+Run the interpreter with a program file by passing `f` or `file` followed by the path to the program file:
+```bash
+$ yarn start f <path-to-program-file-here>
 ```
 
-# Git workflow guide
-
-**Simplest way**
-1. Before starting dev, rebase your branch on top of main (to ensure that you have synced all the changes from main)
-2. Code and create your commits
-3. git merge your commits to main locally without the merge commit
-4. git push the main branch
-
-Example:
-1. git checkout ownBranch -> git fetch main -> git rebase main
-3. git checkout main -> git merge ownBranch
-
-**Shawn's way**
-Same as above, up until step 2.
-3. git push your branch
-4. On GitHub, create a PR from your branch to main and add notes as you please
-5. Merge the pull request (without the merge commit)
-
-
-# Documentation
-
-Source is documented here: [https://docs.sourceacademy.org/](https://docs.sourceacademy.org/)
-
-# Requirements
-
-- `bash`: known working version: GNU bash, version 5.0.16
-- `latexmk`: Version 4.52c
-- `pdflatex`: known working versions
-  - pdfTeX 3.14159265-2.6-1.40.18 (TeX Live 2017)
-
-To build the documentation, run
-
-```{.}
-$ git clone https://github.com/source-academy/calc-slang.git
-$ cd calc-slang
-$ yarn
-$ yarn install
-$ yarn jsdoc  # to make the web pages in calc-slang/docs/source
-$ cd docs/specs
-$ make        # to make the PDF documents using LaTeX
+### Example
+For example, we have included a `presentation.c` file in the project root directory that should takes an integer `n` from stdin and prints out the `n`-th fibonacci number.
+```bash
+$ yarn start f presentation.c
+10
 ```
 
-**Note**: The documentation may not build on Windows, depending on your bash setup,
-[see above](https://github.com/source-academy/js-slang#requirements).
-
-Documentation on the Source libraries are generated from inline documentation in
-the library sources, a copy of which are kept in `docs/lib/*.js`. The command
-`yarn jsdoc` generates the documentation and places it in the folder
-`docs/source`. You can test the documentation using a local server:
-
-```{.}
-$ cd docs/source;  python -m http.server 8000
+Indeed, it prints out the following:
+```bash
+55
+The program exited with return code 55.
 ```
 
-Documentation of libraries is displayed in autocomplete in the frontend. This
-documentation is generated by `./scripts/updateAutocompleteDocs.py` and placed
-in `src/editors/ace/docTooltip/*.json` files. This script is run by
-`yarn build`prior to `tsc`. To add a Source variant to the frontend autocomplete,
-edit `src/editors/ace/docTooltip/index.ts`
-and `./scripts/updateAutocompleteDocs.py`.
+## Running the Interpreter with a Test Case
+We have an extensive test suite with over 100 test cases. You can also run them in individually in the interpreter by passing the name of the test case directly.
+```bash
+$ yarn start <test-case-name-here>
+```
+
+### Example
+Our test cases are all stored in the `/src/__tests__` directory. As an example, we have a test case called `strlen` stored in the `/src/__tests__/general.ts`, which computes the length of the string "Hello, world!". We can run it like so:
+```bash
+$ yarn start strlen
+```
+
+Indeed, the program outputs the following:
+```bash
+The program exited with return code 13.
+```
+where `13` is the length of the string "Hello, world!".
 
 # Testing
 
-To run the test cases, run the following command:
+As mentioned in the [Usage](#usage) section, we have an extensive test suite. Test cases are stored in `/src/__tests__`, but some test utilities are stored in `/src/utils/`.
 
+ Most test cases are unit tests that test the functionality of individual interpreter features. However, we also have some integration tests that test the general code that one might write in a typical code base; these are stored in `/src/__tests__/general.ts`.
+
+You can run the entire test suite by running the following command:
 ```bash
 $ yarn test
 ```
 
-**Everything below might be outdated**
-
-`js-slang` comes with an extensive test suite. To run the tests after you made
-your modifications, run `yarn test`. Regression tests are run automatically when
-you want to push changes to this repository. The regression tests are generated
-using `jest` and stored as snapshots in `src/\_\_tests\_\_`. After modifying
-`js-slang`, carefully inspect any failing regression tests reported in red in
-the command line. If you are convinced that the regression tests and not your
-changes are at fault, you can update the regression tests as follows:
-
-```{.}
-$ yarn test -- --updateSnapshot
+Some of the test cases might output to stdout, which is expected. However, if you want to suppress the output, you can run the following command instead:
+```bash
+$ yarn test --silent
 ```
 
-# Error messages
+# Development workflow
 
-To enable verbose messages, have the statement `"enable verbose";` as the first
-line of your program. This also causes the program to be run by the interpreter.
+## Local development
+The typical dev workflow is:
+1. Run `yarn dev` to start the watcher that auto-compiles any changes.
+2. Code your changes in `src/` and add test cases in `src/__tests__/`.
+3. Run `yarn <test utility> <test case name>` to test your changes.
+ - `yarn parser-test` runs the parser and outputs the AST.
+ - `yarn analyser-test` runs the parser and static analyser.
+ - `yarn interpreter-test` takes as input an AST and runs the interpreter.
+ - `yarn runner-test` tests the entire evaluator, including the parser, type checker, and interpreter.
+4. Run `yarn test` to run the entire test suite and ensure that your changes did not break anything.
+4. Repeat steps 2 and 3.
 
-There are two main kinds of error messages: those that occur at runtime and
-those that occur at parse time. The first can be found in
-`interpreter-errors.ts`, while the second can be found in `rules/`.
 
-Each error subclass will have `explain()` and `elaborate()`. Displaying the
-error will always cause the first to be called; the second is only called when
-verbose mode is enabled. As such, `explain()` should be made to return a string
-containing the most basic information about what the error entails. Any
-additional details about the error message, including specifics and correction
-guides, should be left to `elaborate()`.
+## Git workflow
 
-Please remember to write test cases to reflect your added functionalities. The
-god of this repository is self-professed to be very particular about test cases.
+There are two main ways that we used to merge our changes into main:
 
-# Using your xx-slang in your local Source Academy
+### Simplest method
+1. Before starting development, rebase your branch on top of `main` (to ensure that you have synced all the changes from main)
+2. Code and create your commits
+3. `git merge` your commits to `main` locally without the merge commit
+4. `git push` the `main` branch
 
-(xx is the name of your language)
+**Example workflow:**
+1. `git checkout ownBranch` → `git fetch main` → `git rebase main`
+3. `git checkout main` → `git merge ownBranch`
 
-A common issue when developing modifications to js-slang is how to test it using
-your own local frontend. Assume that you have built your own frontend locally,
-here is how you can make it use your own xx-slang, instead of the one that the
-Source Academy team has deployed to npm.
+### Alternative method
 
-First, build and link your local xx-slang: (don't forget to modify the "calc-slang" in both projects)
+Same as above, up until step 2.
 
-```{.}
-$ cd xx-slang
-$ yarn build
-$ yarn link
-```
+3. `git push` your branch
+4. On GitHub, create a PR from your branch to `main` and add change notes.
+5. Merge the pull request *without* the merge commit.
 
-Then, from your local copy of frontend:
-
-```{.}
-$ cd frontend
-$ yarn link "xx-slang"
-```
-
-Then start the frontend and the new js-slang will be used.
-
-# Talks and Presentations
-
-- **How `js-slang` works under the hood** [17th Jan 2023][The
-  Gathering][[slides](https://docs.google.com/presentation/d/1GFR39iznBZxWv948zUsmcbCSSDasm4xYs3Jc5GF7A3I/edit?usp=sharing)]
-
-# License
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-All sources in this repository are licensed under the
-[Apache License Version 2][apache2].
-
-[apache2]: https://www.apache.org/licenses/LICENSE-2.0.txt
